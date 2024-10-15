@@ -1,0 +1,260 @@
+<%- include('../layoutsUser/userheader') %>
+
+<style>
+        .price, .duplicate-price {
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .price {
+            color: #28a745;
+        }
+
+        .duplicate-price {
+            text-decoration: line-through;
+            color: #dc3545;
+            margin-left: 10px;
+        }
+
+        .rating {
+            color: #f0ad4e;
+        }
+
+        .category{
+            margin-top: 10px;
+            color: #28a745;
+        }
+
+        .stock {
+            margin-top: 10px;
+            color: #28a745;
+        }
+
+        .limited-stock {
+            color: #dc3545;
+            font-weight: bold;
+            margin-top: 20px;
+        }
+
+        .btn-custom {
+           background-color: #007bff; 
+           color: #fff;
+           border-radius: 5px; 
+           padding: 10px 30px; 
+           width: 200px; 
+           border: none; 
+        }
+
+        .btn-custom:hover {
+           background-color: #0f64be; 
+        }
+
+        .icon_btn {
+            padding: 13px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #e65564; 
+            font-size: 24px; 
+        }
+
+        .table {
+            margin-top: 30px;
+        }
+
+        .table th, .table td {
+            text-align: center;
+        }
+
+        .product-box {
+            border: 1px solid #ddd;
+            padding: 20px;
+            margin-top: 20px;
+            border-radius: 10px;
+            background-color: #f9f9f9;
+        }
+
+        .page-border {
+            border: 1px solid #ddd; 
+            border-radius: 10px;
+            padding: 20px; 
+            margin-top: 20px; 
+            background-color: #fff; 
+        }
+        .container{
+            width: 70%;
+        }
+        .btn-custom {
+            background: linear-gradient(45deg, #ff6b6b, #f7b733);
+        }
+       .btn-custom:hover {
+            background: linear-gradient(45deg, #f7b733, #ff6b6b); 
+        }
+        .availability {
+            color: black; 
+            font-weight: bold;
+        }
+       .in-stock {
+            color: green; 
+        }
+
+       .only-left {
+           color:orange
+        }
+       .out-of-stock {
+           color: red; 
+        }
+       .container {
+           width: 70%;
+        }
+       .product-gallery {
+           flex: 1;
+        }
+       .product-details {
+           flex: 1; 
+        }
+       .product-details-top {
+           display: flex; 
+        }
+       .product-details-tab {
+           margin-top: 20px;
+        }
+</style>
+
+<main class="main">
+    <nav aria-label="breadcrumb" class="breadcrumb-nav border-0 mb-0">
+        <div class="container d-flex align-items-center">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/">Home</a></li>
+                <li class="breadcrumb-item"><a href="/shop">Shop</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Products</li>
+            </ol>
+        </div>
+    </nav>
+
+    <div class="page-content">
+        <div class="container">
+            <div class="product-details-top">
+                <div class="product-gallery">
+                    <div class="row">
+                        <figure class="product-main-image">
+                            <img id="product-zoom" src="/uploads/cropped/<%= product.productImage[0] %>" data-zoom-image="/uploads/cropped/<%= product.productImage[0] %>" alt="Product Image" class="product-image img-thumbnail">
+                            <a href="#" id="btn-product-gallery" class="btn-product-gallery">
+                                <i class="icon-arrows"></i>
+                            </a>
+                        </figure>
+
+                        <div id="product-zoom-gallery" class="product-image-gallery">
+                            <% product.productImage.forEach((image, index) => { %>
+                                <a class="product-gallery-item <%= index === 0 ? 'active' : '' %>" href="#" 
+                                   data-image="/uploads/cropped/<%= image %>" 
+                                   data-zoom-image="/uploads/cropped/<%= image %>">
+                                    <img src="/uploads/cropped/<%= image %>" alt="product image <%= index + 1 %>">
+                                </a>
+                            <% }) %>
+                        </div><!-- End .product-image-gallery -->
+                    </div><!-- End .row -->
+                </div><!-- End .product-gallery -->
+
+                <div class="product-details">
+                    <h1 class="product-title" style="font-size: xx-large;"><%= product.productName %></h1>
+
+                    <div class="ratings-container">
+                        <div class="ratings">
+                            <div class="ratings-val" style="width: 80%;"></div><!-- End .ratings-val -->
+                        </div><!-- End .ratings -->
+                        <a class="ratings-text" href="#product-review-link" id="review-link">( 2 Reviews )</a>
+                    </div><!-- End .rating-container -->
+
+                    <div class="d-flex align-items-center">
+                        <p class="duplicate-price">₹<%= product.regularPrice %></p> 
+                        <p class="price ms-3" style="margin-left: 20px;">₹<%= product.salePrice %></p>    
+                    </div>
+
+                    <div class="category">
+                        <span class="availability">Category:</span> <%= product.category ? product.category.name : 'Uncategorized' %>  
+                    </div>
+
+                    <% if (product.quantity >= 10) { %>
+                        <div class="stock in-stock"><span class="availability">Availability:</span> In Stock (Total: <%= product.quantity %>)</div>
+                    <% } else if (product.quantity > 0) { %>
+                        <div class="stock only-left"><span class="availability">Availability:</span> Only <%= product.quantity %> left in stock (Total: <%= product.quantity %>)</div>
+                    <% } else { %>
+                        <div class="stock out-of-stock"><span class="availability">Availability:</span> Out of stock</div>
+                    <% } %>
+
+                    <br><br>
+                    <div class="product-details-action">
+                        <a href="#" class="btn-product btn-cart"><span>Add to Cart</span></a>
+                        <div class="details-action-wrapper">
+                            <a href="#" class="btn-product btn-wishlist" title="Wishlist"><span></span></a>
+                        </div>
+                    </div>
+                </div><!-- End .product-details -->
+            </div><!-- End .product-details-top -->
+
+            <div class="product-details-tab">
+                <ul class="nav nav-pills justify-content-center" role="tablist">
+                    <li class="nav-item">
+                        <a class="nav-link active" id="product-desc-link" data-toggle="tab" href="#product-desc-tab" role="tab" aria-controls="product-desc-tab" aria-selected="true">Description</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" id="product-info-link" data-toggle="tab" href="#product-info-tab" role="tab" aria-controls="product-info-tab" aria-selected="false">Additional Information</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" id="product-review-link" data-toggle="tab" href="#product-review-tab" role="tab" aria-controls="product-review-tab" aria-selected="false">Reviews (2)</a>
+                    </li>
+                </ul>
+                <div class="tab-content">
+                    <div class="tab-pane fade show active" id="product-desc-tab" role="tabpanel" aria-labelledby="product-desc-link">
+                        <div class="product-desc-content">
+                            <p><%= product.description %></p>
+                        </div><!-- End .product-desc-content -->
+                    </div><!-- .End .tab-pane -->
+                    <div class="tab-pane fade" id="product-info-tab" role="tabpanel" aria-labelledby="product-info-link">
+                        <div class="product-desc-content">
+                            <h3>Information</h3>
+                            <p>Lorem ipsum dolor sit amet, consectetuer adipiscing elit...</p>
+
+                            <h3>Fabric & Care</h3>
+                            <p>Lorem ipsum dolor sit amet...</p>
+
+                            <h3>Size</h3>
+                            <p>One Size</p>
+                        </div><!-- End .product-desc-content -->
+                    </div><!-- .End .tab-pane -->
+                    <div class="tab-pane fade" id="product-review-tab" role="tabpanel" aria-labelledby="product-review-link">
+                        <div class="reviews">
+                            <h3>Reviews (2)</h3>
+                            <div class="review">
+                                <div class="row no-gutters">
+                                    <div class="col-auto">
+                                        <h4><a href="#">Samanta J.</a></h4>
+                                        <div class="ratings-container">
+                                            <div class="ratings">
+                                                <div class="ratings-val" style="width: 80%;"></div><!-- End .ratings-val -->
+                                            </div><!-- End .ratings -->
+                                        </div><!-- End .rating-container -->
+                                        <span class="review-date">6 days ago</span>
+                                    </div><!-- End .col -->
+                                    <div class="col">
+                                        <h4>Good, perfect size</h4>
+                                        <div class="review-content">
+                                            <p>Lorem ipsum dolor sit amet...</p>
+                                        </div><!-- End .review-content -->
+                                        <div class="review-action">
+                                            <a href="#"><i class="icon-thumbs-up"></i>Helpful (2)</a>
+                                            <a href="#"><i class="icon-thumbs-down"></i>Unhelpful (0)</a>
+                                        </div><!-- End .review-action -->
+                                    </div><!-- End .col-auto -->
+                                </div><!-- End .row -->
+                            </div><!-- End .review -->
+                        </div><!-- End .reviews -->
+                    </div><!-- .End .tab-pane -->
+                </div><!-- End .tab-content -->
+            </div><!-- End .product-details-tab -->
+
+        </div><!-- End .container -->
+    </div><!-- End .page-content -->
+</main><!-- End .main -->
+<%- include('../layoutsUser/userfooter') %>

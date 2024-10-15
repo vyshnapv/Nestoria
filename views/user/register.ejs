@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Sign Up Form by Colorlib</title>
+
+    <!-- Font Icon -->
+    <link rel="stylesheet" href="/userAssets/signupAssets/fonts/material-icon/css/material-design-iconic-font.min.css">
+
+    <!-- Main css -->
+    <link rel="stylesheet" href="/userAssets/signupAssets/css/style.css">
+</head>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@10/dist/sweetalert2.min.css">
+<body>
+  
+    <div class="main">
+        <!-- Sign up form or register form  -->
+        <section class="signup">
+            <div class="container">
+                <div class="signup-content">
+                    <div class="signup-form">
+                        <h2 class="form-title">Sign up</h2>
+                        <form  class="register-form" id="register-form" >
+                            <div class="form-group">
+                                <label for="name"><i class="zmdi zmdi-account material-icons-name"></i></label>
+                                <input type="text" name="name" id="name" placeholder="Your Name"/>
+                                <div class="error-message" id="name-error" style="color: red;"></div>
+                            </div>
+                            <div class="form-group">
+                                <label for="email"><i class="zmdi zmdi-email"></i></label>
+                                <input type="email" name="email" id="email" placeholder="Your Email"/>
+                                <div class="error-message" id="email-error" style="color: red;"></div> 
+                            </div>
+                            <div class="form-group">
+                                <label for="mobile"><i class="zmdi zmdi-phone"></i></label>
+                                <input type="number" name="mobile" id="mobile" placeholder="Your phone number"/>
+                                <div class="error-message" id="mobile-error" style="color: red;"></div>
+                            </div>
+                            <div class="form-group">
+                                <label for="pass"><i class="zmdi zmdi-lock"></i></label>
+                                <input type="password" name="pass" id="pass" placeholder="Password"/>
+                                <div class="error-message" id="pass-error" style="color: red;"></div>
+                            </div>
+                            <div class="form-group">
+                                <label for="re-pass"><i class="zmdi zmdi-lock-outline"></i></label>
+                                <input type="password" name="re_pass" id="re_pass" placeholder="confirm password"/>
+                                <div class="error-message" id="repass-error" style="color: red;"></div>
+                            </div>
+                            <!-- <div class="form-group">
+                                <input type="checkbox" name="agree-term" id="agree-term" class="agree-term" />
+                                <label for="agree-term" class="label-agree-term"><span><span></span></span>I agree all statements in  <a href="#" class="term-service">Terms of service</a></label>
+                            </div> -->
+                            <div id="errMsg" style="color: red;"></div>
+                            <div class="form-group form-button">
+                                <input type="submit" name="signup" id="signup" class="form-submit" value="Register"/>
+                            </div>
+                            <div id="errMsgMail" style="color: red;"></div>
+                        </form>
+                    </div>
+                    <div class="signup-image">
+                        <figure><img src="/userAssets/signupAssets/images/signup-image.jpg" alt="sing up image"></figure>
+                        <a href="/login" class="signup-image-link">I am already a member</a>
+                        <div class="social-login">
+                            <span class="social-label">Or login with Google</span>
+                            <ul class="socials">
+                                <li><a href="/auth/google"><i class="display-flex-center zmdi zmdi-google"></i></a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </div>
+
+    <% if(typeof message !== "undefined") { %>
+        <p style="color:rgb(225, 239, 28)"><%= message %></p>
+        <% } %>
+
+    <!-- JS -->
+    <script src="/userAssets/signupAssets/vendor/jquery/jquery.min.js"></script>
+    <script src="/userAssets/signupAssets/js/main.js"></script>
+
+    <script>
+      const form = document.getElementById("register-form");
+      const name = document.getElementById("name");
+      const email = document.getElementById("email");
+      const mobile = document.getElementById("mobile");
+      const pass = document.getElementById("pass");
+      const re_pass = document.getElementById("re_pass");
+  
+      const nameError = document.getElementById("name-error");
+      const emailError = document.getElementById("email-error");
+      const mobileError = document.getElementById("mobile-error");
+      const passError = document.getElementById("pass-error");
+      const repassError = document.getElementById("repass-error");
+  
+      form.addEventListener("submit", (e) => {
+          e.preventDefault(); 
+          validateRegister();
+      });
+  
+     
+      const isValidName = (name) => /^[a-zA-Z ]{2,30}$/.test(name);
+      const isValidEmail = (email) => /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/.test(email);
+      const isValidMobile = (mobile) => /^[0-9]{10}$/.test(mobile);
+      const isValidPassword = (pass) => pass.length >= 6;
+  
+     
+      const validateRegister = () => {
+          const nameValue = name.value.trim();
+          const emailValue = email.value.trim();
+          const mobileValue = mobile.value.trim();
+          const passValue = pass.value.trim();
+          const rePassValue = re_pass.value.trim();
+        
+          let valid = true;
+  
+          
+          if (!nameValue) {
+              nameError.innerText = "Please enter your name";
+              valid = false;
+          } else if (!isValidName(nameValue)) {
+              nameError.innerText = "Name should be 2-30 characters long and contain only letters";
+              valid = false;
+          } else {
+              nameError.innerText = "";
+          }
+  
+          
+          if (!emailValue) {
+              emailError.innerText = "Please enter your email";
+              valid = false;
+          } else if (!isValidEmail(emailValue)) {
+              emailError.innerText = "Please enter a valid email";
+              valid = false;
+          } else {
+              emailError.innerText = "";
+          }
+  
+          
+          if (!mobileValue) {
+              mobileError.innerText = "Enter your mobile number";
+              valid = false;
+          } else if (!isValidMobile(mobileValue)) {
+              mobileError.innerText = "Please enter a valid mobile number";
+              valid = false;
+          } else {
+              mobileError.innerText = "";
+          }
+  
+         
+          if (!passValue) {
+              passError.innerText = "Please enter your password";
+              valid = false;
+          } else if (!isValidPassword(passValue)) {
+              passError.innerText = "Password should be at least 6 characters long";
+              valid = false;
+          } else {
+              passError.innerText = "";
+          }
+  
+          
+          if (passValue !== rePassValue) {
+              repassError.innerText = "Passwords do not match";
+              valid = false;
+          } else {
+              repassError.innerText = "";
+          }
+  
+          // If all fields are valid, submit the form
+          if (valid) {
+              const formData = new FormData(form); 
+  
+              
+              fetch("/register", {
+                  method: "post",
+                  headers: {
+                      'Content-Type': 'application/json'
+                  },
+                  body: JSON.stringify(Object.fromEntries(formData)) 
+              })
+              .then(response => response.json())
+              .then(data => {
+                  if (data.success) {
+                    window.location.href="/verify-otp"
+                  } else {
+                      emailError.innerText = data.message; 
+                  }
+              })
+              .catch(error => {
+                  Swal.fire({
+                      icon: "error",
+                      title: "Oops",
+                      text: error.message 
+                  });
+              });
+          }
+      };
+  </script>
+  
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@10/dist/sweetalert2.min.js"></script>
+</body>
+</html>

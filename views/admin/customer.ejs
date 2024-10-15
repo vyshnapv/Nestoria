@@ -1,0 +1,141 @@
+<%- include('../layoutsAdmin/adminheader') %>
+<%- include('../layoutsAdmin/header') %>
+<section class="content-main">
+    <div class="content-header">
+        <h2 class="content-title">Customers List</h2>
+        <!-- <div>
+            <a href="#" class="btn btn-primary"><i class="material-icons md-plus"></i> Create new</a>
+        </div> -->
+    </div>
+    <div class="card-body">
+        <div class="row gx-3 mb-3">
+            <div class="col-lg-4 col-md-6 me-auto">
+                <form action="/admin/users" method="get" class="d-flex">
+                    <input type="text" name="search" placeholder="Search by name or email..." class="form-control search-input" style="border: 1px solid #ced4da;" />
+                    <button type="submit" class="btn btn-outline-secondary ms-2">
+                        <i class="material-icons">search</i>
+                    </button>
+                </form>
+            </div>
+        </div>
+        
+        <div class="table-responsive">
+            <table class="table table-hover table-striped table-bordered align-middle text-center">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Phone No</th>
+                        <th class="text-end">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% if (data.length > 0) { %>
+                        <% for(let i = 0; i < data.length; i++) { %>
+                            <tr>
+                                <td><%= data[i].name %></td>
+                                <td><%= data[i].email %></td>
+                                <td><%= data[i].mobile %></td>
+                                <td class="text-end">
+                                    <% if (data[i].is_blocked === false) { %>
+                                        <button class="btn btn-danger btn-sm" onclick="blockCustomer('<%= data[i]._id %>')">
+                                            Block
+                                        </button>
+                                    <% } else { %>
+                                        <button class="btn btn-success btn-sm" onclick="unblockCustomer('<%= data[i]._id %>')">
+                                            Unblock
+                                        </button>
+                                    <% } %>
+                                </td>
+                            </tr>
+                        <% } %>
+                    <% } else { %>
+                        <tr>
+                            <td colspan="4" class="text-center">No customers found</td>
+                        </tr>
+                    <% } %>
+                </tbody>
+            </table>
+        </div>
+        <div class="container mt-3">
+            <nav aria-label="Page navigation">
+                <% if (!search) { %> 
+                <ul class="pagination justify-content-center mb-4">
+                    <% for(let i = 1; i <= totalPages; i++) { %>
+                        <li class="page-item <%= (i === parseInt(currentPage)) ? 'active' : '' %>">
+                            <a class="page-link" href="?page=<%= i %>"><%= i %></a>
+                        </li>
+                    <% } %>
+                </ul>
+                <% } %>
+            </nav>
+        </div>
+    </div>
+   
+</section>
+<script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+<script>
+    function blockCustomer(userId) {
+        swal({
+            title: "Are you sure?",
+            text: "You want to block this user!",
+            icon: "warning",
+            buttons: true,
+            dangerMode: true,
+        }).then((willBlock) => {
+            if (willBlock) {
+                fetch(`/admin/blockCustomer?id=${userId}`, {
+                    method: 'POST',
+                })
+                .then(response => {
+                    if (response.ok) {
+                        return response.json();
+                    }
+                    throw new Error('Network response was not ok.');
+                })
+                .then(data => {
+                    // Show success message
+                    swal("Success", data.message, "success").then(() => {
+                        location.reload(); // Reload the page
+                    });
+                })
+                .catch(error => {
+                    console.error('There was a problem with the fetch operation:', error);
+                    swal("Error", "An error occurred while blocking the user.", "error");
+                });
+            }
+        });
+    }
+
+    function unblockCustomer(userId) {
+        swal({
+            title: "Are you sure?",
+            text: "You want to unblock this user!",
+            icon: "warning",
+            buttons: true,
+            dangerMode: true,
+        }).then((willUnblock) => {
+            if (willUnblock) {
+                fetch(`/admin/unblockCustomer?id=${userId}`, {
+                    method: 'POST',
+                })
+                .then(response => {
+                    if (response.ok) {
+                        return response.json();
+                    }
+                    throw new Error('Network response was not ok.');
+                })
+                .then(data => {
+                    // Show success message
+                    swal("Success", data.message, "success").then(() => {
+                        location.reload(); // Reload the page
+                    });
+                })
+                .catch(error => {
+                    console.error('There was a problem with the fetch operation:', error);
+                    swal("Error", "An error occurred while unblocking the user.", "error");
+                });
+            }
+        });
+    }
+</script>

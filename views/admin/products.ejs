@@ -1,0 +1,285 @@
+<%- include('../layoutsAdmin/adminheader') %>
+<%- include('../layoutsAdmin/header') %>
+   <head>
+       <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@10/dist/sweetalert2.min.css">
+       <style>
+        body {
+            font-family: Arial, sans-serif; 
+            background-color: #f4f7fa; 
+        }
+
+        .table {
+            border-collapse: collapse;
+            width: 100%;
+            margin-top: 20px; 
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            border-radius: 8px; 
+            overflow: hidden; 
+        }
+
+        .table th, .table td {
+            border: 1px solid #dee2e6;
+            padding: 12px;
+            text-align: left; 
+            transition: background-color 0.3s; 
+        }
+
+        .table th {
+            background-color: #364453;
+            color: white; 
+            font-weight: bold; 
+        }
+
+        .table tr {
+            background-color: #ffffff; 
+        }
+
+        .table tr:nth-child(even) {
+            background-color: #f2f2f2; 
+        }
+
+        .table tr:hover {
+            background-color: #e9ecef; 
+        }
+
+        .table img {
+            border-radius: 4px; 
+        }
+
+        .btn {
+            transition: background-color 0.3s, color 0.3s; 
+        }
+
+        .btn-danger {
+            background-color: #dc3545; 
+            border: none;
+            color: white; 
+        }
+
+        .btn-danger:hover {
+            background-color: #c82333; 
+        }
+
+        .btn-success {
+            background-color: #28a745; 
+            border: none; 
+            color: white; 
+        }
+
+        .btn-success:hover {
+            background-color: #218838; 
+        }
+
+        .btn-info {
+            background-color: #17a2b8; 
+            border: none; 
+            color: white;
+        }
+
+        .btn-info:hover {
+            background-color: #138496; 
+        }
+
+        .pagination-container {
+            margin-top: 20px; 
+            text-align: center;
+        }
+
+        .pagination-container a, .pagination-container .current-page {
+            padding: 10px 15px;
+            margin: 0 5px; 
+            border-radius: 5px; 
+            text-decoration: none; 
+        }
+
+        .pagination-container a {
+            background-color: #007bff; 
+            color: white; 
+        }
+
+        .pagination-container a:hover {
+            background-color: #0056b3; 
+        }
+
+        .pagination-container .current-page {
+            background-color: #0056b3; 
+            color: white; 
+        }
+        .swal-popup {
+            width: 400px; 
+            font-size: 14px; 
+        }
+
+        .swal-title {
+            font-size: 18px;
+        }
+
+        .swal-content {
+            font-size: 12px; 
+        }
+
+</style>
+   </head>
+
+     <div class="content-header">
+       <div>
+         <h2 class="content-title card-title">Products List</h2>
+       </div>
+     </div>
+
+     <header class="card-header text-center mb-20">
+        <form action="" method="get" class="d-inline">
+            <div class="input-group input-group-sm border border-1 border-grey rounded-pill" style="width: 500px; margin: 0 auto;">
+                <input type="text" class="form-control border-0 rounded-pill" placeholder="Search products or brands" name="search">
+                <button class="btn border-0" type="submit">Search</button>
+            </div>
+        </form>
+        <div class="mt-2">
+            <a href="/admin/addproducts" class="btn btn-primary btn-sm rounded">Add new products</a>
+        </div>
+    </header>
+
+  <div class="right mt-5">
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th scope="col"><b>Product Name</b></th>
+                <th scope="col"><b>Image</b></th>
+                <th scope="col"><b>Category</b></th>
+                <th scope="col"><b>Sale Price</b></th>
+                <th scope="col"><b>Quantity</b></th>
+                <th scope="col"><b>Action</b></th>
+                <th scope="col"><b>Edit</b></th>
+            </tr>
+        </thead>
+        <tbody>
+            <% for (let i = data.length - 1; i >= 0; i--) { %>
+            <tr>
+                <td><%= data[i].productName %></td>
+                <td>
+                    <img style="width: 50px; height: 60px;" src="/uploads/cropped/<%= data[i].productImage[0] %>" alt="">
+                </td>
+                <td><%= data[i].category.name %></td>
+                <td><%= data[i].salePrice %></td>
+                <td><%= data[i].quantity %></td>
+                <td>
+                    <% if (data[i].isBlocked === false) { %>
+                      <button class="btn btn-success" style="width: 80px;" onclick="handleBlockProduct('<%= data[i]._id %>', 'block')">
+                        <span class="text-white" style="text-decoration: none;">Unblock</span>
+                      </button>
+                    <% } else { %>
+                      <button class="btn btn-danger" style="width: 80px;" onclick="handleBlockProduct('<%= data[i]._id %>', 'unblock')">
+                        <span class="text-white" style="text-decoration: none;">Block</span>
+                      </button>
+                    <% } %>
+                  </td>
+                <td>
+                    <button class="btn btn-info" style="width: 80px;">
+                        <a href="/admin/editProduct?id=<%=data[i]._id%>" class="text-white" style="text-decoration: none;">Edit</a>
+                    </button>
+                </td>
+            </tr>
+            <% } %>
+        </tbody>
+    </table>
+    
+    
+  </div>
+  <div class="pagination-container mt-30 mb-50">
+    <nav aria-label="Page navigation example">
+        <ul class="pagination justify-content-start">
+            <% if (currentPage > 1) { %>
+                <li class="page-item">
+                    <a class="page-link" href="?page=<%= currentPage - 1 %>&search=<%= search %>">
+                        <i class="material-icons md-chevron_left"></i>
+                    </a>
+                </li>
+            <% } %>
+
+            <% for (let i = 1; i <= totalPages; i++) { %>
+                <% if (i === currentPage) { %>
+                    <li class="page-item active">
+                        <a class="page-link" href="#"><%= i %></a>
+                    </li>
+                <% } else { %>
+                    <li class="page-item">
+                        <a class="page-link" href="?page=<%= i %>&search=<%= search %>"><%= i %></a>
+                    </li>
+                <% } %>
+            <% } %>
+
+            <% if (currentPage < totalPages) { %>
+                <li class="page-item">
+                    <a class="page-link" href="?page=<%= currentPage + 1 %>&search=<%= search %>">
+                        <i class="material-icons md-chevron_right"></i>
+                    </a>
+                </li>
+            <% } %>
+        </ul>
+    </nav>
+</div>
+
+<script>
+    function handleBlockProduct(productId, action) {
+        const actionText = action === 'block' ? 'Block' : 'Unblock';
+        const actionUrl = action === 'block' ? `/admin/blockProduct?id=${productId}` : `/admin/unblockProduct?id=${productId}`;
+
+        Swal.fire({
+            title: `Are you sure you want to ${actionText} this product?`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: `Yes, ${actionText} it!`,
+            customClass: {
+            popup: 'swal-popup', 
+            title: 'swal-title',  
+            content: 'swal-content'
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                fetch(actionUrl, {
+                    method: 'post',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ id: productId }),
+                })
+                    .then(response => {
+                        if (!response.ok) {
+                            return response.json().then(data => {
+                                throw new Error(data.message || 'Failed to list /Unlist the product');
+                            });
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        Swal.fire(
+                            'Success!',
+                            `Product has been ${actionText.toLowerCase()}ed.`,
+                            'success'
+                        ).then(() => {
+                            location.reload(); 
+                        });
+                    })
+                    .catch(error => {
+                        Swal.fire(
+                            'Error!',
+                            error.message,
+                            'error'
+                        );
+                    });
+                 }
+              });
+            }
+</script>
+  
+    
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@10/dist/sweetalert2.min.js"></script>
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+
+
+            
