@@ -13,13 +13,13 @@ const customerInfo=async(req,res)=>{
          {
             page=req.query.page
          }
-        //find userdata
+        
          const limit=5
+         
          const userData=await User.find({
             is_admin:false,
-            //if we search with name and emial we got the user so we put it in to array
             $or:[
-                {name:{$regex:".*"+search+".*",$options:"i"}}, // Case insensitive search
+                {name:{$regex:".*"+search+".*",$options:"i"}}, 
                 {email:{$regex:".*"+search+".*",$options:"i"}},
                 {mobile:{$regex:".*"+search+".*", $options:'i'}},
             ],
@@ -32,7 +32,6 @@ const customerInfo=async(req,res)=>{
          //calculate total pages
          const count=await User.find({
             is_admin:false,
-            //if we search with name and emial we got the user so we put it in to array
             $or:[
                 {name:{$regex:".*"+search+".*",$options:"i"}},
                 {email:{$regex:".*"+search+".*",$options:"i"}},

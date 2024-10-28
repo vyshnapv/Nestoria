@@ -6,13 +6,25 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>Sign Up Form by Colorlib</title>
+    <title>Sign Up Form by Nestoria</title>
+    <link rel="shortcut icon" type="image/x-icon" href="/assets/imgs/theme/favicon.svg" />
 
     <!-- Font Icon -->
     <link rel="stylesheet" href="/userAssets/signupAssets/fonts/material-icon/css/material-design-iconic-font.min.css">
 
     <!-- Main css -->
     <link rel="stylesheet" href="/userAssets/signupAssets/css/style.css">
+
+    <style>
+        .toggle-password {
+        cursor: pointer;
+        position: absolute;
+        right: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 1.5em;
+        }
+    </style>
 </head>
 <body>
 
@@ -37,6 +49,9 @@
                     <div class="form-group">
                         <label for="pass"><i class="zmdi zmdi-lock"></i></label>
                         <input type="password" name="pass" id="pass" placeholder="Password"/>
+                        <span class="toggle-password" onclick="togglePassword('pass', 'pass-toggle')">
+                            <i id="pass-toggle" class="zmdi zmdi-eye"></i>
+                        </span>
                     </div>
 
                     <%if(locals.message && message.length>0) {%>
@@ -60,6 +75,23 @@
 </section>
 
 </div>
+
+<script>
+      function togglePassword(inputId, iconId) {
+    var input = document.getElementById(inputId);
+    var icon = document.getElementById(iconId);
+
+    if (input.type === "password") {
+        input.type = "text";
+        icon.classList.remove('zmdi-eye');
+        icon.classList.add('zmdi-eye-off');
+    } else {
+        input.type = "password";
+        icon.classList.remove('zmdi-eye-off');
+        icon.classList.add('zmdi-eye');
+    }
+}
+</script>
 
    <!-- JS -->
    <script src="/userAssets/signupAssets/vendor/jquery/jquery.min.js"></script>

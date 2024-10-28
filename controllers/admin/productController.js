@@ -22,10 +22,11 @@ const getProductAddPage=async(req,res)=>{
 const addProducts = async (req, res) => {
     try {
         const products = req.body;
+
         const productExists = await Product.findOne({
             productName: products.productName,
         });
-        
+            
         if (!productExists) {
             const images = [];
             if (req.files && req.files.length > 0) {
@@ -34,13 +35,10 @@ const addProducts = async (req, res) => {
                     const resizedImagePath = path.join('public', 'uploads', 'cropped',  req.files[i].filename);
                     await sharp(originalImagePath).resize({width: 440, height: 440}).toFile(resizedImagePath); 
                     images.push(req.files[i].filename);
-                    // fs.unlinkSync(originalImagePath);
+                    
                 }
             }
-            
-            
             const categoryId = await Category.findOne({_id: products.category});
-
             
             if (!categoryId) {
                 return res.status(400).json({ message: "Invalid category name" });
@@ -155,13 +153,15 @@ const getEditProduct=async(req,res)=>{
         const id=req.query.id;
         const product=await Product.findOne({_id:id});
         const category=await Category.find({})
+
         res.render("editproduct",{
             product:product,
             cat:category,
         })
         
     } catch (error) {
-        res.redirect(",pageerror")
+      console.error('Error in getEditProduct:', error);
+        res.redirect("/pageerror");
     }
 }
 
@@ -171,7 +171,9 @@ const editProduct = async (req, res)=>{
        const id = req.params.id;
        const product = await Product.findOne({_id:id});
        const data = req.body;
-       const existingProduct = await Product.findOne({
+
+
+         const existingProduct = await Product.findOne({
           productName: data.productName,
           _id: {$ne:id}
       })
@@ -180,11 +182,11 @@ const editProduct = async (req, res)=>{
          return res.status(400).json({error: "Product with this name already exists. Please try with another name"});
      }
     
-    const images =[];
+    const images=[];
 
       if(req.files && req.files.length>0){
-         for(let i=0;i<req.files.length;i++) {
-         images.push(req.files[i].filename);
+        for(let i=0;i<req.files.length;i++){
+            images.push(req.files[i].filename);
         }
     }
 
@@ -195,43 +197,22 @@ const editProduct = async (req, res)=>{
            regularPrice:data.regularPrice,
            salePrice:data.salePrice,
            quantity:data.quantity,
-           size:data.size,
-           color:data.color
-        }
-        
-        if(req.files.length>0){
-           updateFields. $push = {productImage: {$each:images}};
-          }
+           color:data.color,
+        }  
 
-          await Product.findByIdAndUpdate(id,updateFields,{new:true})
-          res.redirect("/admin/products")
+        if(req.files.length>0){
+            updateFields.$push={productImage:{$each:images}};
+        }
+
+      
+        await Product.findByIdAndUpdate(id,updateFields,{new:true});
+        res.redirect("/admin/products")
     
     } catch (error) {
-        console.error(error);
-        res.redirect("/pageerror")
+        console.error('Error in editProduct:', error);
+        res.redirect("/pageerror");
     }
  }
-
- //delete image
- const deleteSingleImage=async(req,res)=>{
-    try {
-        const {imageNameToServer, productIdToServer} = req.body;
-        const product = await Product.findByIdAndUpdate (productIdToServer, {$pull: {productImage: imageNameToServer}});       
-        const imagePath = path.join("public", "uploads", "cropped", imageNameToServer);       
-        if(fs.existsSync(imagePath)) {
-                await fs.unlinkSync(imagePath);
-               console.log(`Image ${imageNameToServer} deleted successfully`);
-         }else {
-              console.log(`Image ${imageNameToServer} not found`);
-        }
-        res.send({status:true});
-
-        
-    } catch (error) {
-        res.redirect("/pageerror")
-    }
- }
-
 
 module.exports={
     getProductAddPage,
@@ -241,5 +222,4 @@ module.exports={
     unblockProduct,
     getEditProduct,
     editProduct,
-    deleteSingleImage,
 }

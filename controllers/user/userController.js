@@ -17,10 +17,12 @@ const hashPassword = async (password) => {
     }
 };
 
+
 //generate otp
 function generateOTP() {
     return Math.floor(100000 + Math.random() * 900000).toString();
 }
+
 
 //sendverificationEmail
 async function sendverificationEmail(email, otp) {
@@ -45,6 +47,7 @@ async function sendverificationEmail(email, otp) {
         });
 
         return info.accepted.length > 0; 
+
     } catch (error) {
         console.error("Error sending email:", error.message); 
         return false;
@@ -57,8 +60,14 @@ async function sendverificationEmail(email, otp) {
 const loadHome = async (req, res) => {
     try {
         const userData = req.session.user ? await User.findById(req.session.user) : null;
+        if (userData && userData.is_blocked) {
+            req.session.destroy(); 
+            return res.redirect("/login");
+        }
+
         const products=await Product.find()
         res.render('home', { userData ,products});
+
     } catch (error) {
         console.error("Error loading home page", error);
         res.redirect("/pageNotFound");
@@ -114,14 +123,17 @@ const insertUser=async(req,res)=>
             }
     
             const otp=generateOTP();
+
             const emailSend=await sendverificationEmail(email,otp);
     
             if(!emailSend)
             {
                 return res.json({success:false,message: "Email error" });
             }
+
         req.session.userOtp=otp;
         req.session.userData={name,mobile,email,pass};
+        
         res.json({success:true,message: "Registered successfully" });
         console.log("OTP send",otp);
     
@@ -130,7 +142,81 @@ const insertUser=async(req,res)=>
             res.redirect("/pageNotFound")
         }
     }
-    
+
+//otp page loading
+    const otpPage=async(req,res)=>{
+        try {
+            res.render("verify-otp")
+        } catch (error) {
+            console.error(error);
+            
+        }
+    }
+
+
+ //verify otp
+ const verifyOtp=async(req,res)=>
+    {
+       try {
+           const {otp}=req.body;
+           console.log(otp);
+   
+           if(otp===String(req.session.userOtp))
+           {
+               const user=req.session.userData;
+               const passwordHash=await hashPassword(user.pass);
+               const saveUserData=new User({
+                   name:user.name,
+                   email:user.email,
+                   mobile:user.mobile,
+                   password:passwordHash,
+                   is_verified:true//they enterd the correct otp
+               })
+   
+               await saveUserData.save();
+   
+               req.session.user=saveUserData._id;
+               req.session.userOtp = null; //clear the stored otp from the session
+               req.session.userData = null; 
+               res.json({success:true,message:"Registration successful!",redirect:"/login"})
+           }
+           else
+           {
+               res.status(400).json({success:false,message:"Invalid otp,please try again"})
+           }
+           
+       } catch (error) {
+           console.error("Error verifying otp",error);
+           res.status(500).json({success:false,message:"An error occure"})
+       }
+    }
+      
+//Resend OTP
+const resendOtp=async(req,res)=>
+    {
+       try {
+             const userData=req.session.userData;
+             const otp=generateOTP();
+   
+             const emailSend=await sendverificationEmail(userData.email,otp);
+             if(emailSend)
+             {
+               req.session.userOtp=otp;
+               console.log("New OTP send:",otp);
+               return res.json({success:true,message:"OTP resent successfully"});
+             }
+             else
+             {
+               return res.json({success:true,message:"Failed to resend otp,try again"});
+             }
+       } catch (error) {
+             console.error("Error resending otp",error);
+             res.status(500).json({success:false,message:"An error occured"});
+             
+       }
+    }
+   
+
 
 //login user
 const loginUser=async(req,res)=>
@@ -160,25 +246,14 @@ const loginUser=async(req,res)=>
              }
 
              req.session.user=userData._id;
-             
              res.redirect("/")
+             
             }catch(error)
              {
              console.log("login error:",error);
              res.render("login",{message:"login failed,please try again later"})
              }
         }
-
- //page not found
- const pageNotFound=async(req,res)=>
-    {
-      try {
-          res.render("page.404")
-      } catch (error) {
-        res.redirect("/pageNotFound")
-      }
-    }
-
 
 //logout user
 const logoutUser = async (req, res) => {
@@ -200,86 +275,25 @@ const logoutUser = async (req, res) => {
 };
 
 
-const otpPage=async(req,res)=>{
-    try {
-        res.render("verify-otp")
-    } catch (error) {
-        console.error(error);
-        
-    }
-}
-
-
-//verify otp
- const verifyOtp=async(req,res)=>
- {
-    try {
-        const {otp}=req.body;
-        console.log(otp);
-
-        if(otp===String(req.session.userOtp))
-        {
-            const user=req.session.userData;
-            const passwordHash=await hashPassword(user.pass);
-            const saveUserData=new User({
-                name:user.name,
-                email:user.email,
-                mobile:user.mobile,
-                password:passwordHash,
-                is_verified:true
-            })
-
-            await saveUserData.save();
-
-            req.session.user=saveUserData._id;
-            req.session.userOtp = null; 
-            req.session.userData = null; 
-            res.json({success:true,message:"Registration successful!",redirect:"/login"})//home page login page
-        }
-        else
-        {
-            res.status(400).json({success:false,message:"Invalid otp,please try again"})
-        }
-        
-    } catch (error) {
-        console.error("Error verifying otp",error);
-        res.status(500).json({success:false,message:"An error occure"})
-    }
- }
-
- //Resend OTP
- const resendOtp=async(req,res)=>
- {
-    try {
-          const userData=req.session.userData;
-          const otp=generateOTP();
-
-          const emailSend=await sendverificationEmail(userData.email,otp);
-          if(emailSend)
-          {
-            req.session.userOtp=otp;
-            console.log("New OTP send:",otp);
-            return res.json({success:true,message:"OTP resent successfully"});
-          }
-          else
-          {
-            return res.json({success:true,message:"Failed to resend otp,try again"});
-          }
-    } catch (error) {
-          console.error("Error resending otp",error);
-          res.status(500).json({success:false,message:"An error occured"});
-          
-    }
- }
-
-
+//shop page 
  const shop = async (req, res) => {
     try {
+        //check if the user is logged
+        const userData = req.session.user ? await User.findById(req.session.user) : null;
+
+        if (userData && userData.is_blocked) {
+            req.session.destroy(); 
+            return res.redirect("/login");
+        }
+
       const selectedCategory = req.query.Category;
+
       const listedCategories = await Category.find({ isListed: true }).select('_id name');
+
       const categoryIds = listedCategories.map(category => category._id);
   
       let filter = { isBlocked: false };
+
       if (selectedCategory) {
         const category = await Category.findOne({ name: selectedCategory, isListed: true });
         if (category) {
@@ -295,12 +309,11 @@ const otpPage=async(req,res)=>{
 
       
       const totalProducts = await Product.countDocuments(filter);
+
       const totalPages = Math.ceil(totalProducts / limit);
 
      
       const products = await Product.find(filter).skip(skip).limit(limit);
-
-      const userData = await User.find();
 
       res.render("shop", {
           products,
@@ -316,20 +329,43 @@ const otpPage=async(req,res)=>{
   }
 };
   
-
+//product detailed page
 const productDetails=async(req,res)=>{
   try {
-    const userData=await User.find()
+    const userData=req.session.user ? await User.findById(req.session.user) : null;
+
+    if (userData && userData.is_blocked) {
+        req.session.destroy();
+        return res.redirect("/login"); 
+      }
+  
     const productId=req.params.id;
+
     const product=await Product.findOne({_id:productId}).populate("category")
+
+    if (!product || !product.category || !product.category.isListed) {
+        return res.redirect("/shop");
+      }
+
     const categories=await Category.find({isListed:true});
     res.render("product",{product,userData,categories})
     
   } catch (error) {
     console.error("Error in productdetails",error);
-    res.status(500).json({success:false,message:"An error occured"});
+   res.render("404")
   }
 }
+
+//page not found
+const pageNotFound=async(req,res)=>
+    {
+      try {
+          res.render("404")
+      } catch (error) {
+        res.redirect("/pageNotFound")
+      }
+    }
+
 
 
 module.exports = {
@@ -337,12 +373,12 @@ module.exports = {
     loadRegister,
     loadLogin,
     insertUser,
+    otpPage,
+    verifyOtp,
+    resendOtp,
     loginUser,
     logoutUser,
-    verifyOtp,
-    otpPage,
-    resendOtp,
-    pageNotFound,
     shop,
     productDetails,
+    pageNotFound,
 }

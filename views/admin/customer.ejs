@@ -1,5 +1,6 @@
 <%- include('../layoutsAdmin/adminheader') %>
 <%- include('../layoutsAdmin/header') %>
+
 <section class="content-main">
     <div class="content-header">
         <h2 class="content-title">Customers List</h2>
@@ -26,6 +27,7 @@
                         <th>Name</th>
                         <th>Email</th>
                         <th>Phone No</th>
+                        <th>Status</th>
                         <th class="text-end">Action</th>
                     </tr>
                 </thead>
@@ -36,6 +38,15 @@
                                 <td><%= data[i].name %></td>
                                 <td><%= data[i].email %></td>
                                 <td><%= data[i].mobile %></td>
+
+                                <td class="text-start ">
+                                    <% if (data[i].is_blocked) { %>
+                                      <span class="badge rounded-pill alert-danger" style="width: 60px">Inactive</span>
+                                    <% } else { %>
+                                      <span class="badge rounded-pill alert-success" style="width: 60px">Active</span>
+                                    <% } %>
+                                  </td>
+
                                 <td class="text-end">
                                     <% if (data[i].is_blocked === false) { %>
                                         <button class="btn btn-danger btn-sm" onclick="blockCustomer('<%= data[i]._id %>')">
@@ -85,7 +96,7 @@
         }).then((willBlock) => {
             if (willBlock) {
                 fetch(`/admin/blockCustomer?id=${userId}`, {
-                    method: 'POST',
+                    method: 'PATCH',
                 })
                 .then(response => {
                     if (response.ok) {
@@ -94,9 +105,8 @@
                     throw new Error('Network response was not ok.');
                 })
                 .then(data => {
-                    // Show success message
                     swal("Success", data.message, "success").then(() => {
-                        location.reload(); // Reload the page
+                        location.reload(); 
                     });
                 })
                 .catch(error => {
@@ -117,7 +127,7 @@
         }).then((willUnblock) => {
             if (willUnblock) {
                 fetch(`/admin/unblockCustomer?id=${userId}`, {
-                    method: 'POST',
+                    method: 'PATCH',
                 })
                 .then(response => {
                     if (response.ok) {
@@ -126,7 +136,6 @@
                     throw new Error('Network response was not ok.');
                 })
                 .then(data => {
-                    // Show success message
                     swal("Success", data.message, "success").then(() => {
                         location.reload(); // Reload the page
                     });
@@ -139,3 +148,12 @@
         });
     }
 </script>
+<script src="/assets/js/vendors/jquery-3.6.0.min.js"></script>
+<script src="/assets/js/vendors/bootstrap.bundle.min.js"></script>
+<script src="/assets/js/vendors/select2.min.js"></script>
+<script src="/assets/js/vendors/perfect-scrollbar.js"></script>
+<script src="/assets/js/vendors/jquery.fullscreen.min.js"></script>
+<script src="/assets/js/vendors/chart.js"></script>
+<!-- Main Script -->
+<script src="/assets/js/main.js?v=1.1" type="text/javascript"></script>
+<script src="/assets/js/custom-chart.js" type="text/javascript"></script>

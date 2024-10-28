@@ -57,13 +57,10 @@
                                             <figure class="product-media">
                                                 <span class="product-label label-out">
                                                     <% if (product.quantity >= 10) { %>
-                                                        <!-- In stock -->
                                                         <div class="stock in-stock">In Stock</div>
                                                     <% } else if (product.quantity > 0) { %>
-                                                        <!-- Only a few left -->
                                                         <div class="stock only-left">Only <%= product.quantity %> left in stock</div>
                                                     <% } else { %>
-                                                        <!-- Out of stock -->
                                                         <div class="stock out-of-stock">Out of stock</div>
                                                     <% } %>
                                                 </span>

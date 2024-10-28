@@ -3,18 +3,14 @@ const Admin = require("../../models/adminModel");
 const bcrypt = require('bcrypt');
 const mongoose=require("mongoose");
 
-//admin login
+//admin loadlogin
 const loadLogin=(req,res)=>
 {
-    if(req.session.admin)
-    {
-        return res.redirect("/admin/dashboard")
-    }
     res.render("adminlog",{message:null})
 }
 
 
-
+//admin login
 const login = async (req, res) => {
     try {
       const { email, password } = req.body;
@@ -39,7 +35,20 @@ const login = async (req, res) => {
     }
   };
 
-//dashboard
+
+//logout admin
+const logoutAdmin=async(req,res)=>{
+  req.session.destroy((err) => {
+    if (err) {
+      return res.status(500).send('Error logging out');
+    }
+    res.redirect('/admin/login');
+  });
+  
+}
+
+
+//admindashboard
 const loadDashboard=async(req,res)=>
 {
     if(req.session.admin)
@@ -52,6 +61,7 @@ const loadDashboard=async(req,res)=>
    }
 }
 
+
 //page Error
 const pageerror=async(req,res)=>{
     res.render("adminerror")
@@ -61,6 +71,7 @@ const pageerror=async(req,res)=>{
 module.exports={
     loadLogin,
     login,
+    logoutAdmin,
     loadDashboard,
     pageerror,
 

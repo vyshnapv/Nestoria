@@ -10,14 +10,9 @@ const productSchema = new Schema({
         type: String,
         required: true,
     },
-    // brand: {
-    //     type: String,
-    //     required: true,
-    // },
     category: {
         type: Schema.Types.ObjectId,
         ref: "Category",
-        // required: true,
     },
     regularPrice: {
         type: Number,
@@ -27,24 +22,15 @@ const productSchema = new Schema({
         type: Number,
         required: true,
     },
-    // productOffer: {
-    //     type: Number,
-    //     default: 0,
-    // },
     quantity: {
         type: Number,
-        default: 0,  // Set default to 0 (or another appropriate number)
-        // required: true 
+        default: 0,  
     },
     color: {
-        type: String
-        ,
-        // required: true,
+        type: String,
     },
     productImage: {
-        type: [String]
-        ,
-        // required: true,
+        type: [String],
     },
     isBlocked: {
         type: Boolean,

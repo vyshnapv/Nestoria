@@ -7,15 +7,14 @@ const categoryInfo=async(req,res)=>{
         const limit=4;
         const skip=(page-1)*limit;
          
-        //access categories from database 
+        
         const categoryData=await Category.find({})
-        .sort({createdAt:-1})//sort in decending order
+        .sort({createdAt:-1})
         .skip(skip)
         .limit(limit);
-        
-        //total categories count for calculate total pages
+
         const totalCategories=await Category.countDocuments();
-        //calculate total pages
+
         const totalPages=Math.ceil(totalCategories / limit);
         res.render("category",{
             cat:categoryData,
@@ -41,13 +40,13 @@ const addCategory=async(req,res)=>{
         {
             return res.status(400).json({error:"category already exist"})
         }
-     //if categoy not existed we add it
+     
         const newCategory=new Category({
             name:normalizedName,
             description,
         })
 
-        await newCategory.save();//SAVE IT TO DATABASE
+        await newCategory.save();
         return res.json({message:"Category Added Successfully"})
         
     } catch (error) {
@@ -58,7 +57,7 @@ const addCategory=async(req,res)=>{
 }
 
 //list category
-const getListCategory=async(req,res)=>{
+const listCategory=async(req,res)=>{
     try {
         let id=req.query.id;
         const result=await Category.updateOne({ _id: id }, { $set: { isListed: false } });
@@ -75,7 +74,7 @@ const getListCategory=async(req,res)=>{
 
 
 //unlist category
-const getUnListCategory=async(req,res)=>{
+const unListCategory=async(req,res)=>{
     try {
         let id=req.query.id;
         const result=await Category.updateOne({ _id: id }, { $set: { isListed: true } }); 
@@ -106,7 +105,7 @@ const editCategory=async(req,res)=>{
     try {
          const id=req.params.id;
          const {categoryName,description}=req.body;
-        const normalizedName = categoryName.trim().toLowerCase();
+        const normalizedName = categoryName.trim()
 
         const existingCategory = await Category.findOne({
             _id: { $ne: id },
@@ -124,7 +123,7 @@ const editCategory=async(req,res)=>{
          
          if(updateCategory)
          {
-            res.redirect("/admin/category")
+            res.status(200).json({success:true})
          }
          else
          {
@@ -138,8 +137,8 @@ const editCategory=async(req,res)=>{
 module.exports={
     categoryInfo,
     addCategory,
-    getListCategory,
-    getUnListCategory,
+    listCategory,
+    unListCategory,
     getEditCategory,
     editCategory,
 }

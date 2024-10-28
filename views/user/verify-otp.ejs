@@ -7,7 +7,6 @@
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11.3.3/dist/sweetalert2.min.css">
     <style>
-        /* Base Styles for both themes */
         body {
             font-family: Arial, sans-serif;
             transition: background-color 0.3s ease, color 0.3s ease;
@@ -229,21 +228,24 @@
     document.getElementById('otpForm').addEventListener('submit', async function (e) {
         e.preventDefault();
         const otpInputs = document.querySelectorAll('.otp-input');
-        let otp = '';
+        let otp = '';//it is used to store the complete otp
+        
         otpInputs.forEach(input => {
             otp += input.value;
         });
-        const data = new URLSearchParams();//to store otp
+
+        const data = new URLSearchParams();//store the otpvalue that sent to the server
         data.append('otp', otp);
         try {
-            const response = await fetch('/verify-otp', {
+                const response = await fetch('/verify-otp', {
                 method: 'post',
                 body: data,
                 headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded'
+                    'Content-Type': 'application/x-www-form-urlencoded'//like query string
                 }
             });
-            const result = await response.json();//handle server response
+
+            const result = await response.json();
             if (result.success) {
                 Swal.fire({
                     title: 'Success!',
@@ -251,7 +253,7 @@
                     icon: 'success',
                     confirmButtonText: 'OK'
                 }).then(() => {
-                    window.location.href = '/login';
+                    window.location.href = '/login';//this change the current url of the page to login
                 });
             } else {
                 Swal.fire({
@@ -280,6 +282,7 @@
         const resendLink = document.getElementById('resendLink');
         timerSpan.textContent = timerDuration;
         resendLink.classList.remove('enabled');
+        
         timerInterval = setInterval(() => {
             timerDuration--;
             timerSpan.textContent = timerDuration;

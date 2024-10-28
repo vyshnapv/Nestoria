@@ -4,19 +4,117 @@
 <div class="container">
     <div class="row justify-content-center">
         <div class="col-md-6 mt-60">
-            <form method="put" action="/admin/editCategory/<%=category._id%>">
-                <div class="d-grid text-end mt-30 col-md-5">
-                    <button class="btn btn-primary" type="submit">Update category</button>
-                </div>
+            <form id="editCategoryForm" onsubmit="return submitForm(event)">
                 <div class="mb-4 mt-30">
-                    <label for="product_name" class="form-label">Name</label>
-                    <input type="text" name="categoryName" value="<%=category.name%>" class="form-control border" />
+                    <label for="categoryName" class="form-label">Name</label>
+                    <input type="text" id="categoryName" name="categoryName" value="<%= category.name %>" class="form-control border" required minlength="3" maxlength="50" />
                 </div>
                 <div class="mb-4">
-                    <label class="form-label">Description</label>
-                    <textarea name="description" class="form-control border"><%=category.description%></textarea>
+                    <label for="description" class="form-label">Description</label>
+                    <textarea id="description" name="description" class="form-control border" required minlength="10" maxlength="200"><%= category.description %></textarea>
+                </div>
+                <div id="errorMessage" class="alert alert-danger d-none"></div>
+                <div id="successMessage" class="alert alert-success d-none"></div>
+                <div class="d-grid text-end mt-30 col-md-5">
+                    <button class="btn btn-primary" type="submit" id="submitButton">Update category</button>
                 </div>
             </form>
         </div>
     </div>
 </div>
+
+<script>
+function showError(message) {
+    const errorMessage = document.getElementById('errorMessage');
+    errorMessage.textContent = message;
+    errorMessage.classList.remove('d-none');
+}
+
+function showSuccess(message) {
+    const successMessage = document.getElementById('successMessage');
+    successMessage.textContent = message;
+    successMessage.classList.remove('d-none');
+}
+
+function validateForm(categoryName, description) {
+    const errorMessage = document.getElementById('errorMessage');
+    const successMessage = document.getElementById('successMessage');
+    errorMessage.classList.add('d-none');
+    successMessage.classList.add('d-none');
+
+    const namePattern = /^[a-zA-Z _-]+$/; 
+    if (!categoryName) {
+        showError("Category name is required.");
+        return false;
+    }
+    if (categoryName.length < 3 || categoryName.length > 50) {
+        showError("Category name must be between 3 and 50 characters.");
+        return false;
+    }
+    if (!namePattern.test(categoryName)) {
+        showError("Category name contains invalid characters or numbers.");
+        return false;
+    }
+    
+
+    if (!description) {
+        showError("Description is required.");
+        return false;
+    }
+    if (description.length < 10 || description.length > 200) {
+        showError("Description must be between 10 and 200 characters.");
+        return false;
+    }
+    if (description.includes("<") || description.includes(">")) {
+        showError("Description contains invalid characters.");
+        return false;
+    }
+
+    return true; 
+}
+
+async function submitForm(event) {
+    event.preventDefault(); 
+    
+    const submitButton = document.getElementById('submitButton');
+    submitButton.disabled = true; //prevent from multiple submission
+
+    const categoryName = document.getElementById('categoryName').value.trim();
+    const description = document.getElementById('description').value.trim();
+
+    if (validateForm(categoryName, description)) {
+        try {
+            const response = await fetch(`/admin/editCategory/<%= category._id %>`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ categoryName, description })
+            });
+
+            const result = await response.json();
+
+            if (!response.ok) {
+                throw new Error(result.error || "Failed to update category");
+            }
+
+            if (result.success) {
+                showSuccess("Category updated successfully!");
+                setTimeout(() => {
+                    window.location.href = '/admin/category';
+                }, 1500);
+            } else {
+                throw new Error(result.error || "Failed to update category");
+            }
+        } catch (error) {
+            showError(error.message);
+        } finally {
+            submitButton.disabled = false; 
+        }
+    } else {
+        submitButton.disabled = false; 
+    }
+
+    return false;
+}
+</script>

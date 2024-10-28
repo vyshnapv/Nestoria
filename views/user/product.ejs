@@ -1,5 +1,6 @@
-<%- include('../layoutsUser/userheader') %>
 
+<%- include('../layoutsUser/userheader') %>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <style>
         .price, .duplicate-price {
             font-size: 24px;
@@ -134,27 +135,35 @@
 
     <div class="page-content">
         <div class="container">
-            <div class="product-details-top">
-                <div class="product-gallery">
+            <div class="product-details-top mb-2">
                     <div class="row">
-                        <figure class="product-main-image">
-                            <img id="product-zoom" src="/uploads/cropped/<%= product.productImage[0] %>" data-zoom-image="/uploads/cropped/<%= product.productImage[0] %>" alt="Product Image" class="product-image img-thumbnail">
-                            <a href="#" id="btn-product-gallery" class="btn-product-gallery">
-                                <i class="icon-arrows"></i>
-                            </a>
-                        </figure>
-
-                        <div id="product-zoom-gallery" class="product-image-gallery">
-                            <% product.productImage.forEach((image, index) => { %>
-                                <a class="product-gallery-item <%= index === 0 ? 'active' : '' %>" href="#" 
-                                   data-image="/uploads/cropped/<%= image %>" 
-                                   data-zoom-image="/uploads/cropped/<%= image %>">
-                                    <img src="/uploads/cropped/<%= image %>" alt="product image <%= index + 1 %>">
-                                </a>
-                            <% }) %>
-                        </div><!-- End .product-image-gallery -->
-                    </div><!-- End .row -->
-                </div><!-- End .product-gallery -->
+                        <div class="col-md-6">
+                            <div class="product-gallery product-gallery-vertical">
+                                <div class="row">
+                                    <figure class="product-main-image">
+                                       
+                                        <img id="product-zoom" src="/uploads/cropped/<%= product.productImage[0] %>" data-zoom-image="/uploads/cropped/<%= product.productImage[0] %>" alt="product image">
+<!--     
+                                        <a href="#" id="btn-product-gallery" class="btn-product-gallery">
+                                            <i class="icon-arrows"></i>
+                                        </a> -->
+                                    </figure><!-- End .product-main-image -->
+    
+                                    
+                           
+    
+                                    <div id="product-zoom-gallery" class="product-image-gallery">
+                                        <% for(let i=0;i<product.productImage.length;i++){ %>
+                                            <a class="product-gallery-item <%= i === 0 ? 'active' : '' %>" href="#" data-image="/uploads/cropped/<%= product.productImage[i] %>" data-zoom-image="/uploads/cropped/<%= product.productImage[i] %>">
+                                                <img src="/uploads/cropped/<%= product.productImage[i] %>" alt="product side">
+                                            </a>
+                                        <% } %>
+                                     
+    
+                                    </div><!-- End .product-image-gallery -->
+                                </div><!-- End .row -->
+                            </div><!-- End .product-gallery -->
+                        </div><!-- End .col-md-6 -->
 
                 <div class="product-details">
                     <h1 class="product-title" style="font-size: xx-large;"><%= product.productName %></h1>
@@ -177,7 +186,7 @@
 
                     <% if (product.quantity >= 10) { %>
                         <div class="stock in-stock"><span class="availability">Availability:</span> In Stock (Total: <%= product.quantity %>)</div>
-                    <% } else if (product.quantity > 0) { %>
+                    <% } else if (product.quantity >0) { %>
                         <div class="stock only-left"><span class="availability">Availability:</span> Only <%= product.quantity %> left in stock (Total: <%= product.quantity %>)</div>
                     <% } else { %>
                         <div class="stock out-of-stock"><span class="availability">Availability:</span> Out of stock</div>
@@ -192,7 +201,7 @@
                     </div>
                 </div><!-- End .product-details -->
             </div><!-- End .product-details-top -->
-
+        </div>
             <div class="product-details-tab">
                 <ul class="nav nav-pills justify-content-center" role="tablist">
                     <li class="nav-item">
@@ -258,3 +267,43 @@
     </div><!-- End .page-content -->
 </main><!-- End .main -->
 <%- include('../layoutsUser/userfooter') %>
+
+
+<!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/elevatezoom/2.2.3/jquery.elevatezoom.min.js" integrity="sha512-UH428GPLVbCa8xDVooDWXytY8WASfzVv3kxCvTAFkxD2vPjouf1I3+RJ2QcSckESsb7sI+gv3yhsgw9ZhM7sDw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/elevatezoom/2.2.3/jquery.elevatezoom.js" integrity="sha512-EjW7LChk2bIML+/kvj1NDrPSKHqfQ+zxJGBUKcopijd85cGwAX8ojz+781Rc0e7huwyI3j5Bn6rkctL3Gy61qw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script>
+  $(document).ready(function() {
+    // Initialize zoom on the main product image
+    $('#product-zoom').elevateZoom({
+        zoomType: "lens", // You can change this to "inner" or "window" based on your preference
+        lensShape: "square",
+        lensSize: 200
+    });
+
+    $('.product-gallery-item').click(function(event) {
+        event.preventDefault(); 
+
+        var newImage = $(this).attr('data-image');
+        var zoomImage = $(this).attr('data-zoom-image');
+
+        // Update the main image and zoom image
+        $('#product-zoom').attr('src', newImage);
+        $('#product-zoom').attr('data-zoom-image', zoomImage);
+
+        // Destroy the old zoom instance
+        $('.zoomContainer').remove(); // Remove zoom container created by elevateZoom
+        $('#product-zoom').removeData('elevateZoom'); // Remove zoom instance data
+
+        // Reinitialize zoom on the new image
+        $('#product-zoom').elevateZoom({
+            zoomType: "lens",
+            lensShape: "square",
+            lensSize: 200
+        });
+
+        // Handle active class for the selected thumbnail
+        $('.product-gallery-item').removeClass('active');
+        $(this).addClass('active');
+    });
+});
+</script> -->

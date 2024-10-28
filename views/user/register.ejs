@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>Sign Up Form by Colorlib</title>
+    <title>Sign Up Form of Nestoria</title>
 
     <!-- Font Icon -->
     <link rel="stylesheet" href="/userAssets/signupAssets/fonts/material-icon/css/material-design-iconic-font.min.css">
@@ -13,7 +13,20 @@
     <link rel="stylesheet" href="/userAssets/signupAssets/css/style.css">
 </head>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@10/dist/sweetalert2.min.css">
+<link href="https://cdn.jsdelivr.net/npm/remixicon/fonts/remixicon.css" rel="stylesheet">
+<style>
+    .toggle-password {
+    cursor: pointer;
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 1.5em;
+    }
+</style>
+
 <body>
+   
   
     <div class="main">
         <!-- Sign up form or register form  -->
@@ -41,11 +54,18 @@
                             <div class="form-group">
                                 <label for="pass"><i class="zmdi zmdi-lock"></i></label>
                                 <input type="password" name="pass" id="pass" placeholder="Password"/>
+                                <span class="toggle-password" onclick="togglePassword('pass', 'pass-toggle')">
+                                    <i id="pass-toggle" class="zmdi zmdi-eye"></i>
+                                </span>
                                 <div class="error-message" id="pass-error" style="color: red;"></div>
                             </div>
+                            
                             <div class="form-group">
                                 <label for="re-pass"><i class="zmdi zmdi-lock-outline"></i></label>
-                                <input type="password" name="re_pass" id="re_pass" placeholder="confirm password"/>
+                                <input type="password" name="re_pass" id="re_pass" placeholder="Confirm Password"/>
+                                <span class="toggle-password" onclick="togglePassword('re_pass', 'repass-toggle')">
+                                    <i id="repass-toggle" class="zmdi zmdi-eye"></i>
+                                </span>
                                 <div class="error-message" id="repass-error" style="color: red;"></div>
                             </div>
                             <!-- <div class="form-group">
@@ -105,7 +125,7 @@
      
       const isValidName = (name) => /^[a-zA-Z ]{2,30}$/.test(name);
       const isValidEmail = (email) => /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/.test(email);
-      const isValidMobile = (mobile) => /^[0-9]{10}$/.test(mobile);
+      const isValidMobile = (mobile) => /^(4|6|9)[0-9]{9}$/.test(mobile);
       const isValidPassword = (pass) => pass.length >= 6;
   
      
@@ -199,6 +219,22 @@
               });
           }
       };
+
+
+      function togglePassword(inputId, iconId) {
+      var input = document.getElementById(inputId);
+      var icon = document.getElementById(iconId);
+
+    if (input.type === "password") {
+        input.type = "text";
+        icon.classList.remove('zmdi-eye');
+        icon.classList.add('zmdi-eye-off');
+    } else {
+        input.type = "password";
+        icon.classList.remove('zmdi-eye-off');
+        icon.classList.add('zmdi-eye');
+    }
+}
   </script>
   
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@10/dist/sweetalert2.min.js"></script>
