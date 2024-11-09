@@ -1,0 +1,309 @@
+<%- include('../layoutsUser/userheader') %>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+<style>
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    body {
+        font-family: Arial, sans-serif;
+        background-color: #f4f6f9;
+        color: #333;
+    }
+
+    .container {
+        max-width: 1200px;
+        margin: auto;
+        padding: 20px;
+    }
+
+    .banner-area {
+        background: #ebebeb;
+        padding: 20px 0;
+    }
+
+    .banner-area h1 {
+        font-size: 24px;
+        color: rgb(39, 37, 37);
+        text-align: center;
+    }
+
+    .edit-form-container {
+        max-width: 800px;
+        margin: 30px auto;
+        padding: 30px;
+        background-color: white;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .form-title {
+        font-size: 24px;
+        color: #333;
+        margin-bottom: 25px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid #eee;
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    .form-group label {
+        display: block;
+        font-weight: bold;
+        color: #555;
+        margin-bottom: 8px;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 12px;
+        font-size: 14px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        transition: border-color 0.3s ease;
+    }
+
+    .form-control:focus {
+        border-color: #007bff;
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+    }
+
+    .error {
+        border-color: #dc3545;
+    }
+
+    .error-message {
+        color: #dc3545;
+        font-size: 12px;
+        margin-top: 5px;
+        display: none;
+    }
+
+    .buttons-container {
+        display: flex;
+        gap: 15px;
+        margin-top: 30px;
+    }
+
+    .btn {
+        padding: 12px 24px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-weight: bold;
+        transition: background-color 0.3s ease;
+    }
+
+    .btn-primary {
+        background-color: #007bff;
+        color: white;
+    }
+
+    .btn-primary:hover {
+        background-color: #0056b3;
+    }
+
+    .btn-secondary {
+        background-color: #6c757d;
+        color: white;
+    }
+
+    .btn-secondary:hover {
+        background-color: #545b62;
+    }
+
+    @media (max-width: 768px) {
+        .edit-form-container {
+            margin: 15px;
+            padding: 20px;
+        }
+
+        .buttons-container {
+            flex-direction: column;
+        }
+
+        .btn {
+            width: 100%;
+        }
+    }
+</style>
+
+<section class="banner-area">
+    <div class="container text-center">
+        <h1>Edit Address</h1>
+    </div>
+</section>
+
+<nav aria-label="breadcrumb" class="breadcrumb-nav mb-3">
+    <div class="container">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/">Home</a></li>
+            <li class="breadcrumb-item"><a href="/address">Manage Address</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Edit Address</li>
+        </ol>
+    </div>
+</nav>
+
+<div class="container">
+    <div class="edit-form-container">
+        <h2 class="form-title">Edit Address Details</h2>
+        <form id="editAddressForm" method="post" action="/editAddress/<%= addressId %>/<%= index %>">
+            <div class="form-group">
+                <label for="name">Name</label>
+                <input type="text" class="form-control" id="name" name="name" value="<%= address.name %>">
+                <span class="error-message" id="nameError"></span>
+            </div>
+            <div class="form-group">
+                <label for="phone">Phone</label>
+                <input type="text" class="form-control" id="phone" name="phone" value="<%= address.phone %>">
+                <span class="error-message" id="phoneError"></span>
+            </div>
+            <div class="form-group">
+                <label for="district">District</label>
+                <input type="text" class="form-control" id="district" name="district" value="<%= address.district %>">
+                <span class="error-message" id="districtError"></span>
+            </div>
+            <div class="form-group">
+                <label for="city">City</label>
+                <input type="text" class="form-control" id="city" name="city" value="<%= address.city %>">
+                <span class="error-message" id="cityError"></span>
+            </div>
+            <div class="form-group">
+                <label for="house">House</label>
+                <input type="text" class="form-control" id="house" name="house" value="<%= address.house %>">
+                <span class="error-message" id="houseError"></span>
+            </div>
+            <div class="form-group">
+                <label for="state">State</label>
+                <input type="text" class="form-control" id="state" name="state" value="<%= address.state %>">
+                <span class="error-message" id="stateError"></span>
+            </div>
+            <div class="form-group">
+                <label for="pincode">Pincode</label>
+                <input type="text" class="form-control" id="pincode" name="pincode" value="<%= address.pincode %>">
+                <span class="error-message" id="pincodeError"></span>
+            </div>
+            <div class="buttons-container">
+                <button type="submit" class="btn btn-primary">Update Address</button>
+                <button type="button" class="btn btn-secondary" onclick="cancelEdit()">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<script>
+    function showError(elementId, message) {
+        const element = document.getElementById(elementId);
+        const errorElement = document.getElementById(elementId + 'Error');
+        element.classList.add('error');
+        errorElement.style.display = 'block';
+        errorElement.textContent = message;
+    }
+
+    function clearErrors() {
+        const inputs = document.querySelectorAll('.form-control');
+        inputs.forEach(input => {
+            input.classList.remove('error');
+            const errorElement = document.getElementById(input.id + 'Error');
+            if (errorElement) {
+                errorElement.style.display = 'none';
+                errorElement.textContent = '';
+            }
+        });
+    }
+
+    function cancelEdit() {
+        Swal.fire({
+            title: 'Cancel Editing?',
+            text: "Any unsaved changes will be lost!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Yes, cancel edit'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                window.location.href = '/address';
+            }
+        });
+    }
+
+    document.getElementById("editAddressForm").addEventListener("submit", function(e) {
+        e.preventDefault();
+        clearErrors();
+        let isValid = true;
+
+        
+        const name = document.getElementById("name").value;
+        if (!/^[A-Za-z\s]{3,50}$/.test(name)) {
+            showError("name", "Name should be 3-50 characters long and contain only letters and spaces");
+            isValid = false;
+        }
+
+        
+        const phone = document.getElementById("phone").value;
+        if (!/^[6-9]\d{9}$/.test(phone)) {
+            showError("phone", "Please enter a valid 10-digit phone number starting with 6-9");
+            isValid = false;
+        }
+
+        
+        const district = document.getElementById("district").value;
+        if (!/^[A-Za-z\s]{3,30}$/.test(district)) {
+            showError("district", "District should be 3-30 characters long and contain only letters and spaces");
+            isValid = false;
+        }
+
+        
+        const city = document.getElementById("city").value;
+        if (!/^[A-Za-z\s]{3,30}$/.test(city)) {
+            showError("city", "City should be 3-30 characters long and contain only letters and spaces");
+            isValid = false;
+        }
+
+        
+        const house = document.getElementById("house").value;
+        if (!/^[A-Za-z0-9\s,.-/#]{3,100}$/.test(house)) {
+            showError("house", "House should be 3-100 characters long and contain only letters, numbers, spaces, and common symbols");
+            isValid = false;
+        }
+
+        
+        const state = document.getElementById("state").value;
+        if (!/^[A-Za-z\s]{3,30}$/.test(state)) {
+            showError("state", "State should be 3-30 characters long and contain only letters and spaces");
+            isValid = false;
+        }
+
+        const pincode = document.getElementById("pincode").value;
+        if (!/^\d{6}$/.test(pincode)) {
+            showError("pincode", "Please enter a valid 6-digit pincode");
+            isValid = false;
+        }
+
+        if (isValid) {
+            Swal.fire({
+                title: 'Update Address?',
+                text: "Do you want to save these changes?",
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Yes, update it!'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    this.submit();
+                }
+            });
+        }
+    });
+</script>
+
+<%- include('../layoutsUser/userfooter') %>

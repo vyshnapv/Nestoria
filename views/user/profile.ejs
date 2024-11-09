@@ -1,0 +1,373 @@
+<%- include('../layoutsUser/userheader') %>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+
+<style>
+    .profile-card {
+        background-color: #fff;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        padding: 3rem;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        transition: box-shadow 0.3s;
+        text-align: center; 
+    }
+
+    .profile-card:hover {
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+    }
+
+    .profile-card h2 {
+        font-size: 2rem; 
+        font-weight: 700;
+        color: #333;
+    }
+
+    .profile-info p {
+        font-size: 1.5rem;
+        color: #555;
+        margin-bottom: 1.5rem;
+    }
+
+    .profile-info p strong {
+        font-weight: 700;
+        color: #333;
+    }
+
+    .profile-actions .btn {
+        font-size: 1.2rem;
+        padding: 0.75rem 2rem;
+        border-radius: 20px;
+    }
+
+    .profile-actions .btn-outline-primary {
+        color: #007bff;
+        border-color: #007bff;
+    }
+
+    .profile-actions .btn-outline-primary:hover {
+        background-color: #007bff;
+        color: #fff;
+    }
+
+    .profile-actions .btn-outline-secondary {
+        color: #6c757d;
+        border-color: #6c757d;
+    }
+
+    .profile-actions .btn-outline-secondary:hover {
+        background-color: #6c757d;
+        color: #fff;
+    }
+    .modal-content {
+    border-radius: 1rem;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+}
+
+.modal-header {
+    padding-bottom: 0;
+}
+
+.modal-header .modal-title {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #333;
+}
+
+.modal-body {
+    padding: 2rem;
+}
+
+.form-group label {
+    color: #333;
+}
+
+.form-control {
+    padding: 0.75rem 1.25rem;
+    font-size: 1rem;
+    color: #495057;
+    background-color: #fff;
+    border: 1px solid #ced4da;
+    border-radius: 0.5rem;
+    transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+.form-control:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.btn-primary {
+    background-color: #007bff;
+    border-color: #007bff;
+}
+
+.btn-primary:hover {
+    background-color: #0056b3;
+    border-color: #0056b3;
+}
+
+.btn-secondary {
+    background-color: #6c757d;
+    border-color: #6c757d;
+}
+
+.btn-secondary:hover {
+    background-color: #5a6268;
+    border-color: #5a6268;
+}
+
+</style>
+<main class="main">
+    <div class="page-header text-center" style="background-image: url('assets/images/page-header-bg.jpg')">
+        <div class="container">
+            <h1 class="page-title">My Profile<span>Account</span></h1>
+        </div>
+    </div>
+
+    <nav aria-label="breadcrumb" class="breadcrumb-nav mb-3">
+        <div class="container">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/">Home</a></li>
+                <li class="breadcrumb-item active" aria-current="page">My Profile</li>
+            </ol>
+        </div>
+    </nav>
+
+    <div class="page-content">
+        <div class="dashboard">
+            <div class="container">
+                <div class="row">
+                    <!-- Sidebar Navigation -->
+                    <aside class="col-md-4 col-lg-3">
+                        <ul class="nav nav-dashboard flex-column mb-3 mb-md-0" role="tablist">
+                            <li class="nav-item">
+                                <a class="nav-link active" id="tab-profile-link" href="#tab-profile" role="tab" aria-controls="tab-profile" aria-selected="true">My Profile</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" id="tab-address-link"  href="/address" role="tab" aria-controls="tab-address" aria-selected="false">Manage Address</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" id="tab-orders-link" href="#tab-orders" role="tab" aria-controls="tab-orders" aria-selected="false">Orders</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="#">Sign Out</a>
+                            </li>
+                        </ul>
+                    </aside>
+
+                    <!-- Main Content Area -->
+                    <div class="col-md-8 col-lg-9">
+                        <div class="tab-content">
+                            <!-- Profile Tab with Centered Content and Larger Font Sizes -->
+                            <div class="tab-pane fade show active" id="tab-profile" role="tabpanel" aria-labelledby="tab-profile-link">
+                                <div class="profile-card p-4 shadow-sm rounded text-center">
+                                    <h2 class="mb-4">My Profile</h2>
+                                    <div class="profile-info mb-4">
+                                        <% if(userData) { %>
+                                        <p><strong>Name:</strong> <span><%=userData.name%></span></p>
+                                        <p><strong>Email:</strong> <span><%=userData.email%></span></p>
+                                        <p><strong>Mobile:</strong> <span><%=userData.mobile%></span></p>
+                                        <%} else { %>
+                                            <p>User data not available. Please log in.</p>
+                                         <% } %>   
+                                    </div>
+                                    <div class="profile-actions">
+                                        <a href="#" class="btn btn-outline-primary mx-2"  data-toggle="modal" data-target="#editProfileModal">Edit Profile</a>
+                                        <a href="/editPassword" class="btn btn-outline-secondary mx-2">Change Password</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>  
+    <div class="modal fade" id="editProfileModal" tabindex="-1" aria-labelledby="editProfileModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editProfileModalLabel">Edit Profile</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="editProfileForm" novalidate>
+                        <div class="form-group">
+                            <label for="editName">Name</label>
+                            <input type="text" class="form-control" id="editName" name="name" 
+                                   value="<%= userData.name %>" required 
+                                   minlength="3" maxlength="50"
+                                   pattern="^[A-Za-z\s]+$">
+                            <div class="invalid-feedback" id="nameError"></div>
+                        </div>
+                        <div class="form-group">
+                            <label for="editEmail">Email</label>
+                            <input type="email" class="form-control" id="editEmail" 
+                                   value="<%= userData.email %>" readonly disabled>
+                            <small class="text-muted">Email cannot be changed</small>
+                        </div>
+                        <div class="form-group">
+                            <label for="editMobile">Mobile</label>
+                            <input type="tel" class="form-control" id="editMobile" name="mobile" 
+                                   value="<%= userData.mobile %>" required 
+                                   pattern="^[6-9]\d{9}$">
+                            <div class="invalid-feedback" id="mobileError"></div>
+                        </div>
+                        <div class="mt-3">
+                            <button type="submit" class="btn btn-primary">Save Changes</button>
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<script>
+   function validateForm() {
+    const nameInput = document.getElementById('editName');
+    const mobileInput = document.getElementById('editMobile');
+    let isValid = true;
+
+    
+    document.getElementById('nameError').textContent = '';
+    document.getElementById('mobileError').textContent = '';
+    nameInput.classList.remove('is-invalid');
+    mobileInput.classList.remove('is-invalid');
+
+    
+    const nameValue = nameInput.value.trim();
+    const namePattern = /^[A-Za-z\s]+$/;
+    if (!nameValue) {
+        nameInput.classList.add('is-invalid');
+        document.getElementById('nameError').textContent = 'Name is required';
+        isValid = false;
+    } else if (nameValue.length < 3) {
+        nameInput.classList.add('is-invalid');
+        document.getElementById('nameError').textContent = 'Name must be at least 3 characters';
+        isValid = false;
+    } else if (nameValue.length > 50) {
+        nameInput.classList.add('is-invalid');
+        document.getElementById('nameError').textContent = 'Name cannot exceed 50 characters';
+        isValid = false;
+    } else if (!namePattern.test(nameValue)) {
+        nameInput.classList.add('is-invalid');
+        document.getElementById('nameError').textContent = 'Name can only contain letters and spaces';
+        isValid = false;
+    }
+
+    
+    const mobileValue = mobileInput.value.trim();
+    const mobilePattern = /^[6-9]\d{9}$/;
+    if (!mobileValue) {
+        mobileInput.classList.add('is-invalid');
+        document.getElementById('mobileError').textContent = 'Mobile number is required';
+        isValid = false;
+    } else if (!mobilePattern.test(mobileValue)) {
+        mobileInput.classList.add('is-invalid');
+        document.getElementById('mobileError').textContent = 'Please enter a valid 10-digit mobile number starting with 6-9';
+        isValid = false;
+    }
+
+    return isValid;
+}
+
+
+document.getElementById('editProfileForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    if (!validateForm()) {
+        return;
+    }
+
+    const formData = {
+        name: document.getElementById('editName').value.trim(),
+        mobile: document.getElementById('editMobile').value.trim()
+    };
+
+    try {
+       
+        const confirmResult = await Swal.fire({
+            title: 'Are you sure?',
+            text: "Do you want to update your profile?",
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Yes, update it!',
+            cancelButtonText: 'Cancel'
+        });
+
+        if (!confirmResult.isConfirmed) {
+            return;
+        }
+
+       
+        Swal.fire({
+            title: 'Updating...',
+            text: 'Please wait while we update your profile',
+            allowOutsideClick: false,
+            allowEscapeKey: false,
+            showConfirmButton: false,
+            didOpen: () => {
+                Swal.showLoading();
+            }
+        });
+
+        const response = await fetch('/editProfile', {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(formData)
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+           
+            $('#editProfileModal').modal('hide');
+            
+           
+            await Swal.fire({
+                title: 'Success!',
+                text: 'Your profile has been updated successfully',
+                icon: 'success',
+                confirmButtonColor: '#3085d6'
+            });
+
+           
+            window.location.reload();
+        } else {
+            throw new Error(data.message || 'Error updating profile');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        Swal.fire({
+            title: 'Error!',
+            text: error.message || 'An error occurred while updating profile',
+            icon: 'error',
+            confirmButtonColor: '#3085d6'
+        });
+    }
+});
+
+
+document.getElementById('editName').addEventListener('input', function() {
+    if (this.value.trim()) {
+        validateForm();
+    }
+});
+
+document.getElementById('editMobile').addEventListener('input', function() {
+    if (this.value.trim()) {
+        validateForm();
+    }
+});
+</script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<%- include('../layoutsUser/userfooter') %>

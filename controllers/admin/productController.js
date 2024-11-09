@@ -183,6 +183,17 @@ const editProduct = async (req, res)=>{
      }
     
     const images=[];
+    const deletedImages = [];
+
+    if (data.deletedImages) {
+        try {
+            deletedImages = JSON.parse(data.deletedImages);
+        } catch (err) {
+            console.error('Error parsing deletedImages:', err);
+            deletedImages = [];
+        }
+    }
+
 
       if(req.files && req.files.length>0){
         for(let i=0;i<req.files.length;i++){
@@ -200,10 +211,13 @@ const editProduct = async (req, res)=>{
            color:data.color,
         }  
 
-        if(req.files.length>0){
-            updateFields.$push={productImage:{$each:images}};
+        if (images.length > 0) {
+            updateFields.$set = { productImage: images };
         }
 
+        if (deletedImages.length > 0) {
+            updateFields.$pull = { productImage: { $in: deletedImages } };
+        }
       
         await Product.findByIdAndUpdate(id,updateFields,{new:true});
         res.redirect("/admin/products")

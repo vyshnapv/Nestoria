@@ -1,0 +1,465 @@
+<%- include('../layoutsUser/userheader') %>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+<style>
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+    .banner-area h1 {
+    font-size: 24px;
+    color: rgb(39, 37, 37);
+    text-align: center;
+}
+
+    body {
+        font-family: Arial, sans-serif;
+        background-color: #f4f6f9;
+        color: #333;
+    }
+
+    .container {
+        max-width: 1200px;
+        margin: auto;
+        padding: 20px;
+    }
+
+    /* Banner Section */
+    .banner-area {
+        background: #ebebeb;
+        color: white;
+        padding: 20px 0;
+    }
+
+    .breadcrumb-banner {
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+    }
+
+    .breadcrumb-banner .col-first h1 {
+        font-size: 24px;
+        color: white;
+    }
+
+    .breadcrumb-banner nav a {
+        color: #cce5ff;
+        text-decoration: none;
+        margin-right: 10px;
+        font-size: 14px;
+    }
+
+    /* Address Section */
+    .address-container h4 {
+        font-size: 22px;
+        margin: 20px 0;
+        color: #555;
+    }
+
+    .row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 20px;
+        margin-top: 20px;
+    }
+
+    .col-md-4 {
+        flex: 1 1 calc(33.333% - 20px);
+    }
+
+    .card {
+        border: 1px solid #e3e3e3;
+        border-radius: 8px;
+        padding: 20px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        background-color: white;
+        transition: transform 0.2s ease;
+    }
+
+    .card:hover {
+        transform: translateY(-5px);
+    }
+
+    .card h4 {
+        font-size: 18px;
+        margin-bottom: 10px;
+    }
+
+    .card p {
+        color: #666;
+        font-size: 14px;
+        margin: 5px 0;
+    }
+
+    .card-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .btn-link {
+        color: #007bff;
+        text-decoration: none;
+        font-weight: bold;
+        cursor: pointer;
+    }
+
+    .btn-danger {
+        background-color: #dc3545;
+        color: #fff;
+        border: none;
+        padding: 5px 10px;
+        border-radius: 3px;
+        cursor: pointer;
+    }
+
+    .add-card {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        cursor: pointer;
+        border: 2px dashed #ddd;
+        border-radius: 8px;
+        color: #777;
+        padding: 20px;
+    }
+
+    .plus-icon {
+        font-size: 50px;
+        color: #007bff;
+    }
+
+    /* Form Styling */
+    #addAddressForm {
+        display: none;
+        margin-top: 20px;
+        padding: 20px;
+        background-color: white;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .form-group {
+        margin-bottom: 15px;
+    }
+
+    .form-group label {
+        font-weight: bold;
+        color: #555;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 10px;
+        font-size: 14px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        margin-top: 5px;
+    }
+
+    .btn-primary {
+        background-color: #007bff;
+        color: white;
+        border: none;
+        padding: 10px 15px;
+        border-radius: 5px;
+        cursor: pointer;
+    }
+
+    .btn-secondary {
+        background-color: #6c757d;
+        color: white;
+        border: none;
+        padding: 10px 15px;
+        border-radius: 5px;
+        cursor: pointer;
+        margin-left: 10px;
+    }
+    .error{
+        border-color: #dc3545;
+    }
+    .error-message {
+        color: #dc3545;
+        font-size: 12px;
+        margin-top: 5px;
+        display: none;
+    }
+    @media (max-width: 768px) {
+        .breadcrumb-banner {
+            justify-content: center;
+        }
+
+        .col-md-4 {
+            flex: 1 1 100%;
+        }
+
+        .btn-link, .btn-danger {
+            font-size: 12px;
+        }
+
+        .plus-icon {
+            font-size: 30px;
+        }
+    }
+    
+
+</style>
+<section class="banner-area">
+    <div class="container text-center">
+        <h1>My Address</h1>
+    </div>
+</section>
+<nav aria-label="breadcrumb" class="breadcrumb-nav mb-3">
+    <div class="container">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/">Home</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Manage Address</li>
+        </ol>
+    </div>
+</nav>
+
+<div class="container address-container">
+    <h4>Your Address</h4>
+    <div class="row">
+        <div class="col-md-4 add-card">
+            <div class="card h-100 d-flex align-items-center justify-content-center border-dashed">
+                <div class="card-body text-center">
+                    <a href="#" onclick="toggleForm()" id="toggleFormButton">
+                        <span class="plus-icon">+</span>
+                        <h5>Add new address</h5>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Replace with dynamic data -->
+        <% addresses.address.forEach((address, index) => { %>
+        <div class="col-md-4">
+            <div class="card h-100 address-card">
+                <div class="card-body">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <h5 class="card-title">Address <%= index + 1 %></h5>
+                        <i class="fas fa-trash-alt delete-icon" onclick="confirmDelete('<%= addresses._id %>', '<%= index %>')" title="Delete Address"  style="cursor: pointer; color: #dc3545;"></i>
+                    </div><br>
+                <p class="card-text">Name: <%= address.name %></p>
+                <p class="card-text">Phone Number: <%= address.phone %></p>
+                <p class="card-text">District: <%= address.district %></p>
+                <p class="card-text">City: <%= address.city %></p>
+                <p class="card-text">House: <%= address.house %></p>
+                <p class="card-text">State: <%= address.state %></p>
+                <p class="card-text">Pincode: <%= address.pincode %></p>
+                </div>
+                <div class="card-footer">
+                    <a href="/editAddress/<%= addresses._id %>/<%= index %>" class="btn-link">Edit</a>
+                </div>
+            </div>
+        </div>
+        <% }) %>
+    </div>
+
+    <div id="addAddressForm" class="mt-4">
+        <form id="actualAddAddressForm" method="POST" action="/addAddress">
+            <div class="form-group">
+                <label for="name">Name</label>
+                <input type="text" class="form-control" id="name" name="name">
+                <span class="error-message" id="nameError"></span>
+            </div>
+            <div class="form-group">
+                <label for="phone">Phone</label>
+                <input type="text" class="form-control" id="phone" name="phone">
+                <span class="error-message" id="phoneError"></span>
+            </div>
+            <div class="form-group">
+                <label for="district">District</label>
+                <input type="text" class="form-control" id="district" name="district">
+                <span class="error-message" id="districtError"></span>
+            </div>
+            <div class="form-group">
+                <label for="city">City</label>
+                <input type="text" class="form-control" id="city" name="city">
+                <span class="error-message" id="cityError"></span>
+            </div>
+            <div class="form-group">
+                <label for="house">House</label>
+                <input type="text" class="form-control" id="house" name="house">
+                <span class="error-message" id="houseError"></span>
+            </div>
+            <div class="form-group">
+                <label for="state">State</label>
+                <input type="text" class="form-control" id="state" name="state">
+                <span class="error-message" id="stateError"></span>
+            </div>
+            <div class="form-group">
+                <label for="pincode">Pincode</label>
+                <input type="text" class="form-control" id="pincode" name="pincode">
+                <span class="error-message" id="pincodeError"></span>
+            </div>
+            <button type="submit" class="btn btn-primary">Save Address</button>
+            <button type="button" class="btn btn-secondary" onclick="cancelForm()">Cancel</button>
+        </form>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<script>
+     function toggleForm() {
+        var form = document.getElementById("addAddressForm");
+        form.style.display = form.style.display === "none" ? "block" : "none";
+    }
+
+    function cancelForm() {
+        Swal.fire({
+            title: 'Are you sure?',
+            text: "Your entered data will be discarded!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Yes, cancel it!'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                document.getElementById("addAddressForm").style.display = "none";
+                document.getElementById("actualAddAddressForm").reset();
+                clearErrors();
+                Swal.fire(
+                    'Cancelled!',
+                    'Form has been reset.',
+                    'success'
+                )
+            }
+        })
+    }
+
+    function showError(elementId, message) {
+        const element = document.getElementById(elementId);
+        const errorElement = document.getElementById(elementId + 'Error');
+        element.classList.add('error');
+        errorElement.style.display = 'block';
+        errorElement.textContent = message;
+    }
+
+    function clearErrors() {
+        const inputs = document.querySelectorAll('.form-control');
+        inputs.forEach(input => {
+            input.classList.remove('error');
+            const errorElement = document.getElementById(input.id + 'Error');
+            if (errorElement) {
+                errorElement.style.display = 'none';
+                errorElement.textContent = '';
+            }
+        });
+    }
+
+    document.getElementById("actualAddAddressForm").addEventListener("submit", function(e) {
+        e.preventDefault();
+        clearErrors();
+        let isValid = true;
+
+        const name = document.getElementById("name").value;
+        if (!/^[A-Za-z\s]{3,50}$/.test(name)) {
+            showError("name", "Name should be 3-50 characters long and contain only letters and spaces");
+            isValid = false;
+        }
+
+        const phone = document.getElementById("phone").value;
+        if (!/^[6-9]\d{9}$/.test(phone)) {
+            showError("phone", "Please enter a valid 10-digit phone number starting with 6-9");
+            isValid = false;
+        }
+
+        const district = document.getElementById("district").value;
+        if (!/^[A-Za-z\s]{3,30}$/.test(district)) {
+            showError("district", "District should be 3-30 characters long and contain only letters and spaces");
+            isValid = false;
+        }
+
+        const city = document.getElementById("city").value;
+        if (!/^[A-Za-z\s]{3,30}$/.test(city)) {
+            showError("city", "City should be 3-30 characters long and contain only letters and spaces");
+            isValid = false;
+        }
+
+        const house = document.getElementById("house").value;
+        if (!/^[A-Za-z0-9\s,.-/#]{3,100}$/.test(house)) {
+            showError("house", "House should be 3-100 characters long and contain only letters, numbers, spaces, and common symbols");
+            isValid = false;
+        }
+
+        const state = document.getElementById("state").value;
+        if (!/^[A-Za-z\s]{3,30}$/.test(state)) {
+            showError("state", "State should be 3-30 characters long and contain only letters and spaces");
+            isValid = false;
+        }
+
+        const pincode = document.getElementById("pincode").value;
+        if (!/^\d{6}$/.test(pincode)) {
+            showError("pincode", "Please enter a valid 6-digit pincode");
+            isValid = false;
+        }
+
+        if (isValid) {
+            Swal.fire({
+                title: 'Save Address?',
+                text: "Do you want to save this address?",
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Yes, save it!'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    this.submit();
+                }
+            });
+        }
+    });
+
+
+    function confirmDelete(addressId, index) {
+    Swal.fire({
+        title: 'Are you sure?',
+        text: "You want to delete it",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Yes, delete it!'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Send delete request
+            fetch(`/deleteAddress/${addressId}/${index}`, {
+                method: 'DELETE'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire(
+                        'Deleted!',
+                        'Your address has been deleted.',
+                        'success'
+                    ).then(() => {
+                        window.location.reload();
+                    });
+                } else {
+                    Swal.fire(
+                        'Error!',
+                        'Failed to delete address.',
+                        'error'
+                    );
+                }
+            })
+            .catch(error => {
+                Swal.fire(
+                    'Error!',
+                    'Something went wrong.',
+                    'error'
+                );
+            });
+        }
+    });
+}
+</script>
+
+<%- include('../layoutsUser/userfooter') %>

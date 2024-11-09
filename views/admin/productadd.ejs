@@ -166,26 +166,30 @@ const maxImages = 3;
 function handleMultipleImages(event) {
     const files = event.target.files;
     const container = document.getElementById('thumbnailsContainer');
-    container.innerHTML = '';
 
+    const existingCount = container.getElementsByClassName('thumbnail').length;
+    const newFilesCount = files.length;
 
-    if (files.length >maxImages) {
+    if (existingCount + newFilesCount > maxImages) {
         event.target.value = '';
-        displayErrorMessage('images-error', 'Please upload exactly 3 images.');
+        displayErrorMessage('images-error', 'Total number of images cannot exceed 3.');
         return;
-    } else {
-        clearErrorMessages(); 
     }
 
+    clearErrorMessages();
 
     for (let i = 0; i < files.length; i++) {
         const file = files[i];
         const reader = new FileReader();
         
         reader.onload = function(e) {
-            const thumbnail = createThumbnail(e.target.result, i);
+            const nextIndex = processedImages.size;
+            const thumbnail = createThumbnail(e.target.result, nextIndex);
             container.appendChild(thumbnail);
-            processedImages.set(i, file);
+
+            const newFile = new File([file], file.name, { type: file.type });
+            processedImages.set(nextIndex, newFile);
+            updateFileInput();
         };
         
         reader.readAsDataURL(file);
@@ -218,24 +222,27 @@ function removeThumbnail(thumbnailDiv) {
     const index = parseInt(thumbnailDiv.getAttribute('data-index'));
     processedImages.delete(index);
     thumbnailDiv.remove();
-    updateFileInput();
     reorderThumbnails();
+    updateFileInput();
 }
 
 function reorderThumbnails() {
     const container = document.getElementById('thumbnailsContainer');
     const thumbnails = container.getElementsByClassName('thumbnail');
     
+    const tempMap = new Map();
     Array.from(thumbnails).forEach((thumbnail, newIndex) => {
         const oldIndex = parseInt(thumbnail.getAttribute('data-index'));
         thumbnail.setAttribute('data-index', newIndex);
         
-        // Update processedImages map with new indices
         if (processedImages.has(oldIndex)) {
-            const file = processedImages.get(oldIndex);
-            processedImages.delete(oldIndex);
-            processedImages.set(newIndex, file);
+            tempMap.set(newIndex, processedImages.get(oldIndex));
         }
+    });
+    
+    processedImages.clear();
+    tempMap.forEach((value, key) => {
+        processedImages.set(key, value);
     });
 }
 
@@ -266,13 +273,12 @@ function saveCroppedImage() {
         });
         
         processedImages.set(currentImageIndex, file);
-     
         
         const thumbnail = document.querySelector(`.thumbnail[data-index="${currentImageIndex}"] img`);
         if (thumbnail) {
-        thumbnail.src = URL.createObjectURL(blob);
+            thumbnail.src = URL.createObjectURL(blob);
         }
-
+        
         updateFileInput();
         cancelCrop();
     }, 'image/jpeg');
@@ -314,28 +320,37 @@ function validateForm() {
         isValid = false;
     }
 
-    const regularPrice = document.getElementsByName('regularPrice')[0].value;
-    const priceRegex = /^\d+(\.\d{1,2})?$/;
-    if (!priceRegex.test(regularPrice) || parseFloat(regularPrice) <= 0) {
-        displayErrorMessage('regularPrice-error', 'Please enter a valid price (positive number, up to 2 decimal places).');
-        isValid = false;
-    }
+      const regularPrice = document.getElementsByName('regularPrice')[0].value;
+      const priceRegex = /^-?\d+(\.\d{1,2})?$/;  // Allow optional negative sign
 
-    const salePrice = document.getElementsByName('salePrice')[0].value;
-    if (!priceRegex.test(salePrice) || parseFloat(salePrice) < 0) {
-        displayErrorMessage('salePrice-error', 'Please enter a valid sale price (positive number, up to 2 decimal places).');
-        isValid = false;
-    }
+      if (!priceRegex.test(regularPrice)) {
+          displayErrorMessage('regularPrice-error', 'Please enter a valid price (use a valid number format).');
+          isValid = false;
+        } else if (parseFloat(regularPrice) < 0) {
+          displayErrorMessage('regularPrice-error', 'Please enter a valid price (negative numbers are not allowed).');
+          isValid = false;
+        } else if (parseFloat(regularPrice) <= 0) {
+          displayErrorMessage('regularPrice-error', 'Please enter a price greater than zero.');
+          isValid = false;
+        }
 
-    if (parseFloat(salePrice) > parseFloat(regularPrice)) {
-        displayErrorMessage('salePrice-error', 'Sale price cannot be greater than regular price.');
-        isValid = false;
-    }
+        const salePrice = document.getElementsByName('salePrice')[0].value;
+        if (!priceRegex.test(salePrice)) {
+            displayErrorMessage('salePrice-error', 'Please enter a valid sale price.');
+            isValid = false;
+         } else if(parseFloat(salePrice) < 0){
+            displayErrorMessage('salePrice-error', 'Please enter a valid price (negative numbers are not allowed).');
+            isValid = false;
+         }
+         else if (parseFloat(salePrice) > parseFloat(regularPrice)) {
+             displayErrorMessage('salePrice-error', 'Sale price cannot be greater than regular price.');
+            isValid = false;
+          }
 
     const quantity = document.getElementsByName('quantity')[0].value;
     const quantityRegex = /^[1-9][0-9]*$/; 
     if (!quantityRegex.test(quantity)) {
-        displayErrorMessage('quantity-error', 'Please enter a valid quantity (positive integer).');
+        displayErrorMessage('quantity-error', 'Please enter a valid quantity .');
         isValid = false;
     }
 

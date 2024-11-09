@@ -143,15 +143,9 @@
                                     <figure class="product-main-image">
                                        
                                         <img id="product-zoom" src="/uploads/cropped/<%= product.productImage[0] %>" data-zoom-image="/uploads/cropped/<%= product.productImage[0] %>" alt="product image">
-<!--     
-                                        <a href="#" id="btn-product-gallery" class="btn-product-gallery">
-                                            <i class="icon-arrows"></i>
-                                        </a> -->
-                                    </figure><!-- End .product-main-image -->
-    
-                                    
-                           
-    
+
+                                    </figure>
+
                                     <div id="product-zoom-gallery" class="product-image-gallery">
                                         <% for(let i=0;i<product.productImage.length;i++){ %>
                                             <a class="product-gallery-item <%= i === 0 ? 'active' : '' %>" href="#" data-image="/uploads/cropped/<%= product.productImage[i] %>" data-zoom-image="/uploads/cropped/<%= product.productImage[i] %>">
@@ -194,7 +188,15 @@
 
                     <br><br>
                     <div class="product-details-action">
-                        <a href="#" class="btn-product btn-cart"><span>Add to Cart</span></a>
+                        <% if (product.quantity > 0) { %>
+                        <a href="#" class="btn-product btn-cart addToCart" data-product-id="<%= product._id %>">
+                            <span>Add to Cart</span>
+                        </a>
+                        <% } else { %>
+                            <a  class="btn-product btn-cart addToCart" >
+                                <span>Out of Stock</span>
+                            </a>
+                        <% } %>
                         <div class="details-action-wrapper">
                             <a href="#" class="btn-product btn-wishlist" title="Wishlist"><span></span></a>
                         </div>
@@ -266,44 +268,35 @@
         </div><!-- End .container -->
     </div><!-- End .page-content -->
 </main><!-- End .main -->
-<%- include('../layoutsUser/userfooter') %>
-
-
-<!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/elevatezoom/2.2.3/jquery.elevatezoom.min.js" integrity="sha512-UH428GPLVbCa8xDVooDWXytY8WASfzVv3kxCvTAFkxD2vPjouf1I3+RJ2QcSckESsb7sI+gv3yhsgw9ZhM7sDw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/elevatezoom/2.2.3/jquery.elevatezoom.js" integrity="sha512-EjW7LChk2bIML+/kvj1NDrPSKHqfQ+zxJGBUKcopijd85cGwAX8ojz+781Rc0e7huwyI3j5Bn6rkctL3Gy61qw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
-  $(document).ready(function() {
-    // Initialize zoom on the main product image
-    $('#product-zoom').elevateZoom({
-        zoomType: "lens", // You can change this to "inner" or "window" based on your preference
-        lensShape: "square",
-        lensSize: 200
-    });
-
-    $('.product-gallery-item').click(function(event) {
-        event.preventDefault(); 
-
-        var newImage = $(this).attr('data-image');
-        var zoomImage = $(this).attr('data-zoom-image');
-
-        // Update the main image and zoom image
-        $('#product-zoom').attr('src', newImage);
-        $('#product-zoom').attr('data-zoom-image', zoomImage);
-
-        // Destroy the old zoom instance
-        $('.zoomContainer').remove(); // Remove zoom container created by elevateZoom
-        $('#product-zoom').removeData('elevateZoom'); // Remove zoom instance data
-
-        // Reinitialize zoom on the new image
-        $('#product-zoom').elevateZoom({
-            zoomType: "lens",
-            lensShape: "square",
-            lensSize: 200
+   $(document).ready(function() {
+    $('.addToCart').on('click', function(e) {
+        e.preventDefault();  
+        var productId = $(this).data('product-id');  
+        $.ajax({
+            url: '/addToCart', 
+            method: 'POST',
+            data: { productId: productId },
+            success: function(response) {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Added to Cart!',
+                    text: 'Your product has been added to the cart successfully.',
+                    confirmButtonText: 'Okay'
+                });
+            },
+            error: function(error) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error!',
+                    text: 'please login.',
+                    confirmButtonText: 'Okay'
+                });
+            }
         });
-
-        // Handle active class for the selected thumbnail
-        $('.product-gallery-item').removeClass('active');
-        $(this).addClass('active');
     });
 });
-</script> -->
+
+</script>
+<%- include('../layoutsUser/userfooter') %>
