@@ -8,10 +8,11 @@ user_route.set('views', './views/user');
 const userController = require('../controllers/user/userController');
 const cartController = require('../controllers/user/cartController');
 const orderController = require('../controllers/user/orderController');
+const profileController = require("../controllers/user/profileController")
 const passport = require("passport");
 const auth = require("../middleware/userAuth")
 
-//user 
+//user management 
 user_route.get('/',userController.loadHome)
 user_route.get("/register", auth.userNotAuth, userController.loadRegister)
 user_route.get("/login",auth.userNotAuth,userController.loadLogin)
@@ -19,6 +20,14 @@ user_route.get('/logout', userController.logoutUser);
 user_route.get("/pageNotFound",userController.pageNotFound)
 user_route.post("/register",userController.insertUser)
 user_route.post("/login",userController.loginUser)
+
+//forgot password
+user_route.get("/forgotPassword",profileController.getForgotPassword)
+user_route.post("/forgotemailvalid",profileController.forgotEmailValid)
+user_route.post("/verifyForgotPassotp",profileController.verifyForgotPassOtp)
+user_route.get("/resetPassword",profileController.getResetPassword)
+user_route.post("/resentForgotOtp",profileController.resentOtp)
+user_route.post("/resetPassword",profileController.NewPassword)
 
 //otp
 user_route.get("/verify-otp",userController.otpPage)
@@ -48,6 +57,7 @@ user_route.post('/addCheckAddress',auth.userAuth, cartController.addCheckAddress
 //PASSWORD
 user_route.get("/editPassword",auth.userAuth,userController.loadEditPassword)
 user_route.put("/changepassword",auth.userAuth,userController.changePassword)
+
 
 //profile
 user_route.get("/profile",auth.userAuth,userController.profile);

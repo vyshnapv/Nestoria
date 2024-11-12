@@ -24,6 +24,17 @@
         transform: translateY(-50%);
         font-size: 1.5em;
         }
+        .forgot-password-link{
+            font-size: 0.875rem;
+            text-decoration: none;
+            color:#315f91;
+            text-decoration: none;
+            margin-left: 60px;
+        }
+        .forgot-password-link:hover{
+            color: #052950;
+            text-decoration: underline;
+        }
     </style>
 </head>
 <body>
@@ -61,6 +72,7 @@
                     <%}%>
                     <div class="form-group form-button">
                         <input type="submit" name="signin" id="signin" class="form-submit" value="Log in"/>
+                        <a href="/forgotPassword" class="forgot-password-link">Forgot Password</a>
                     </div>
                 </form>
                 <div class="social-login">
