@@ -11,6 +11,7 @@ const orderController = require('../controllers/user/orderController');
 const profileController = require("../controllers/user/profileController")
 const passport = require("passport");
 const auth = require("../middleware/userAuth")
+const auth1 = require("../middleware/userAuthPost")
 
 //user management 
 user_route.get('/',userController.loadHome)
@@ -46,7 +47,7 @@ user_route.get("/product/:id",userController.productDetails)
 
 //cart
 user_route.get('/cart',cartController.loadCart);
-user_route.post('/addToCart',auth.userAuth,cartController.addToCart);
+user_route.post('/addToCart',auth1.userAuth,cartController.addToCart);
 user_route.post('/updateCart', auth.userAuth,cartController.updateCartQuantity);
 user_route.post('/removeFromCart',auth.userAuth, cartController.removeCartItem);
 
@@ -73,6 +74,7 @@ user_route.delete('/deleteAddress/:addressId/:index',auth.userAuth,userControlle
 //Order
 user_route.post('/place-order',auth.userAuth,orderController.createOrder);
 user_route.get('/ordersuccess/:orderId',orderController.orderSuccess);
+user_route.get("/viewOrders",orderController.getViewOrders)
 
 
 module.exports=user_route;

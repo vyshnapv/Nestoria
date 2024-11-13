@@ -62,7 +62,7 @@ const createOrder = async (req, res) => {
         await newOrder.save();
         await Cart.deleteOne({ userId });
 
-        res.status(200).json({ success: true, message: "Order placed successfully!", orderId: newOrder.orderId });
+        res.status(200).json({ success: true, message: "Order placed successfully!", orderId: newOrder.orderId, orderTime: newOrder.createdAt });
 
     }  catch (error) {
         console.error("Error placing order:", error);
@@ -115,7 +115,91 @@ const orderSuccess = async (req,res)=>{
 }
 
 
+//get view order page 
+const getViewOrders = async (req, res) => {
+  try {
+      const userData = req.session.user ? await User.findById(req.session.user) : null;
+      
+      // Check if the user is blocked, if so log out and redirect to login
+      if (userData && userData.is_blocked) {
+          req.session.destroy();
+          return res.redirect("/login");
+      }
+      
+      // If no user is logged in, redirect to login page
+      if (!userData) {
+          return res.redirect("/login");
+      }
+
+      // Fetch orders of the logged-in user
+      const orders = await Order.find({ userId: userData._id })
+          .sort({ createdAt: -1 }) // Sort orders by creation date (latest first)
+          .lean();
+
+      // Format the orders
+      const formattedOrders = orders.map(order => {
+          // Determine the order status based on the payment status
+          const orderStatus = order.paymentStatus === 'Paid' ? 'Shipped' : (order.paymentStatus === 'Pending' ? 'Processing' : order.orderStatus);
+
+          return {
+              orderId: order.orderId,
+              date: new Date(order.createdAt).toLocaleDateString('en-US', {
+                  year: 'numeric',
+                  month: '2-digit',
+                  day: '2-digit'
+              }),
+              totalPrice: order.totalPrice.toFixed(2),
+              paymentStatus: order.paymentStatus,
+              orderStatus: orderStatus, // Set dynamic order status based on payment status
+              items: order.items.map(item => ({
+                  productName: item.productName,
+                  quantity: item.quantity,
+                  price: item.price,
+                  finalPrice: item.finalPrice,
+                  itemStatus: item.itemStatus
+              })),
+              address: order.address,
+              paymentMethod: order.paymentMethod
+          };
+      });
+
+      // Render the viewOrders page, passing in the formatted orders
+      res.render("viewOrders", {
+          userData,
+          orders: formattedOrders,
+          helpers: {
+              // Helper function to determine status class for styling
+              getStatusClass: (status) => {
+                  switch (status.toLowerCase()) {
+                      case 'paid':
+                          return 'paid';
+                      case 'pending':
+                          return 'pending';
+                      case 'processing':
+                          return 'processing';
+                      case 'shipped':
+                          return 'shipped';
+                      case 'delivered':
+                          return 'delivered';
+                      default:
+                          return '';
+                  }
+              }
+          }
+      });
+
+  } catch (error) {
+      console.error('Error in getViewOrders:', error);
+      res.status(500).render('error', {
+          message: 'An error occurred while fetching your orders',
+          error: process.env.NODE_ENV === 'development' ? error : {}
+      });
+  }
+};
+
+
 module.exports={
     createOrder,
     orderSuccess,
+    getViewOrders
 }
