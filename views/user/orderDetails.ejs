@@ -1,0 +1,386 @@
+<%- include('../layoutsUser/userheader') %>
+<style>
+/* General Styles */
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f8f9fa;
+}
+
+.order-detail-heading {
+    font-weight: bold;
+    font-size: 1.5rem; /* Increased heading size */
+    text-align: center; /* Center the heading */
+}
+
+.order-detail-date {
+    font-size: 0.9rem;
+    text-align: center; /* Center the order date and ID */
+}
+
+/* Section Titles */
+.order-detail-section-title {
+    font-size: 1rem;
+    font-weight: bold;
+    color: #6c757d;
+    margin-top: 1rem;
+}
+
+/* Shipping, Payment, and Order Details */
+.order-detail-container {
+    background-color: #ffffff;
+    padding: 20px;
+    border-radius: 5px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.order-detail-text {
+    margin: 0;
+    color: #333;
+}
+
+.order-detail-section {
+    padding-top: 10px;
+}
+
+/* Order Table */
+.order-detail-table-responsive {
+    margin-top: 20px;
+}
+
+.order-detail-table {
+    background-color: #ffffff;
+}
+
+.order-detail-table-header {
+    background-color: #f1f1f1;
+    font-weight: bold;
+    text-align: center;
+}
+
+.order-detail-table-bordered th, .order-detail-table-bordered td {
+    border: 1px solid #dee2e6;
+    vertical-align: middle;
+    text-align: center;
+}
+
+/* Product Image */
+.order-detail-product-image {
+    max-width: 50px;
+    height: auto;
+}
+
+/* Action Button */
+.order-detail-btn-cancel {
+    font-size: 1rem;
+   
+    color: #fff;
+    background-color: #dc3545;
+    border: none;
+}
+
+.order-detail-btn-cancel:hover {
+    background-color: #c82333;
+}
+
+/* Order Summary */
+.order-detail-summary-title {
+    color: #495057;
+}
+
+.order-detail-summary-text {
+    font-size: 0.9rem;
+    color: #495057;
+}
+.modal-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.modal-footer {
+    background-color: #f8f9fa;
+    border-top: 1px solid #dee2e6;
+}
+
+.form-label {
+    font-weight: 500;
+    color: #495057;
+}
+
+.form-control:focus {
+    border-color: #80bdff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.btn-danger {
+    background-color: #dc3545;
+}
+
+.btn-danger:hover {
+    background-color: #c82333;
+}
+
+/* Add loading state styles */
+.btn-loading {
+    position: relative;
+    pointer-events: none;
+    opacity: 0.65;
+}
+
+.btn-loading:after {
+    content: '';
+    width: 1rem;
+    height: 1rem;
+    margin-left: 0.5rem;
+    display: inline-block;
+    vertical-align: text-bottom;
+    border: 0.2em solid currentColor;
+    border-right-color: transparent;
+    border-radius: 50%;
+    animation: spinner-border .75s linear infinite;
+}
+</style>
+<div class="order-detail-container mt-5">
+    <div class="row">
+        <div class="col-12">
+            <h5 class="order-detail-heading">Order Details</h5>
+            <p class="order-detail-date">Ordered on <%= order.orderDate %> | Order ID: <%= order.orderId %></p>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-4 order-detail-section">
+            <h6 class="order-detail-section-title">Shipping Address</h6>
+            <p class="order-detail-text">
+                <%= order.address.name %><br>
+                +91 <%= order.address.phone %><br>
+                <%= order.address.house %><br>
+                <%= order.address.district %><br>
+                <%= order.address.city %>, <%= order.address.state %> <%= order.address.pincode %>
+            </p>
+        </div>
+        <div class="col-md-4 order-detail-section">
+            <h6 class="order-detail-section-title">Payment Method</h6>
+            <p class="order-detail-text"><%= order.paymentMethod %></p>
+        </div>
+        <div class="col-md-4 order-detail-section">
+            <h6 class="order-detail-section-title">Payment Status</h6>
+            <p class="order-detail-text"><%= order.paymentStatus %></p>
+        </div>
+    </div>
+
+    <div class="order-detail-table-responsive">
+        <table class="table order-detail-table order-detail-table-bordered">
+            <thead class="order-detail-table-header">
+                <tr>
+                    <th>Product Name</th>
+                    <th>Category</th>
+                    <th>Image</th>
+                    <th>Quantity</th>
+                    <th>Price</th>
+                    <th>Final Price</th>
+                    <th>Order Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% order.items.forEach(item => { %>
+                <tr>
+                    <td><%= item.productName %></td>
+                    <td><%= item.category %></td>
+                    <td><img src="/uploads/cropped/<%= item.image %>"  alt="<%= item.productName %>" class="order-detail-product-image"></td>
+                    <td><%= item.quantity %></td>
+                    <td>₹<%= item.price %></td>
+                    <td>₹<%= item.finalPrice %></td>
+                    <td><%= item.itemStatus %></td>
+                    <td>
+                        <% if (item.itemStatus === 'Ordered') { %>
+                            <button class="btn btn-sm order-detail-btn-cancel" 
+                               onclick="cancelOrderItem('<%= order.orderId %>', '<%= item.productName %>')">
+                               ✖ Cancel
+                            </button>
+                        <% } else { %>
+                            <%= item.itemStatus %>
+                        <% } %>
+                    </td>
+                </tr>
+                <% }); %>
+            </tbody>
+        </table>
+    </div>
+    <div class="row mt-4">
+        <div class="col-md-6 offset-md-6">
+            <div class="order-detail-summary">
+                <h6 class="order-detail-summary-title">Order Summary</h6>
+                <p class="order-detail-summary-text">Total Amount: ₹<%= order.totalPrice %></p>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="cancelOrderModal" tabindex="-1" role="dialog" aria-labelledby="cancelOrderModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="cancelOrderModalLabel">Cancel Order Item</h5>
+                <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="cancelOrderForm">
+                    <div class="form-group mb-3">
+                        <label for="cancelReason" class="form-label">Reason for Cancellation</label>
+                        <select class="form-control" id="cancelReason" required>
+                            <option value="" disabled selected>Select a reason</option>
+                            <option value="Changed my mind">Changed my mind</option>
+                            <option value="Ordered wrong product">Ordered wrong product</option>
+                            <option value="Found better price elsewhere">Found better price elsewhere</option>
+                            <option value="Shipping time too long">Shipping time too long</option>
+                            <option value="Ordered by mistake">Ordered by mistake</option>
+                            <option value="Payment issues">Payment issues</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group mb-3 d-none" id="otherReasonDiv">
+                        <label for="otherReason" class="form-label">Please specify other reason</label>
+                        <textarea class="form-control" id="otherReason" rows="3"></textarea>
+                    </div>
+                    <input type="hidden" id="cancelOrderId">
+                    <input type="hidden" id="cancelProductName">
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-danger" id="confirmCancelOrder">Cancel Item</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <%- include('../layoutsUser/userfooter') %>
+    
+<script>
+document.getElementById('cancelReason').addEventListener('change', function() {
+    const otherReasonDiv = document.getElementById('otherReasonDiv');
+    if (this.value === 'Other') {
+        otherReasonDiv.classList.remove('d-none');
+    } else {
+        otherReasonDiv.classList.add('d-none');
+    }
+});
+
+// Update the existing cancelOrderItem function
+function cancelOrderItem(orderId, productName) {
+    document.getElementById('cancelOrderId').value = orderId;
+    document.getElementById('cancelProductName').value = productName;
+    
+    // Reset form
+    document.getElementById('cancelReason').value = '';
+    document.getElementById('otherReason').value = '';
+    document.getElementById('otherReasonDiv').classList.add('d-none');
+    
+    // Show the modal
+    const modal = new bootstrap.Modal(document.getElementById('cancelOrderModal'));
+    modal.show();
+}
+
+// Handle form submission
+document.getElementById('confirmCancelOrder').addEventListener('click', async function() {
+    const button = this;
+    const orderId = document.getElementById('cancelOrderId').value;
+    const productName = document.getElementById('cancelProductName').value;
+    const reasonSelect = document.getElementById('cancelReason');
+    
+    if (!reasonSelect.value) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Required',
+            text: 'Please select a reason for cancellation'
+        });
+        return;
+    }
+    
+    const reason = reasonSelect.value === 'Other' 
+        ? document.getElementById('otherReason').value.trim()
+        : reasonSelect.value;
+        
+    if (reasonSelect.value === 'Other' && !reason) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Required',
+            text: 'Please specify the other reason'
+        });
+        return;
+    }
+
+    try {
+        // Add loading state
+        button.classList.add('btn-loading');
+        button.disabled = true;
+
+        const response = await fetch(`/orderDetails/${orderId}/cancel-item`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                productName: productName,
+                reason: reason
+            })
+        });
+
+        const data = await response.json();
+
+        console.log('response=>',data)
+        
+        // Remove loading state
+        button.classList.remove('btn-loading');
+        button.disabled = false;
+        
+        if (data.success) {
+            // Close the modal
+            // const modal = bootstrap.Modal.getInstance(document.getElementById('cancelOrderModal'));
+            // modal.hide();
+            
+            // Show success message
+            Swal.fire({
+                icon: 'success',
+                title: 'Success',
+                text: 'Order item cancelled successfully',
+                showConfirmButton: false,
+                timer: 1500
+            }).then(() => {
+                // Reload the page to show updated order status
+                location.reload();
+            });
+        } else {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: data.message || 'Failed to cancel order item'
+            });
+        }
+    } catch (error) {
+        // Remove loading state
+        button.classList.remove('btn-loading');
+        button.disabled = false;
+        
+        console.error('Error cancelling order item:', error);
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'An error occurred while cancelling the order item'
+        });
+    }
+});
+
+// Add error handling for modal initialization
+document.addEventListener('DOMContentLoaded', function() {
+    // Check if modal element exists
+    if (!document.getElementById('cancelOrderModal')) {
+        console.error('Cancel order modal element not found');
+    }
+});
+</script>

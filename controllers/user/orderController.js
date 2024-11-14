@@ -88,7 +88,7 @@ const orderSuccess = async (req,res)=>{
     if (!order) {
       return res.status(404).json({ success: false, message: 'Order not found' });
     }
-    order.orderStatus = 'Delivered';
+
     await order.save();
 
     const user = await User.findById(order.userId);
@@ -139,8 +139,7 @@ const getViewOrders = async (req, res) => {
       // Format the orders
       const formattedOrders = orders.map(order => {
           // Determine the order status based on the payment status
-          const orderStatus = order.paymentStatus === 'Paid' ? 'Shipped' : (order.paymentStatus === 'Pending' ? 'Processing' : order.orderStatus);
-
+          let totalPrice=order.items.reduce((sum,price)=> sum+=price.finalPrice ,0)
           return {
               orderId: order.orderId,
               date: new Date(order.createdAt).toLocaleDateString('en-US', {
@@ -148,9 +147,9 @@ const getViewOrders = async (req, res) => {
                   month: '2-digit',
                   day: '2-digit'
               }),
-              totalPrice: order.totalPrice.toFixed(2),
+              totalPrice: totalPrice.toFixed(2),
               paymentStatus: order.paymentStatus,
-              orderStatus: orderStatus, // Set dynamic order status based on payment status
+              orderStatus: order.orderStatus, 
               items: order.items.map(item => ({
                   productName: item.productName,
                   quantity: item.quantity,
@@ -197,9 +196,154 @@ const getViewOrders = async (req, res) => {
   }
 };
 
+//get order details
+const getOrderDetails = async (req, res) => {
+    try {
+        const userData = req.session.user ? await User.findById(req.session.user) : null;
+        
+        // Check if user is blocked
+        if (userData && userData.is_blocked) {
+            req.session.destroy();
+            return res.redirect("/login");
+        }
+
+        // Get orderId from params
+        const { orderId } = req.params;
+        
+        // Fetch the specific order with populated product details
+        const order = await Order.findOne({ orderId }).populate({
+            path: 'items.productId',
+            model: 'Product',
+            select: 'productName category productImage'
+        });
+
+        if (!order) {
+            return res.status(404).render('error', {
+                message: 'Order not found',
+                error: { status: 404 }
+            });
+        }
+
+        // Format the order data for display
+        const formattedOrder = {
+            orderId: order.orderId,
+            orderDate: new Date(order.createdAt).toLocaleDateString('en-US', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            }),
+            address: order.address,
+            paymentMethod: order.paymentMethod,
+            paymentStatus: order.paymentStatus,
+            orderStatus: order.orderStatus,
+            totalPrice: order.totalPrice.toFixed(2),
+            items: order.items.map(item => ({
+                productName: item.productName,
+                category: item.productId.category,
+                image: item.productId.productImage[0], // First image from the array
+                quantity: item.quantity,
+                price: item.price.toFixed(2),
+                finalPrice: item.finalPrice.toFixed(2),
+                itemStatus: item.itemStatus
+            }))
+        };
+
+        res.render("orderDetails", {
+            userData,
+            order: formattedOrder
+        });
+
+    } catch (error) {
+        console.error('Error in getOrderDetails:', error);
+        res.status(500).render('error', {
+            message: 'An error occurred while fetching order details',
+            error: process.env.NODE_ENV === 'development' ? error : {}
+        });
+    }
+};
+
+const cancelOrderItem = async (req, res) => {
+    try {
+        const { orderId } = req.params;
+        const { productName, reason } = req.body;
+        
+        // Find the order
+        const order = await Order.findOne({ orderId });
+        
+        if (!order) {
+            return res.status(404).json({ 
+                success: false, 
+                message: 'Order not found' 
+            });
+        }
+        
+        // Find the specific item in the order
+        const itemIndex = order.items.findIndex(item => item.productName === productName);
+        
+        if (itemIndex === -1) {
+            return res.status(404).json({ 
+                success: false, 
+                message: 'Product not found in order' 
+            });
+        }
+        
+        const item = order.items[itemIndex];
+        
+        // Check if item can be cancelled (only if it's in 'Ordered' status)
+        if (item.itemStatus !== 'Ordered') {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'This item cannot be cancelled in its current status' 
+            });
+        }
+        
+        // Update item status and add reason
+        item.itemStatus = 'Cancelled';
+        item.reason = reason;
+        
+        // Find the product to update stock
+        const product = await Product.findById(item.productId);
+        
+        if (product) {
+            // Restore the cancelled quantity back to stock
+            product.quantity += item.quantity;
+            await product.save();
+        }
+        
+        // Recalculate total price
+        const cancelledItemPrice = item.finalPrice;
+        order.totalPrice -= cancelledItemPrice;
+        
+        // Check if all items are cancelled
+        const allItemsCancelled = order.items.every(item => item.itemStatus === 'Cancelled');
+        if (allItemsCancelled) {
+            order.orderStatus = 'Cancelled';
+        }
+        
+        // Save the updated order
+        await order.save();
+        
+        res.status(200).json({ 
+            success: true, 
+            message: 'Order item cancelled successfully' 
+        });
+        
+    } catch (error) {
+        console.error('Error in cancelOrderItem:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'An error occurred while cancelling the order item' 
+        });
+    }
+};
+
+
 
 module.exports={
     createOrder,
     orderSuccess,
-    getViewOrders
+    getViewOrders,
+    getOrderDetails,
+    cancelOrderItem,
 }

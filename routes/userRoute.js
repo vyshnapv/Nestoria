@@ -75,6 +75,7 @@ user_route.delete('/deleteAddress/:addressId/:index',auth.userAuth,userControlle
 user_route.post('/place-order',auth.userAuth,orderController.createOrder);
 user_route.get('/ordersuccess/:orderId',orderController.orderSuccess);
 user_route.get("/viewOrders",orderController.getViewOrders)
-
+user_route.get("/orderDetails/:orderId",orderController.getOrderDetails)
+user_route.post('/orderDetails/:orderId/cancel-item', orderController.cancelOrderItem);
 
 module.exports=user_route;
