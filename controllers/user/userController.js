@@ -67,7 +67,6 @@ const loadHome = async (req, res) => {
             return res.redirect("/login");
         }
         
-
         const products=await Product.find({ isBlocked: false })
         const categories=await Category.find({isListed:true});
         res.render('home', { userData ,products,categories});
@@ -118,7 +117,6 @@ const insertUser=async(req,res)=>
                 return res.json({success:false,message:"passwords do not match"})
             }
            
-            //check the user already exist
             const findUser=await User.findOne({email})
     
             if(findUser)
@@ -174,13 +172,13 @@ const insertUser=async(req,res)=>
                    email:user.email,
                    mobile:user.mobile,
                    password:passwordHash,
-                   is_verified:true//they enterd the correct otp
+                   is_verified:true
                })
    
                await saveUserData.save();
    
                req.session.user=saveUserData._id;
-               req.session.userOtp = null; //clear the stored otp from the session
+               req.session.userOtp = null; 
                req.session.userData = null; 
                res.json({success:true,message:"Registration successful!",redirect:"/login"})
            }
@@ -498,7 +496,6 @@ const changePassword = async (req,res) =>{
 
       const selectedCategory = req.query.Category;
 
-    //   const listedCategories = await Category.find({ isListed: true }).select('_id name');
     const listedCategories = await Category.aggregate([
         { $match: { isListed: true } },
         {

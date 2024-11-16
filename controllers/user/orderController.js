@@ -117,103 +117,113 @@ const orderSuccess = async (req,res)=>{
 
 //get view order page 
 const getViewOrders = async (req, res) => {
-  try {
-      const userData = req.session.user ? await User.findById(req.session.user) : null;
-      
-      // Check if the user is blocked, if so log out and redirect to login
-      if (userData && userData.is_blocked) {
-          req.session.destroy();
-          return res.redirect("/login");
-      }
-      
-      // If no user is logged in, redirect to login page
-      if (!userData) {
-          return res.redirect("/login");
-      }
+    try {
+        const userData = req.session.user ? await User.findById(req.session.user) : null;
+        
+        if (userData && userData.is_blocked) {
+            req.session.destroy();
+            return res.redirect("/login");
+        }
+        
+        if (!userData) {
+            return res.redirect("/login");
+        }
 
-      // Fetch orders of the logged-in user
-      const orders = await Order.find({ userId: userData._id })
-          .sort({ createdAt: -1 }) // Sort orders by creation date (latest first)
-          .lean();
+        // Pagination
+        const page = parseInt(req.query.page) || 1;
+        const limit = 5; // Orders per page
+        const skip = (page - 1) * limit;
 
-      // Format the orders
-      const formattedOrders = orders.map(order => {
-          // Determine the order status based on the payment status
-          let totalPrice=order.items.reduce((sum,price)=> sum+=price.finalPrice ,0)
-          return {
-              orderId: order.orderId,
-              date: new Date(order.createdAt).toLocaleDateString('en-US', {
-                  year: 'numeric',
-                  month: '2-digit',
-                  day: '2-digit'
-              }),
-              totalPrice: totalPrice.toFixed(2),
-              paymentStatus: order.paymentStatus,
-              orderStatus: order.orderStatus, 
-              items: order.items.map(item => ({
-                  productName: item.productName,
-                  quantity: item.quantity,
-                  price: item.price,
-                  finalPrice: item.finalPrice,
-                  itemStatus: item.itemStatus
-              })),
-              address: order.address,
-              paymentMethod: order.paymentMethod
-          };
-      });
+        // Get total count of orders
+        const totalOrders = await Order.countDocuments({ userId: userData._id });
+        const totalPages = Math.ceil(totalOrders / limit);
 
-      // Render the viewOrders page, passing in the formatted orders
-      res.render("viewOrders", {
-          userData,
-          orders: formattedOrders,
-          helpers: {
-              // Helper function to determine status class for styling
-              getStatusClass: (status) => {
-                  switch (status.toLowerCase()) {
-                      case 'paid':
-                          return 'paid';
-                      case 'pending':
-                          return 'pending';
-                      case 'processing':
-                          return 'processing';
-                      case 'shipped':
-                          return 'shipped';
-                      case 'delivered':
-                          return 'delivered';
-                      default:
-                          return '';
-                  }
-              }
-          }
-      });
+        // Get paginated orders
+        const orders = await Order.find({ userId: userData._id })
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(limit)
+            .lean();
 
-  } catch (error) {
-      console.error('Error in getViewOrders:', error);
-      res.status(500).render('error', {
-          message: 'An error occurred while fetching your orders',
-          error: process.env.NODE_ENV === 'development' ? error : {}
-      });
-  }
+        const formattedOrders = orders.map(order => {
+            let totalPrice = order.items.reduce((sum, price) => sum += price.finalPrice, 0);
+            return {
+                orderId: order.orderId,
+                date: new Date(order.createdAt).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit'
+                }),
+                totalPrice: totalPrice.toFixed(2),
+                paymentStatus: order.paymentStatus,
+                orderStatus: order.orderStatus,
+                items: order.items.map(item => ({
+                    productName: item.productName,
+                    quantity: item.quantity,
+                    price: item.price,
+                    finalPrice: item.finalPrice,
+                    itemStatus: item.itemStatus
+                })),
+                address: order.address,
+                paymentMethod: order.paymentMethod
+            };
+        });
+
+        res.render("viewOrders", {
+            userData,
+            orders: formattedOrders,
+            paginatedOrders: formattedOrders,
+            currentPage: page,
+            totalPages: totalPages,
+            helpers: {
+                getStatusClass: (status) => {
+                    switch (status.toLowerCase()) {
+                        case 'paid':
+                            return 'paid';
+                        case 'pending':
+                            return 'pending';
+                        case 'processing':
+                            return 'processing';
+                        case 'shipped':
+                            return 'shipped';
+                        case 'delivered':
+                            return 'delivered';
+                        default:
+                            return '';
+                    }
+                }
+            }
+        });
+    } catch (error) {
+        console.error('Error in getViewOrders:', error);
+        res.status(500).render('error', {
+            message: 'An error occurred while fetching your orders',
+            error: process.env.NODE_ENV === 'development' ? error : {}
+        });
+    }
 };
+
 
 //get order details
 const getOrderDetails = async (req, res) => {
     try {
         const userData = req.session.user ? await User.findById(req.session.user) : null;
         
-        // Check if user is blocked
         if (userData && userData.is_blocked) {
             req.session.destroy();
             return res.redirect("/login");
         }
 
-        // Get orderId from params
         const { orderId } = req.params;
         
-        // Fetch the specific order with populated product details
         const order = await Order.findOne({ orderId }).populate({
             path: 'items.productId',
             model: 'Product',
+            populate: {
+                path: 'category',
+                model: 'Category',
+                select: 'name'
+              },
             select: 'productName category productImage'
         });
 
@@ -224,7 +234,10 @@ const getOrderDetails = async (req, res) => {
             });
         }
 
-        // Format the order data for display
+        const activeTotalPrice = order.items.reduce((total, item) => {
+            return item.itemStatus !== 'Cancelled' ? total + item.finalPrice : total;
+        }, 0);
+
         const formattedOrder = {
             orderId: order.orderId,
             orderDate: new Date(order.createdAt).toLocaleDateString('en-US', {
@@ -237,11 +250,11 @@ const getOrderDetails = async (req, res) => {
             paymentMethod: order.paymentMethod,
             paymentStatus: order.paymentStatus,
             orderStatus: order.orderStatus,
-            totalPrice: order.totalPrice.toFixed(2),
+            totalPrice: activeTotalPrice.toFixed(2),
             items: order.items.map(item => ({
                 productName: item.productName,
                 category: item.productId.category,
-                image: item.productId.productImage[0], // First image from the array
+                image: item.productId.productImage[0], 
                 quantity: item.quantity,
                 price: item.price.toFixed(2),
                 finalPrice: item.finalPrice.toFixed(2),
@@ -263,12 +276,13 @@ const getOrderDetails = async (req, res) => {
     }
 };
 
+
+//cancelled order
 const cancelOrderItem = async (req, res) => {
     try {
         const { orderId } = req.params;
         const { productName, reason } = req.body;
         
-        // Find the order
         const order = await Order.findOne({ orderId });
         
         if (!order) {
@@ -278,19 +292,17 @@ const cancelOrderItem = async (req, res) => {
             });
         }
         
-        // Find the specific item in the order
         const itemIndex = order.items.findIndex(item => item.productName === productName);
         
         if (itemIndex === -1) {
             return res.status(404).json({ 
-                success: false, 
+                success: false,
                 message: 'Product not found in order' 
             });
         }
         
         const item = order.items[itemIndex];
         
-        // Check if item can be cancelled (only if it's in 'Ordered' status)
         if (item.itemStatus !== 'Ordered') {
             return res.status(400).json({ 
                 success: false, 
@@ -298,35 +310,32 @@ const cancelOrderItem = async (req, res) => {
             });
         }
         
-        // Update item status and add reason
         item.itemStatus = 'Cancelled';
         item.reason = reason;
         
-        // Find the product to update stock
         const product = await Product.findById(item.productId);
         
         if (product) {
-            // Restore the cancelled quantity back to stock
             product.quantity += item.quantity;
             await product.save();
         }
+
+        order.totalPrice = order.items.reduce((total, currentItem) => {
+            return currentItem.itemStatus !== 'Cancelled' ? total + currentItem.finalPrice : total;
+        }, 0);
+    
         
-        // Recalculate total price
-        const cancelledItemPrice = item.finalPrice;
-        order.totalPrice -= cancelledItemPrice;
-        
-        // Check if all items are cancelled
         const allItemsCancelled = order.items.every(item => item.itemStatus === 'Cancelled');
         if (allItemsCancelled) {
             order.orderStatus = 'Cancelled';
         }
         
-        // Save the updated order
         await order.save();
         
         res.status(200).json({ 
             success: true, 
-            message: 'Order item cancelled successfully' 
+            message: 'Order item cancelled successfully' ,
+            updatedTotalPrice: order.totalPrice
         });
         
     } catch (error) {

@@ -308,7 +308,6 @@
             }
         });
 
-        // Clear and re-append sorted items
         nameList.innerHTML = '';
         names.forEach(name => nameList.appendChild(name));
     }
@@ -353,7 +352,6 @@
             }
             
                 if (result.success) {
-                // Update cart count in header if exists
                 const cartCountElement = document.querySelector('.cart-count');
                 if (cartCountElement && result.cartCount) {
                     cartCountElement.textContent = result.cartCount;

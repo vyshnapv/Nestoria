@@ -7,7 +7,6 @@ const customerInfo=async(req,res)=>{
             {
                 search=req.query.search
             }  
-         //pagination
          let page=1;
          if(req.query.page)
          {
@@ -29,7 +28,6 @@ const customerInfo=async(req,res)=>{
          .skip((page-1)*limit)
          .exec();
 
-         //calculate total pages
          const count=await User.find({
             is_admin:false,
             $or:[
@@ -70,7 +68,7 @@ const customerBlocked=async(req,res)=>{
     }
 }
 
-
+//customer unblocked
 const customerunBlocked=async(req,res)=>{
     try {
         let id = req.query.id;

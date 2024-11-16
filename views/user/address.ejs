@@ -357,46 +357,86 @@
         clearErrors();
         let isValid = true;
 
+        const isEmptyOrWhitespace = (str) => !str.trim().length;
+
         const name = document.getElementById("name").value;
-        if (!/^[A-Za-z\s]{3,50}$/.test(name)) {
-            showError("name", "Name should be 3-50 characters long and contain only letters and spaces");
+        if (isEmptyOrWhitespace(name)) {
+            showError("name", "Name cannot be empty");
             isValid = false;
+        } else if (!/^[A-Za-z]+(?: [A-Za-z]+)*$/.test(name.trim())) {
+           showError("name", "Name should contain only letters with single spaces between words");
+           isValid = false;
+        } else if (name.trim().length < 3 || name.trim().length > 50) {
+           showError("name", "Name should be 3-50 characters long");
+           isValid = false;
         }
 
         const phone = document.getElementById("phone").value;
-        if (!/^[6-9]\d{9}$/.test(phone)) {
-            showError("phone", "Please enter a valid 10-digit phone number starting with 6-9");
-            isValid = false;
+        if (isEmptyOrWhitespace(phone)) {
+           showError("phone", "Phone number cannot be empty");
+           isValid = false;
+        } else if (!/^[6-9]\d{9}$/.test(phone.trim())) {
+           showError("phone", "Please enter a valid 10-digit phone number starting with 6-9");
+           isValid = false;
         }
 
+        
+
         const district = document.getElementById("district").value;
-        if (!/^[A-Za-z\s]{3,30}$/.test(district)) {
-            showError("district", "District should be 3-30 characters long and contain only letters and spaces");
-            isValid = false;
+        if (isEmptyOrWhitespace(district)) {
+           showError("district", "District cannot be empty ");
+           isValid = false;
+        } else if (!/^[A-Za-z]+(?: [A-Za-z]+)*$/.test(district.trim())) {
+           showError("district", "District should contain only letters with single spaces between words");
+           isValid = false;
+        } else if (district.trim().length < 3 || district.trim().length > 30) {
+           showError("district", "District should be 3-30 characters long");
+           isValid = false;
         }
 
         const city = document.getElementById("city").value;
-        if (!/^[A-Za-z\s]{3,30}$/.test(city)) {
-            showError("city", "City should be 3-30 characters long and contain only letters and spaces");
-            isValid = false;
+        if (isEmptyOrWhitespace(city)) {
+           showError("city", "City cannot be empty ");
+           isValid = false;
+        } else if (!/^[A-Za-z]+(?: [A-Za-z]+)*$/.test(city.trim())) {
+           showError("city", "City should contain only letters with single spaces between words");
+           isValid = false;
+        } else if (city.trim().length < 3 || city.trim().length > 30) {
+           showError("city", "City should be 3-30 characters long");
+           isValid = false;
         }
 
         const house = document.getElementById("house").value;
-        if (!/^[A-Za-z0-9\s,.-/#]{3,100}$/.test(house)) {
-            showError("house", "House should be 3-100 characters long and contain only letters, numbers, spaces, and common symbols");
-            isValid = false;
+        if (isEmptyOrWhitespace(house)) {
+           showError("house", "House/Address cannot be empty ");
+           isValid = false;
+        } else if (!/^[A-Za-z0-9](?:[A-Za-z0-9\s,.-/#]*[A-Za-z0-9])?$/.test(house.trim())) {
+           showError("house", "House/Address should start and end with alphanumeric characters and can contain spaces and common symbols (,.-/#)");
+           isValid = false;
+        } else if (house.trim().length < 3 || house.trim().length > 100) {
+           showError("house", "House/Address should be 3-100 characters long");
+           isValid = false;
         }
 
         const state = document.getElementById("state").value;
-        if (!/^[A-Za-z\s]{3,30}$/.test(state)) {
-            showError("state", "State should be 3-30 characters long and contain only letters and spaces");
-            isValid = false;
+        if (isEmptyOrWhitespace(state)) {
+           showError("state", "State cannot be empty ");
+           isValid = false;
+        } else if (!/^[A-Za-z]+(?: [A-Za-z]+)*$/.test(state.trim())) {
+           showError("state", "State should contain only letters with single spaces between words");
+           isValid = false;
+        } else if (state.trim().length < 3 || state.trim().length > 30) {
+           showError("state", "State should be 3-30 characters long");
+           isValid = false;
         }
 
         const pincode = document.getElementById("pincode").value;
-        if (!/^\d{6}$/.test(pincode)) {
-            showError("pincode", "Please enter a valid 6-digit pincode");
-            isValid = false;
+        if (isEmptyOrWhitespace(pincode)) {
+           showError("pincode", "Pincode cannot be empty");
+           isValid = false;
+        } else if (!/^\d{6}$/.test(pincode.trim())) {
+           showError("pincode", "Please enter a valid 6-digit pincode");
+           isValid = false;
         }
 
         if (isValid) {

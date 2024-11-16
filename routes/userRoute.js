@@ -14,10 +14,10 @@ const auth = require("../middleware/userAuth")
 const auth1 = require("../middleware/userAuthPost")
 
 //user management 
-user_route.get('/',userController.loadHome)
+user_route.get('/',auth.userAuth,userController.loadHome)
 user_route.get("/register", auth.userNotAuth, userController.loadRegister)
 user_route.get("/login",auth.userNotAuth,userController.loadLogin)
-user_route.get('/logout', userController.logoutUser); 
+user_route.get('/logout',userController.logoutUser); 
 user_route.get("/pageNotFound",userController.pageNotFound)
 user_route.post("/register",userController.insertUser)
 user_route.post("/login",userController.loginUser)

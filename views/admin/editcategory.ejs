@@ -77,7 +77,7 @@ async function submitForm(event) {
     event.preventDefault(); 
     
     const submitButton = document.getElementById('submitButton');
-    submitButton.disabled = true; //prevent from multiple submission
+    submitButton.disabled = true; 
 
     const categoryName = document.getElementById('categoryName').value.trim();
     const description = document.getElementById('description').value.trim();

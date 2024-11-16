@@ -103,6 +103,7 @@ const forgotEmailValid = async(req,res)=>{
         }    
   }
 
+
 //verify forgot pass otp
 const verifyForgotPassOtp = async(req,res)=>{
     try {
@@ -123,6 +124,7 @@ const verifyForgotPassOtp = async(req,res)=>{
         res.json({success:false,message:"An error occure please try again"});
     }
 }
+
 
 //get reset password
 const getResetPassword = async(req,res)=>{

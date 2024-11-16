@@ -58,7 +58,7 @@
 											<td class="price-col">₹<%= product.salePrice %></td>
 											<td class="quantity-col">
                                                 <div class="cart-product-quantity">
-                                                    <input type="number" class="form-control quantity-input" value="<%= item.quantity %>" min="1" max="5" step="1" data-decimals="0" data-product-id="<%= product._id %>" required>
+                                                    <input type="number" class="form-control quantity-input" value="<%= item.quantity %>" min="1" max="5" step="1" data-decimals="0" data-product-id="<%= product._id %>" required oninput="validity.valid||(value='1');">
                                                 </div><!-- End .cart-product-quantity -->
                                             </td>
 											<td class="total-col" id="total-<%= product._id %>">₹<%= itemTotal %></td>
@@ -146,7 +146,7 @@
       
       let subtotal = 0;
       
-      // Add updated items to summary
+     
       items.forEach(item => {
           const row = document.createElement('tr');
           const price = parseFloat(item.querySelector('.price-col').textContent.replace('₹', ''));
@@ -169,7 +169,7 @@
       }
   }
 
-  // Update event listener for quantity changes
+
   document.querySelectorAll('.quantity-input').forEach(input => {
       input.addEventListener('change', async (event) => {
           const productId = event.target.dataset.productId;

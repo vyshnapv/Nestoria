@@ -1,0 +1,223 @@
+<%- include('../layoutsAdmin/adminheader') %> 
+<%- include('../layoutsAdmin/header') %>
+
+<style>
+  .main-panel {
+    background-color: #f5f5f5;
+    padding: 20px;
+  }
+  .order-container {
+    background-color: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  }
+  .section {
+    font-size: 2rem;
+    color: #333;
+  }
+  .section-title {
+    font-size: 1.35rem;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 15px;
+  }
+
+  .order-summary,
+  .delivery-address,
+  .order-items {
+    margin-bottom: 20px;
+  }
+
+  .order-details-wrapper {
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
+  }
+
+  .details-card {
+    flex: 1;
+    padding: 15px;
+    background-color: white;
+    border-radius: 5px;
+    box-shadow: 0 3px 5px 3px rgba(8, 7, 7, 0.1);
+  }
+
+  .order-item-card {
+    background-color: white;
+    padding: 15px;
+    border-radius: 5px;
+    box-shadow: 0 3px 5px 3px rgba(0, 0, 0, 0.1);
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center;
+    margin-bottom: 15px;
+  }
+  .order-item-image {
+    display: flex;
+    flex-direction: column; 
+    align-items: center;
+    width: 25%; 
+  }
+  .order-item-image img {
+    width: 80px;
+    height: auto;
+    border-radius: 5px;
+    margin-bottom: 10px; 
+  }
+
+  .product-name {
+    text-align: center; 
+    font-size: 1.1rem;
+    margin-bottom: 10px; 
+  }
+  .order-item-details {
+    width: 70%; 
+  }
+
+  .status-dropdown {
+    width: 150px; 
+    padding: 5px 8px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+    font-size: 0.9rem; 
+    background-color: #f9f9f9;
+  }
+
+  .btn-back {
+    background-color: #30475b;
+    border: 2px solid #5d5a7b;
+    color: white;
+    font-weight: bold;
+    transition: all 0.3s ease;
+    border-radius: 4px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    cursor: pointer;
+  }
+
+  .btn-back:hover {
+    background-color: #54545d;
+    transform: translateY(-3px);
+  }
+</style>
+
+<div class="main-panel">
+  <div class="content-wrapper col-lg-12">
+    <div class="order-container">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3 class="section">Order Details</h3>
+        <button class="btn-back" onclick="location.href='/admin/orderList'">
+          Back to Orders
+        </button>
+      </div>
+
+      <div class="order-details-wrapper">
+        <div class="details-card order-summary">
+            <p><strong>Order ID:</strong> <%= order.orderId %></p>
+            <p><strong>Order Date:</strong> <%= order.orderDate %></p>
+            <p><strong>Total Amount:</strong> ₹ <%= order.totalAmount %></p>
+            <p><strong>Payment Method:</strong> <%= order.paymentMethod %></p>
+            <p><strong>Payment Status:</strong> <%= order.paymentStatus %></p>
+            <p><strong>Customer Name:</strong> <%= order.customer.name %></p>
+        </div>
+
+        <div class="details-card delivery-address">
+            <div class="section-title">Delivery Address</div>
+            <p><strong>Name:</strong> <%= order.address.name %></p>
+            <p><strong>Email:</strong> <%= order.customer.email %></p>
+            <p><strong>Mobile:</strong> <%= order.address.phone %></p>
+            <p><strong>Address:</strong> <%= order.address.house %>, <%= order.address.city %>, <%= order.address.district %>, <%= order.address.state %>, <%= order.address.pincode %></p>
+          </div>
+      </div>
+
+      <div class="order-items">
+        <div class="section-title">Items</div>
+
+        <% order.items.forEach(item => { %>
+            <div class="order-item-card">
+                <div class="order-item-image">
+                    <img src="<%= item.image %>" alt="<%= item.productName %>" onerror="this.src='/placeholder-image.jpg'" />
+                    <h4 class="product-name"><%= item.productName %></h4>
+                  </div>
+
+          <div class="order-item-details">
+            <p><strong>Category:</strong> <%= item.category %></p>
+            <p><strong>Quantity:</strong> <%= item.quantity %></p>
+            <p><strong>Price:</strong> ₹ <%= item.price %></p>
+            <p><strong>Final Price:</strong> ₹ <%= item.finalPrice %></p>
+
+            <div>
+                <label for="status-<%= item.productId %>">Status:</label>
+                <select 
+                  id="status-<%= item.productId %>" 
+                  class="status-dropdown"
+                  onchange="updateStatus('<%= order.orderId %>', '<%= item.productId %>', this.value)"
+                >
+                  <option value="Processing" <%= item.status === 'Processing' ? 'selected' : '' %>>Processing</option>
+                  <option value="Shipped" <%= item.status === 'Shipped' ? 'selected' : '' %>>Shipped</option>
+                  <option value="Delivered" <%= item.status === 'Delivered' ? 'selected' : '' %>>Delivered</option>
+                  <option value="Cancelled" <%= item.status === 'Cancelled' ? 'selected' : '' %>>Cancelled</option>
+                </select>
+            </div>
+          </div>
+        </div>
+        <% }); %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<script>
+    async function updateStatus(orderId, productId, status) {
+        try {
+            const response = await fetch('/admin/updateOrderStatus', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    orderId,
+                    productId,
+                    status
+                })
+            });
+    
+            const data = await response.json();
+            
+            if (data.success) {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Success',
+                    text: 'Status and stock updated successfully',
+                    confirmButtonText: 'OK'
+                });
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: `Failed to update status: ${data.message}`,
+                    confirmButtonText: 'Try Again'
+                });
+            }
+        } catch (error) {
+            console.error('Error updating status:', error);
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'An error occurred while updating the status',
+                confirmButtonText: 'Close'
+            });
+        }
+    }
+    </script>
+
+<script src="/assets/js/vendors/jquery-3.6.0.min.js"></script>
+<script src="/assets/js/vendors/bootstrap.bundle.min.js"></script>
+<script src="/assets/js/vendors/select2.min.js"></script>
+<script src="/assets/js/vendors/perfect-scrollbar.js"></script>
+<script src="/assets/js/vendors/jquery.fullscreen.min.js"></script>
+<script src="/assets/js/vendors/chart.js"></script>
+<script src="/assets/js/main.js?v=1.1" type="text/javascript"></script>
+<script src="/assets/js/custom-chart.js" type="text/javascript"></script>

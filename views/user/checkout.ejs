@@ -50,7 +50,7 @@
 
 .address-list {
     margin-top: 20px;
-    display: none; /* Hide initially */
+    display: none; 
 }
 
 .address-item {
@@ -94,7 +94,7 @@
     border-color: #007bff;
 }
 
-/* New styles for button alignment */
+
 .address-buttons {
     display: flex;
     justify-content: space-between;
@@ -197,6 +197,78 @@
     max-width: 100%;
 }
 
+.payment-method {
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.payment-method-title {
+    font-size: 1.1em;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 15px;
+}
+
+.payment-option {
+    display: flex;
+    align-items: center;
+    padding: 12px;
+    border: 1px solid #e1e1e1;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.payment-option:hover {
+    background-color: #f8f9fa;
+    border-color: #007bff;
+}
+
+.payment-option input[type="radio"] {
+    margin-right: 12px;
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+}
+
+.payment-option label {
+    font-size: 1em;
+    color: #444;
+    margin: 0;
+    cursor: pointer;
+    flex: 1;
+}
+
+.payment-option.selected {
+    background-color: #e6f0ff;
+    border-color: #007bff;
+}
+
+/* Updated Button Styles */
+#placeOrderButton {
+    width: 100%;
+    padding: 15px;
+    font-size: 1.1em;
+    font-weight: 600;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+}
+
+#placeOrderButton:hover {
+    background-color: #0056b3;
+    transform: translateY(-1px);
+}
+
+#placeOrderButton:active {
+    transform: translateY(0);
+}
+
 </style>
 
 <main class="main">
@@ -211,6 +283,7 @@
             <ol class="breadcrumb">
                 <li class="breadcrumb-item"><a href="/">Home</a></li>
                 <li class="breadcrumb-item"><a href="/shop">Shop</a></li>
+                <li class="breadcrumb-item"><a href="/cart">cart</a></li>
                 <li class="breadcrumb-item active" aria-current="page">Checkout</li>
             </ol>
         </div>
@@ -242,14 +315,12 @@
                             </div>
                         </div>
 
-                        <!-- Address Buttons Section -->
                         <div class="address-buttons">
                             
                             <button id="show-addresses-btn" class="btn btn-primary">Your Addresses</button>
                             <button id="add-address-btn" class="btn btn-secondary" onclick="toggleForm()">Add Address</button>
                         </div>
 
-                        <!-- Display All Addresses -->
                         <div class="col-lg-12 address-list" id="address-list">
                             <h4>Your Addresses</h4>
                             <% if (addresses && addresses.address && addresses.address.length > 0) { %>
@@ -314,7 +385,7 @@
                         </form>
                     </div>
                 </div>
-                    <!-- Order Summary Sidebar -->
+                   
                     <aside  class="sidebar">
                         <div class="summary">
                             <h3 class="summary-title">Order Summary</h3>
@@ -346,10 +417,12 @@
                                 </tbody>
                             </table>
 
-                            <div class="payment-method mb-3">
-                                <label>Payment Method:</label>
-                                <input type="radio" name="paymentMethod" value="COD" id="paymentCOD">
-                                <label for="paymentCOD">Cash on Delivery</label>
+                            <div class="payment-method ">
+                                <h4 class="payment-method-title">Payment Method</h4>
+                                <div class="payment-option">
+                                  <input type="radio" name="paymentMethod" value="COD" id="paymentCOD">
+                                  <label for="paymentCOD">Cash on Delivery</label>
+                                </div>
                             </div>
                             <button type="button" id="placeOrderButton" class="btn btn-outline-primary-2 btn-block">Place Order</button>
                         </div>
@@ -433,6 +506,10 @@ function clearErrors() {
     });
 }
 
+function isEmptyOrWhitespace(str) {
+    return !str || str.trim().length === 0;
+}
+
 document.getElementById("actualAddAddressForm").addEventListener("submit", function(e) {
     e.preventDefault();
     clearErrors();
@@ -440,49 +517,82 @@ document.getElementById("actualAddAddressForm").addEventListener("submit", funct
 
     
     const name = document.getElementById("name").value;
-    if (!/^[A-Za-z\s]{3,50}$/.test(name)) {
-        showError("name", "Name should be 3-50 characters long and contain only letters and spaces");
+    if (isEmptyOrWhitespace(name)) {
+        showError("name", "Name cannot be empty");
+        isValid = false;
+    } else if (!/^[A-Za-z]+(?: [A-Za-z]+)*$/.test(name.trim())) {
+        showError("name", "Name should contain only letters with single spaces between words");
+        isValid = false;
+    } else if (name.trim().length < 3 || name.trim().length > 50) {
+        showError("name", "Name should be 3-50 characters long");
         isValid = false;
     }
 
     
     const phone = document.getElementById("phone").value;
-    if (!/^[6-9]\d{9}$/.test(phone)) {
+    if (isEmptyOrWhitespace(phone)) {
+        showError("phone", "Phone number cannot be empty");
+        isValid = false;
+    } else if (!/^[6-9]\d{9}$/.test(phone.trim())) {
         showError("phone", "Please enter a valid 10-digit phone number starting with 6-9");
         isValid = false;
     }
 
     
     const district = document.getElementById("district").value;
-    if (!/^[A-Za-z\s]{3,30}$/.test(district)) {
-        showError("district", "District should be 3-30 characters long and contain only letters and spaces");
+    if (isEmptyOrWhitespace(district)) {
+        showError("district", "District cannot be empty");
+        isValid = false;
+    } else if (!/^[A-Za-z]+(?: [A-Za-z]+)*$/.test(district.trim())) {
+        showError("district", "District should contain only letters with single spaces between words");
+        isValid = false;
+    } else if (district.trim().length < 3 || district.trim().length > 30) {
+        showError("district", "District should be 3-30 characters long");
         isValid = false;
     }
 
    
     const city = document.getElementById("city").value;
-    if (!/^[A-Za-z\s]{3,30}$/.test(city)) {
-        showError("city", "City should be 3-30 characters long and contain only letters and spaces");
+    if (isEmptyOrWhitespace(city)) {
+        showError("city", "City cannot be empty");
+        isValid = false;
+    } else if (!/^[A-Za-z]+(?: [A-Za-z]+)*$/.test(city.trim())) {
+        showError("city", "City should contain only letters with single spaces between words");
+        isValid = false;
+    } else if (city.trim().length < 3 || city.trim().length > 30) {
+        showError("city", "City should be 3-30 characters long");
         isValid = false;
     }
 
     
     const house = document.getElementById("house").value;
-    if (!/^[A-Za-z0-9\s,.-/#]{3,100}$/.test(house)) {
-        showError("house", "House should be 3-100 characters long and contain only letters, numbers, spaces, and common symbols");
+    if (isEmptyOrWhitespace(house)) {
+        showError("house", "House/Building details cannot be empty");
+        isValid = false;
+    } else if (!/^[A-Za-z0-9\s,.-/#]{3,100}$/.test(house.trim())) {
+        showError("house", "House/Building details should be 3-100 characters long and can contain letters, numbers, spaces, and common symbols (,.-/#)");
         isValid = false;
     }
 
     
     const state = document.getElementById("state").value;
-    if (!/^[A-Za-z\s]{3,30}$/.test(state)) {
-        showError("state", "State should be 3-30 characters long and contain only letters and spaces");
+    if (isEmptyOrWhitespace(state)) {
+        showError("state", "State cannot be empty");
+        isValid = false;
+    } else if (!/^[A-Za-z]+(?: [A-Za-z]+)*$/.test(state.trim())) {
+        showError("state", "State should contain only letters with single spaces between words");
+        isValid = false;
+    } else if (state.trim().length < 3 || state.trim().length > 30) {
+        showError("state", "State should be 3-30 characters long");
         isValid = false;
     }
 
     
     const pincode = document.getElementById("pincode").value;
-    if (!/^\d{6}$/.test(pincode)) {
+    if (isEmptyOrWhitespace(pincode)) {
+        showError("pincode", "Pincode cannot be empty");
+        isValid = false;
+    } else if (!/^\d{6}$/.test(pincode.trim())) {
         showError("pincode", "Please enter a valid 6-digit pincode");
         isValid = false;
     }
@@ -506,8 +616,8 @@ document.getElementById("actualAddAddressForm").addEventListener("submit", funct
 
 
 document.addEventListener("DOMContentLoaded", function () {
-    const placeOrderButton = document.getElementById("placeOrderButton");
 
+    const placeOrderButton = document.getElementById("placeOrderButton");
     placeOrderButton.addEventListener("click", async () => {
         const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked')?.value;
         const selectedAddress = document.querySelector('.address-item.selected');
@@ -570,6 +680,17 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     });
 });
+
+
+document.querySelector('.payment-option').addEventListener('click', function() {
+    const radio = this.querySelector('input[type="radio"]');
+    radio.checked = true;
+    document.querySelectorAll('.payment-option').forEach(opt => {
+        opt.classList.remove('selected');
+    });
+    this.classList.add('selected');
+});
+
 </script>
 
 <%- include('../layoutsUser/userfooter') %>  

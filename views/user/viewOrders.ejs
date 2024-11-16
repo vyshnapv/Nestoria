@@ -1,61 +1,90 @@
 <%- include('../layoutsUser/userheader') %>
-    <style>
-        .order-history {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 20px;
-            background-color: #f4f4f4;
-        }
-        .order-history .container {
-            max-width: 800px;
-            margin: auto;
-            background: #fff;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-        }
-        .order-history h1 {
-            text-align: center;
-            color: #333;
-        }
-        .order-history table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-        }
-        .order-history th, .order-history td {
-            padding: 12px;
-            text-align: left;
-            border-bottom: 1px solid #ddd;
-        }
-        .order-history th {
-            background-color: #f8f8f8;
-            font-weight: bold;
-            color: #555;
-        }
-        .order-history .status {
-            padding: 5px 10px;
-            border-radius: 5px;
-            color: #fff;
-        }
-        .order-history .paid {
-            background-color: #28a745;
-        }
-        .order-history .pending {
-            background-color: #ffc107;
-        }
-        .order-history .view-btn {
-            background-color: #007bff;
-            color: white;
-            padding: 8px 12px;
-            text-decoration: none;
-            border-radius: 4px;
-            font-size: 0.9em;
-        }
-        .order-history .view-btn:hover {
-            background-color: #0056b3;
-        }
-    </style>
+<style>
+    .order-history {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 20px;
+        background-color: #f4f4f4;
+    }
+    .order-history .container {
+        max-width: 800px;
+        margin: auto;
+        background: #fff;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+    .order-history h1 {
+        text-align: center;
+        color: #333;
+    }
+    .order-history table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+    }
+    .order-history th, .order-history td {
+        padding: 12px;
+        text-align: left;
+        border-bottom: 1px solid #ddd;
+    }
+    .order-history th {
+        background-color: #f8f8f8;
+        font-weight: bold;
+        color: #555;
+    }
+    .order-history .status {
+        padding: 5px 10px;
+        border-radius: 5px;
+        color: #fff;
+    }
+    .order-history .paid {
+        background-color: #28a745;
+    }
+    .order-history .pending {
+        background-color: #ffc107;
+    }
+    .order-history .view-btn {
+        background-color: #007bff;
+        color: white;
+        padding: 8px 12px;
+        text-decoration: none;
+        border-radius: 4px;
+        font-size: 0.9em;
+    }
+    .order-history .view-btn:hover {
+        background-color: #0056b3;
+    }
+    .pagination {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 5px;
+        margin-top: 20px;
+        font-size: 12px;
+    }
+
+   .pagination a, .pagination span {
+        display: inline-block;
+        padding: 5px 8px;
+        text-decoration: none;
+        color: #333;
+        border: 1px solid #ddd;
+        border-radius: 3px;
+        transition: background-color 0.3s, color 0.3s;
+    }
+
+    .pagination a:hover {
+        background-color: #007bff;
+        color: white;
+    }
+
+   .pagination .active {
+        background-color: #007bff;
+        color: white;
+        border: 1px solid #007bff;
+    }
+</style>
 
 <div class="order-history">
     <div class="container">
@@ -73,7 +102,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <% orders.forEach(order => { %>
+                    <% paginatedOrders.forEach(order => { %>
                         <tr>
                             <td><%= order.orderId %></td>
                             <td><%= order.date %></td>
@@ -91,6 +120,25 @@
                     <% }); %>
                 </tbody>
             </table>
+            
+            <!-- Pagination -->
+            <div class="pagination">
+                <% if (currentPage > 1) { %>
+                    <a href="?page=<%= currentPage - 1 %>">&laquo; Previous</a>
+                <% } else { %>
+                    <a class="disabled">&laquo; Previous</a>
+                <% } %>
+                
+                <% for(let i = 1; i <= totalPages; i++) { %>
+                    <a href="?page=<%= i %>" class="<%= currentPage === i ? 'active' : '' %>"><%= i %></a>
+                <% } %>
+                
+                <% if (currentPage < totalPages) { %>
+                    <a href="?page=<%= currentPage + 1 %>">Next &raquo;</a>
+                <% } else { %>
+                    <a class="disabled">Next &raquo;</a>
+                <% } %>
+            </div>
         <% } else { %>
             <div class="no-orders">
                 <p>You haven't placed any orders yet.</p>

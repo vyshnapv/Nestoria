@@ -228,20 +228,20 @@
     document.getElementById('otpForm').addEventListener('submit', async function (e) {
         e.preventDefault();
         const otpInputs = document.querySelectorAll('.otp-input');
-        let otp = '';//it is used to store the complete otp
+        let otp = '';
         
         otpInputs.forEach(input => {
             otp += input.value;
         });
 
-        const data = new URLSearchParams();//store the otpvalue that sent to the server
+        const data = new URLSearchParams();
         data.append('otp', otp);
         try {
                 const response = await fetch('/verify-otp', {
                 method: 'post',
                 body: data,
                 headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded'//like query string
+                    'Content-Type': 'application/x-www-form-urlencoded'
                 }
             });
 
@@ -253,7 +253,7 @@
                     icon: 'success',
                     confirmButtonText: 'OK'
                 }).then(() => {
-                    window.location.href = '/login';//this change the current url of the page to login
+                    window.location.href = '/login';
                 });
             } else {
                 Swal.fire({
@@ -331,7 +331,6 @@
 
     startTimer();
    
-    //automatically shift cursor for convenience
     document.querySelectorAll('.otp-input').forEach((input, index, array) => {
         input.addEventListener('input', () => {
             if (input.value.length === 1 && index < array.length - 1) {

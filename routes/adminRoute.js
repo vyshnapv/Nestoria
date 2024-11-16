@@ -45,4 +45,9 @@ admin_route.patch("/unblockProduct",adminAuth,productController.unblockProduct)
 admin_route.get("/editProduct",adminAuth,productController.getEditProduct)
 admin_route.post("/editProduct/:id",adminAuth,multer.array("images",3),productController.editProduct)
 
+//order management
+admin_route.get('/orderList',adminAuth,adminController.loadOrdersList);
+admin_route.get('/orderDetails/:orderId',adminAuth, adminController.adminOrderDetails);
+admin_route.post('/updateOrderStatus',adminAuth, adminController.updateOrderStatus);
+
 module.exports=admin_route;

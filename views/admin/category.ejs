@@ -186,8 +186,6 @@
         }
         const name = document.getElementById("category_name").value.trim();
       const description = document.getElementById("descriptionId").value.trim();
-        
-        //pass data to backend using fetch method
 
         fetch("/admin/addCategory",{
             method:"post",
@@ -253,7 +251,7 @@
   function displayErrorMessage(elementId,message){
     var errrorElement=document.getElementById(elementId);
     errrorElement.innerText=message;
-    errrorElement.style.display="block";//error message is visible 
+    errrorElement.style.display="block";
   }
 
 

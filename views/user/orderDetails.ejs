@@ -1,6 +1,6 @@
 <%- include('../layoutsUser/userheader') %>
 <style>
-/* General Styles */
+
 body {
     font-family: Arial, sans-serif;
     background-color: #f8f9fa;
@@ -8,16 +8,15 @@ body {
 
 .order-detail-heading {
     font-weight: bold;
-    font-size: 1.5rem; /* Increased heading size */
-    text-align: center; /* Center the heading */
+    font-size: 1.5rem; 
+    text-align: center; 
 }
 
 .order-detail-date {
     font-size: 0.9rem;
-    text-align: center; /* Center the order date and ID */
+    text-align: center; 
 }
 
-/* Section Titles */
 .order-detail-section-title {
     font-size: 1rem;
     font-weight: bold;
@@ -25,7 +24,6 @@ body {
     margin-top: 1rem;
 }
 
-/* Shipping, Payment, and Order Details */
 .order-detail-container {
     background-color: #ffffff;
     padding: 20px;
@@ -42,7 +40,6 @@ body {
     padding-top: 10px;
 }
 
-/* Order Table */
 .order-detail-table-responsive {
     margin-top: 20px;
 }
@@ -63,13 +60,11 @@ body {
     text-align: center;
 }
 
-/* Product Image */
 .order-detail-product-image {
     max-width: 50px;
     height: auto;
 }
 
-/* Action Button */
 .order-detail-btn-cancel {
     font-size: 1rem;
    
@@ -82,7 +77,6 @@ body {
     background-color: #c82333;
 }
 
-/* Order Summary */
 .order-detail-summary-title {
     color: #495057;
 }
@@ -119,7 +113,6 @@ body {
     background-color: #c82333;
 }
 
-/* Add loading state styles */
 .btn-loading {
     position: relative;
     pointer-events: none;
@@ -138,7 +131,9 @@ body {
     border-radius: 50%;
     animation: spinner-border .75s linear infinite;
 }
+
 </style>
+
 <div class="order-detail-container mt-5">
     <div class="row">
         <div class="col-12">
@@ -186,7 +181,7 @@ body {
                 <% order.items.forEach(item => { %>
                 <tr>
                     <td><%= item.productName %></td>
-                    <td><%= item.category %></td>
+                    <td><%= item.category.name %></td>
                     <td><img src="/uploads/cropped/<%= item.image %>"  alt="<%= item.productName %>" class="order-detail-product-image"></td>
                     <td><%= item.quantity %></td>
                     <td>₹<%= item.price %></td>
@@ -259,8 +254,9 @@ body {
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
     <%- include('../layoutsUser/userfooter') %>
-    
+
 <script>
 document.getElementById('cancelReason').addEventListener('change', function() {
     const otherReasonDiv = document.getElementById('otherReasonDiv');
@@ -271,22 +267,20 @@ document.getElementById('cancelReason').addEventListener('change', function() {
     }
 });
 
-// Update the existing cancelOrderItem function
+
 function cancelOrderItem(orderId, productName) {
     document.getElementById('cancelOrderId').value = orderId;
     document.getElementById('cancelProductName').value = productName;
     
-    // Reset form
     document.getElementById('cancelReason').value = '';
     document.getElementById('otherReason').value = '';
     document.getElementById('otherReasonDiv').classList.add('d-none');
-    
-    // Show the modal
+
     const modal = new bootstrap.Modal(document.getElementById('cancelOrderModal'));
     modal.show();
 }
 
-// Handle form submission
+
 document.getElementById('confirmCancelOrder').addEventListener('click', async function() {
     const button = this;
     const orderId = document.getElementById('cancelOrderId').value;
@@ -316,7 +310,7 @@ document.getElementById('confirmCancelOrder').addEventListener('click', async fu
     }
 
     try {
-        // Add loading state
+       
         button.classList.add('btn-loading');
         button.disabled = true;
 
@@ -332,19 +326,17 @@ document.getElementById('confirmCancelOrder').addEventListener('click', async fu
         });
 
         const data = await response.json();
-
-        console.log('response=>',data)
         
-        // Remove loading state
+        
         button.classList.remove('btn-loading');
         button.disabled = false;
         
         if (data.success) {
-            // Close the modal
-            // const modal = bootstrap.Modal.getInstance(document.getElementById('cancelOrderModal'));
-            // modal.hide();
+            const orderSummaryElement = document.querySelector('.order-detail-summary-text');
+            if (orderSummaryElement && data.updatedTotalPrice !== undefined) {
+                orderSummaryElement.textContent = `Total Amount: ₹${data.updatedTotalPrice.toFixed(2)}`;
+            }
             
-            // Show success message
             Swal.fire({
                 icon: 'success',
                 title: 'Success',
@@ -352,7 +344,6 @@ document.getElementById('confirmCancelOrder').addEventListener('click', async fu
                 showConfirmButton: false,
                 timer: 1500
             }).then(() => {
-                // Reload the page to show updated order status
                 location.reload();
             });
         } else {
@@ -363,7 +354,6 @@ document.getElementById('confirmCancelOrder').addEventListener('click', async fu
             });
         }
     } catch (error) {
-        // Remove loading state
         button.classList.remove('btn-loading');
         button.disabled = false;
         
@@ -376,9 +366,7 @@ document.getElementById('confirmCancelOrder').addEventListener('click', async fu
     }
 });
 
-// Add error handling for modal initialization
 document.addEventListener('DOMContentLoaded', function() {
-    // Check if modal element exists
     if (!document.getElementById('cancelOrderModal')) {
         console.error('Cancel order modal element not found');
     }

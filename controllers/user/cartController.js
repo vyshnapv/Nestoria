@@ -7,7 +7,7 @@ const Address = require("../../models/addressModel");
 const fs = require("fs");
 const path = require("path")
 
-
+//load cart page 
 const loadCart = async (req, res) => {
     try {
         const userData = req.session.user ? await User.findById(req.session.user) : null;
@@ -33,7 +33,7 @@ const loadCart = async (req, res) => {
     }
 };
 
-
+//add to cart
 const addToCart = async (req, res) => {
     try {
         const userId = req.session.user;
@@ -77,6 +77,7 @@ const addToCart = async (req, res) => {
 };
 
 
+//updatecartquantity
 const updateCartQuantity = async (req, res) => {
     try {
         const userId = req.session.user;
@@ -119,7 +120,7 @@ const updateCartQuantity = async (req, res) => {
 };
 
 
-
+//remove cart items
 const removeCartItem = async (req, res) => {
     try {
         const userId = req.session.user;
@@ -149,6 +150,8 @@ const removeCartItem = async (req, res) => {
     }
 };
 
+
+//checkout page 
 const loadCheckout = async (req, res) => {
     try {
       const userData = req.session.user ? await User.findById(req.session.user) : null;
@@ -187,7 +190,7 @@ const loadCheckout = async (req, res) => {
   };
 
 
-
+//addcheck address
   const addCheckAddress = async (req, res) => {
     try {
         const userId = req.session.user;

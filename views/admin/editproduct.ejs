@@ -177,7 +177,6 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 
-// Initialize original images on page load
 function initializeExistingImages() {
     const thumbnailsContainer = document.getElementById('thumbnailsContainer');
     const existingThumbnails = thumbnailsContainer.querySelectorAll('.thumbnail');
@@ -187,14 +186,12 @@ function initializeExistingImages() {
         const imgSrc = imgElement.src;
         const imgName = imgSrc.split('/').pop();
         
-        // Store original image information
         processedImages.set(index, {
             type: 'existing',
             name: imgName,
             src: imgSrc
         });
 
-        // Update click handlers
         imgElement.onclick = () => startCropping(imgSrc, index);
         
         const removeBtn = thumbnail.querySelector('.remove-icon');
@@ -350,10 +347,8 @@ document.querySelector('form').onsubmit = function(e) {
 
     const formData = new FormData(this);
     
-    // Add deleted images information
     formData.append('deletedImages', JSON.stringify(deletedImages));
     
-    // Add new and modified images
     processedImages.forEach((imageData, index) => {
         if (imageData.type === 'new' || imageData.file) {
             formData.append('images', imageData.file);
@@ -382,7 +377,7 @@ function validateForm() {
     }
 
       const regularPrice = document.getElementsByName('regularPrice')[0].value;
-      const priceRegex = /^-?\d+(\.\d{1,2})?$/;  // Allow optional negative sign
+      const priceRegex = /^-?\d+(\.\d{1,2})?$/;  
 
       if (!priceRegex.test(regularPrice)) {
           displayErrorMessage('regularPrice-error', 'Please enter a valid price (use a valid number format).');
