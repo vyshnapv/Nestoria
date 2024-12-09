@@ -510,7 +510,7 @@ function isEmptyOrWhitespace(str) {
     return !str || str.trim().length === 0;
 }
 
-document.getElementById("actualAddAddressForm").addEventListener("submit", function(e) {
+document.getElementById("actualAddAddressForm").addEventListener("submit", async function(e) {
     e.preventDefault();
     clearErrors();
     let isValid = true;
@@ -598,19 +598,44 @@ document.getElementById("actualAddAddressForm").addEventListener("submit", funct
     }
 
     if (isValid) {
-        Swal.fire({
-            title: 'Save Address?',
-            text: "Do you want to save this address?",
-            icon: 'question',
-            showCancelButton: true,
-            confirmButtonColor: '#3085d6',
-            cancelButtonColor: '#d33',
-            confirmButtonText: 'Yes, save it!'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                this.submit();
+        try {
+            const formData = new FormData(this);
+            const response = await fetch('/addCheckAddress', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(Object.fromEntries(formData))
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Success',
+                    text: result.message,
+                    showConfirmButton: false,
+                    timer: 1500
+                }).then(() => {
+                    // Reload the current page
+                    window.location.reload();
+                });
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: result.message || 'Failed to add address'
+                });
             }
-        });
+        } catch (error) {
+            console.error("Error adding address:", error);
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'Failed to add address. Please try again.'
+            });
+        }
     }
 });
 
@@ -641,7 +666,6 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
         const addressId = selectedAddress.getAttribute('data-index'); 
-        console.log('qqwqq',paymentMethod, addressId)
         try {
             const response = await fetch("/place-order", {
                 method: "POST",

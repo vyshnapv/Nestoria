@@ -105,6 +105,7 @@
 
     <script>
       const form = document.getElementById("register-form");
+
       const name = document.getElementById("name");
       const email = document.getElementById("email");
       const mobile = document.getElementById("mobile");
@@ -194,7 +195,6 @@
           if (valid) {
               const formData = new FormData(form); 
   
-              
               fetch("/register", {
                   method: "post",
                   headers: {

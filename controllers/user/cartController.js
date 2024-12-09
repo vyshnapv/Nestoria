@@ -10,12 +10,7 @@ const path = require("path")
 //load cart page 
 const loadCart = async (req, res) => {
     try {
-        const userData = req.session.user ? await User.findById(req.session.user) : null;
-        if (userData && userData.is_blocked) {
-            req.session.destroy(); 
-            return res.redirect("/login");
-        }
-
+        const userData = await User.findById(req.session.user);
         const cart =  await Cart.findOne({ userId: req.session.user }).populate({path:'items.product',select: 'productName productImage salePrice quantity'})|| { items: [] };
         
         let subtotal = 0;
@@ -154,12 +149,7 @@ const removeCartItem = async (req, res) => {
 //checkout page 
 const loadCheckout = async (req, res) => {
     try {
-      const userData = req.session.user ? await User.findById(req.session.user) : null;
-      if (userData && userData.is_blocked) {
-        req.session.destroy(); 
-        return res.redirect("/login");
-      }
-  
+      const userData =await User.findById(req.session.user);
       const cart = await Cart.findOne({ userId: req.session.user })
         .populate({
           path: 'items.product',
@@ -203,50 +193,6 @@ const loadCheckout = async (req, res) => {
 
        
         const { name, phone, district, city, house, state, pincode } = req.body;
-
-        
-        const namePattern = /^[A-Za-z\s]{3,50}$/;
-        const phonePattern = /^[6-9]\d{9}$/;
-        const locationPattern = /^[A-Za-z\s]{3,30}$/;
-        const housePattern = /^[A-Za-z0-9\s,.-/#]{3,100}$/;
-        const pincodePattern = /^\d{6}$/;
-
-        
-        if (!namePattern.test(name)) {
-            return res.status(400).json({
-                success: false,
-                message: "Invalid name format"
-            });
-        }
-
-        if (!phonePattern.test(phone)) {
-            return res.status(400).json({
-                success: false,
-                message: "Invalid phone number"
-            });
-        }
-
-        if (!locationPattern.test(district) || !locationPattern.test(city) || !locationPattern.test(state)) {
-            return res.status(400).json({
-                success: false,
-                message: "Invalid district, city, or state format"
-            });
-        }
-
-        if (!housePattern.test(house)) {
-            return res.status(400).json({
-                success: false,
-                message: "Invalid house address format"
-            });
-        }
-
-        if (!pincodePattern.test(pincode)) {
-            return res.status(400).json({
-                success: false,
-                message: "Invalid pincode format"
-            });
-        }
-
         
         let userAddress = await Address.findOne({ userId });
         
@@ -271,13 +217,11 @@ const loadCheckout = async (req, res) => {
         await userAddress.save();
 
        
-        req.flash('success', 'Address added successfully');
-        res.redirect('/checkout');
+        return res.json({success: true, message: 'Address added successfully',addresses: userAddress});
 
     } catch (error) {
         console.error("Error adding address:", error);
-        req.flash('error', 'Failed to add address');
-        res.redirect('/checkout');
+        return res.status(500).json({ success: false, message: 'Failed to add address'});
     }
 };
 

@@ -26,6 +26,7 @@ const createOrder = async (req, res) => {
         if (!address) {
             return res.status(404).json({ success: false, message: "Address not found." });
         }
+
         const selectedAddress = address.address[addressId];
 
 
@@ -76,6 +77,7 @@ const createOrder = async (req, res) => {
       }
 };
 
+//ordersuccess
 const orderSuccess = async (req,res)=>{
   try {
 
@@ -118,27 +120,15 @@ const orderSuccess = async (req,res)=>{
 //get view order page 
 const getViewOrders = async (req, res) => {
     try {
-        const userData = req.session.user ? await User.findById(req.session.user) : null;
-        
-        if (userData && userData.is_blocked) {
-            req.session.destroy();
-            return res.redirect("/login");
-        }
-        
-        if (!userData) {
-            return res.redirect("/login");
-        }
-
-        // Pagination
+        const userData =await User.findById(req.session.user);
+    
         const page = parseInt(req.query.page) || 1;
-        const limit = 5; // Orders per page
+        const limit = 5; 
         const skip = (page - 1) * limit;
 
-        // Get total count of orders
         const totalOrders = await Order.countDocuments({ userId: userData._id });
         const totalPages = Math.ceil(totalOrders / limit);
 
-        // Get paginated orders
         const orders = await Order.find({ userId: userData._id })
             .sort({ createdAt: -1 })
             .skip(skip)
@@ -207,12 +197,7 @@ const getViewOrders = async (req, res) => {
 //get order details
 const getOrderDetails = async (req, res) => {
     try {
-        const userData = req.session.user ? await User.findById(req.session.user) : null;
-        
-        if (userData && userData.is_blocked) {
-            req.session.destroy();
-            return res.redirect("/login");
-        }
+        const userData =await User.findById(req.session.user);
 
         const { orderId } = req.params;
         

@@ -10,21 +10,20 @@ const cartController = require('../controllers/user/cartController');
 const orderController = require('../controllers/user/orderController');
 const profileController = require("../controllers/user/profileController")
 const passport = require("passport");
-const auth = require("../middleware/userAuth")
-const auth1 = require("../middleware/userAuthPost")
+const { userAuth, userNotAuth, userAuth1 } = require("../middleware/userAuth");
 
 //user management 
-user_route.get('/',auth.userAuth,userController.loadHome)
-user_route.get("/register", auth.userNotAuth, userController.loadRegister)
-user_route.get("/login",auth.userNotAuth,userController.loadLogin)
+user_route.get('/',userAuth,userController.loadHome)
+user_route.get("/register",userNotAuth, userController.loadRegister)
+user_route.get("/login",userNotAuth,userController.loadLogin)
 user_route.get('/logout',userController.logoutUser); 
 user_route.get("/pageNotFound",userController.pageNotFound)
 user_route.post("/register",userController.insertUser)
 user_route.post("/login",userController.loginUser)
 
 //forgot password
-user_route.get("/forgotPassword",profileController.getForgotPassword)
-user_route.post("/forgotemailvalid",profileController.forgotEmailValid)
+user_route.get("/forgotPassword",userNotAuth,profileController.getForgotPassword)
+user_route.post("/forgotemailvalid",userNotAuth,profileController.forgotEmailValid)
 user_route.post("/verifyForgotPassotp",profileController.verifyForgotPassOtp)
 user_route.get("/resetPassword",profileController.getResetPassword)
 user_route.post("/resentForgotOtp",profileController.resentOtp)
@@ -42,40 +41,40 @@ user_route.get("/auth/google/callback",passport.authenticate("google",{failureRe
 })
 
 //product
-user_route.get("/shop",userController.shop)
-user_route.get("/product/:id",userController.productDetails)
+user_route.get("/shop",userAuth,userController.shop)
+user_route.get("/product/:id",userAuth,userController.productDetails)
 
 //cart
-user_route.get('/cart',cartController.loadCart);
-user_route.post('/addToCart',auth1.userAuth,cartController.addToCart);
-user_route.post('/updateCart', auth.userAuth,cartController.updateCartQuantity);
-user_route.post('/removeFromCart',auth.userAuth, cartController.removeCartItem);
+user_route.get('/cart',userAuth,cartController.loadCart);
+user_route.post('/addToCart',userAuth1,cartController.addToCart);
+user_route.post('/updateCart',userAuth,cartController.updateCartQuantity);
+user_route.post('/removeFromCart',userAuth, cartController.removeCartItem);
 
 //checkout
-user_route.get("/checkout",cartController.loadCheckout);
-user_route.post('/addCheckAddress',auth.userAuth, cartController.addCheckAddress);
+user_route.get("/checkout",userAuth,cartController.loadCheckout);
+user_route.post('/addCheckAddress',userAuth, cartController.addCheckAddress);
 
 //PASSWORD
-user_route.get("/editPassword",auth.userAuth,userController.loadEditPassword)
-user_route.put("/changepassword",auth.userAuth,userController.changePassword)
+user_route.get("/editPassword",userAuth,userController.loadEditPassword)
+user_route.put("/changepassword",userAuth,userController.changePassword)
 
 
 //profile
-user_route.get("/profile",auth.userAuth,userController.profile);
-user_route.put("/editProfile",auth.userAuth,userController.editProfile)
+user_route.get("/profile",userAuth,userController.profile);
+user_route.put("/editProfile",userAuth,userController.editProfile)
 
 //address
-user_route.get("/address",auth.userAuth,userController.loadAddress);
-user_route.post("/addAddress",auth.userAuth,userController.addAddress)
-user_route.get("/editAddress/:addressId/:index",auth.userAuth,userController.loadEditAddress);
-user_route.post('/editAddress/:addressId/:index',auth.userAuth,userController.editAddress);
-user_route.delete('/deleteAddress/:addressId/:index',auth.userAuth,userController.deleteAddress);
+user_route.get("/address",userAuth,userController.loadAddress);
+user_route.post("/addAddress",userAuth,userController.addAddress)
+user_route.get("/editAddress/:addressId/:index",userAuth,userController.loadEditAddress);
+user_route.post('/editAddress/:addressId/:index',userAuth,userController.editAddress);
+user_route.delete('/deleteAddress/:addressId/:index',userAuth,userController.deleteAddress);
 
 //Order
-user_route.post('/place-order',auth.userAuth,orderController.createOrder);
-user_route.get('/ordersuccess/:orderId',orderController.orderSuccess);
-user_route.get("/viewOrders",orderController.getViewOrders)
-user_route.get("/orderDetails/:orderId",orderController.getOrderDetails)
-user_route.post('/orderDetails/:orderId/cancel-item', orderController.cancelOrderItem);
+user_route.post('/place-order',userAuth,orderController.createOrder);
+user_route.get('/ordersuccess/:orderId', userAuth,orderController.orderSuccess);
+user_route.get("/viewOrders", userAuth,orderController.getViewOrders)
+user_route.get("/orderDetails/:orderId", userAuth,orderController.getOrderDetails)
+user_route.post('/orderDetails/:orderId/cancel-item', userAuth, orderController.cancelOrderItem);
 
 module.exports=user_route;

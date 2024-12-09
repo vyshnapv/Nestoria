@@ -61,12 +61,7 @@ async function sendverificationEmail(email, otp) {
 //load home page
 const loadHome = async (req, res) => {
     try {
-        const userData = req.session.user ? await User.findById(req.session.user) : null;
-        if (userData && userData.is_blocked) {
-            req.session.destroy(); 
-            return res.redirect("/login");
-        }
-        
+        const userData =await User.findById(req.session.user);
         const products=await Product.find({ isBlocked: false })
         const categories=await Category.find({isListed:true});
         res.render('home', { userData ,products,categories});
@@ -110,7 +105,6 @@ const insertUser=async(req,res)=>
     {
         try {
             const { name, email, mobile, pass, re_pass } = req.body;
-            
             
             if(pass !== re_pass)
             {
@@ -279,25 +273,7 @@ const logoutUser = async (req, res) => {
 //user profile
 const profile =async (req,res) =>{
     try {
-        
-        if (!req.session.user) {
-            return res.render("profile", { userData: null });
-        }
-
         const userData = await User.findById(req.session.user);
-        
-       
-        if (!userData) {
-            req.session.destroy();
-            return res.redirect("/login");
-        }
-
-       
-        if (userData.is_blocked) {
-            req.session.destroy();
-            return res.redirect("/login");
-        }
-
         res.render("profile", { userData });
     } catch (error) {
         console.error("Error loading profile page:", error);
@@ -312,46 +288,6 @@ const editProfile = async (req, res) => {
         const userId = req.session.user;
         const { name, mobile } = req.body;
 
-        
-        if (!name || !mobile) {
-            return res.status(400).json({
-                success: false,
-                message: "Name and mobile number are required"
-            });
-        }
-
-        
-        const nameValue = name.trim();
-        const namePattern = /^[A-Za-z\s]+$/;
-        if (nameValue.length < 3) {
-            return res.status(400).json({
-                success: false,
-                message: "Name must be at least 3 characters"
-            });
-        }
-        if (nameValue.length > 50) {
-            return res.status(400).json({
-                success: false,
-                message: "Name cannot exceed 50 characters"
-            });
-        }
-        if (!namePattern.test(nameValue)) {
-            return res.status(400).json({
-                success: false,
-                message: "Name can only contain letters and spaces"
-            });
-        }
-
-      
-        const mobilePattern = /^[6-9]\d{9}$/;
-        if (!mobilePattern.test(mobile.trim())) {
-            return res.status(400).json({
-                success: false,
-                message: "Please enter a valid 10-digit mobile number starting with 6-9"
-            });
-        }
-
-        
         const existingUser = await User.findOne({
             mobile: mobile.trim(),
             _id: { $ne: userId }
@@ -368,7 +304,7 @@ const editProfile = async (req, res) => {
         const updatedUser = await User.findByIdAndUpdate(
             userId,
             {
-                name: nameValue,
+                name,
                 mobile: mobile.trim()
             },
             { new: true }
@@ -398,18 +334,7 @@ const editProfile = async (req, res) => {
 //load change password
 const loadEditPassword = async (req,res)=>{
     try {
-        if (!req.session.user) {
-            return res.redirect("/login");
-        }
         const userData = await User.findById(req.session.user);
-        if (!userData) {
-            req.session.destroy();
-            return res.redirect("/login");
-        }
-        if (userData.is_blocked) {
-            req.session.destroy();
-            return res.redirect("/login");
-        }
 
         const userDataForView = {
             ...userData.toObject(),
@@ -430,42 +355,14 @@ const changePassword = async (req,res) =>{
     try {
         const userId=req.session.user;
         const { currentPassword, newPassword, confirmPassword } = req.body;
-
-        if (!userId) {
-            return res.status(401).json({ 
-                success: false, 
-                message: "Please login to change password." 
-            });
-        }
         
         if (!currentPassword || !newPassword || !confirmPassword) {
             return res.status(400).json({  success: false, message: "All fields are required." ,  field: !currentPassword ? 'currentPassword' : !newPassword ? 'newPassword' : 'confirmPassword'});
         }
 
-        if (newPassword.length < 6) {
-            return res.status(400).json({ success: false, message: "New password must be at least 6 characters long." });
-        }
-
-        if (newPassword !== confirmPassword) {
-            return res.status(400).json({ success: false, message: "New passwords do not match." });
-        }
-
         const user = await User.findById(userId);
         if(!user){
             return res.status(404).json({ success:false,message:"User not found."});
-        }
-
-        const isMatch = await bcrypt.compare(currentPassword, user.password);
-        if (!isMatch) {
-            return res.status(400).json({ success: false, message: "Current password is incorrect." });
-        }
-
-        const isSamePassword = await bcrypt.compare(newPassword, user.password);
-        if (isSamePassword) {
-            return res.status(400).json({ 
-                success: false, 
-                message: "New password must be different from current password." 
-            });
         }
 
         const hashedPassword = await hashPassword(newPassword);
@@ -487,14 +384,8 @@ const changePassword = async (req,res) =>{
 //shop page 
  const shop = async (req, res) => {
     try {
-        const userData = req.session.user ? await User.findById(req.session.user) : null;
-
-        if (userData && userData.is_blocked) {
-            req.session.destroy(); 
-            return res.redirect("/login");
-        }
-
-      const selectedCategory = req.query.Category;
+        const userData =await User.findById(req.session.user);
+        const selectedCategory = req.query.Category;
 
     const listedCategories = await Category.aggregate([
         { $match: { isListed: true } },
@@ -587,12 +478,7 @@ sortStage.push({ $limit: limit });
 //product detailed page
 const productDetails=async(req,res)=>{
   try {
-    const userData=req.session.user ? await User.findById(req.session.user) : null;
-
-    if (userData && userData.is_blocked) {
-        req.session.destroy();
-        return res.redirect("/login"); 
-      }
+    const userData=await User.findById(req.session.user);
   
     const productId=req.params.id;
 
@@ -625,19 +511,7 @@ const pageNotFound=async(req,res)=>
 //load address page
 const loadAddress = async (req,res)=>{
     try {
-        if (!req.session.user) {
-            return res.redirect("/login");
-        }
         const userData = await User.findById(req.session.user);
-        if (!userData) {
-            req.session.destroy();
-            return res.redirect("/login");
-        }
-        if (userData.is_blocked) {
-            req.session.destroy();
-            return res.redirect("/login");
-        }
-
         const addressData = await Address.findOne({ userId: userData._id });
         res.render("address",{userData, addresses:addressData || { address: [] }})
     } catch (error) {
@@ -656,16 +530,6 @@ const addAddress = async (req,res)=>{
 
         if (!name || !phone || !district || !city || !house || !state || !pincode) {
             return res.status(400).json({ success: false, message: "All fields are required" });
-        }
-
-        const phoneRegex = /^[6-9]\d{9}$/;
-        if (!phoneRegex.test(phone)) {
-            return res.status(400).json({ success: false, message: "Invalid phone number" });
-        }
-
-        const pincodeRegex = /^\d{6}$/;
-        if (!pincodeRegex.test(pincode)) {
-            return res.status(400).json({ success: false, message: "Invalid pincode" });
         }
 
         const newAddress = {
@@ -701,15 +565,8 @@ const addAddress = async (req,res)=>{
 //load edit address
 const loadEditAddress = async (req, res) => {
     try {
-        if (!req.session.user) {
-            return res.redirect("/login");
-        }
 
         const userData = await User.findById(req.session.user);
-        if (!userData || userData.is_blocked) {
-            req.session.destroy();
-            return res.redirect("/login");
-        }
 
         const addressId = req.params.addressId;
         const addressIndex = parseInt(req.params.index);
@@ -743,9 +600,6 @@ const loadEditAddress = async (req, res) => {
 //edit adddress
 const editAddress = async (req, res) => {
     try {
-        if (!req.session.user) {
-            return res.redirect("/login");
-        }
 
         const { name, phone, district, city, house, state, pincode } = req.body;
         const addressId = req.params.addressId;
@@ -754,16 +608,6 @@ const editAddress = async (req, res) => {
         // Validation
         if (!name || !phone || !district || !city || !house || !state || !pincode) {
             return res.status(400).json({ success: false, message: "All fields are required" });
-        }
-
-        const phoneRegex = /^[6-9]\d{9}$/;
-        if (!phoneRegex.test(phone)) {
-            return res.status(400).json({ success: false, message: "Invalid phone number" });
-        }
-
-        const pincodeRegex = /^\d{6}$/;
-        if (!pincodeRegex.test(pincode)) {
-            return res.status(400).json({ success: false, message: "Invalid pincode" });
         }
 
         const addressDoc = await Address.findById(addressId);
@@ -800,10 +644,6 @@ const editAddress = async (req, res) => {
 //delete address
 const deleteAddress = async (req, res) => {
     try {
-        
-        if (!req.session.user) {
-            return res.json({ success: false, message: "Please login first" });
-        }
 
         const addressId = req.params.addressId;
         const index = parseInt(req.params.index);

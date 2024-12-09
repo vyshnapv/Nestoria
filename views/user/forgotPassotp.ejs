@@ -117,7 +117,6 @@
         color: #ff5722;
     }
  
-    /* Keyframe Animations */
     @keyframes pulse {
         0%, 100% { transform: scale(1); }
         50% { transform: scale(1.05); }
@@ -148,7 +147,7 @@
                 <div class="otp-timer" id="otpTimer"></div>
             </div>
             <div class="form-group">
-                <button type="button" class="btn btn-link resend-button" onclick="resentOtp()">Resend OTP</button>
+                <button type="button" id="resendOtpButton" class="btn btn-link resend-button" onclick="resentOtp()" disabled>Resend OTP</button>
             </div>
             <%if(locals.message && message.length > 0){%>
             <div class="alert alert-danger mt-3">
@@ -168,6 +167,7 @@
     
     function updateTimerColor(percentage){
         const timerElement = document.getElementById('otpTimer');
+        const resendButton = document.getElementById('resendOtpButton');
 
         if(percentage>50){
             timerElement.style.backgroundColor = '#28a745';
@@ -180,20 +180,23 @@
 
     function startOtpTimer(){
         const timerElement = document.getElementById('otpTimer');
+        const resendButton = document.getElementById('resendOtpButton');
+
+        resendButton.disabled = true;
+
         otpTimerInterval = setInterval(function(){
             const minutes = Math.floor(timer/60)
             const seconds = timer%60;
             timerElement.textContent = `${minutes}:${seconds <10 ?'0':''}${seconds}`;
             updateTimerColor((timer/60)*100)
+
             if(--timer < 0){
                 clearInterval(otpTimerInterval);
-                timerElement.textContent = 'Expired';
-                timerElement.style.backgroundColor = 'red';
+                resendButton.disabled = false;
+
             }
         },1000)
     }
-
-    initializeOtpTimer();
 
     function initializeOtpTimer(){
         clearInterval(otpTimerInterval);
@@ -243,6 +246,7 @@
         clearInterval(otpTimerInterval)
         timer = 60;
         startOtpTimer();
+
         $.ajax({
             type:"post",
             url:"/resentForgotOtp",
@@ -276,6 +280,7 @@
     input.value = input.value.replace(/\D/g, '');
     }
 
+    initializeOtpTimer();
  </script>
  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
  <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
