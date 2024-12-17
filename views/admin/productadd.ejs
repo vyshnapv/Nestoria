@@ -306,7 +306,7 @@ function validateForm() {
     clearErrorMessages();
     let isValid = true;
 
-    const productName = document.getElementById('product_name').value;
+    const productName = document.getElementById('product_name').value.trim();
     const productNameRegex = /^[a-zA-Z0-9\s]{3,}$/;
     if (!productNameRegex.test(productName)) {
         displayErrorMessage('productName-error', 'Product name must be at least 3 characters long and contain only letters and numbers.');

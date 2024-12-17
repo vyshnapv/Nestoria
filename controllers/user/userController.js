@@ -3,6 +3,7 @@ const Category = require("../../models/categoryModel");
 const Product = require("../../models/productModel");
 const User = require("../../models/userModel");
 const Address = require("../../models/addressModel")
+const Wishlist = require("../../models/wishlistModel");
 const bcrypt = require('bcrypt');
 const nodemailer=require("nodemailer")
 const session=require("express-session")
@@ -379,12 +380,19 @@ const changePassword = async (req,res) =>{
 }
 
 
-
-
 //shop page 
  const shop = async (req, res) => {
     try {
         const userData =await User.findById(req.session.user);
+        
+        let wishlistedProducts = [];
+        if (userData) {
+           const wishlist = await Wishlist.findOne({ userId: userData._id });
+         if (wishlist) {
+            wishlistedProducts = wishlist.items.map(item => item.productId.toString());
+         }
+        }
+
         const selectedCategory = req.query.Category;
 
     const listedCategories = await Category.aggregate([
@@ -454,12 +462,17 @@ const changePassword = async (req,res) =>{
         }
 
         sortStage.push({ $skip: skip });
-sortStage.push({ $limit: limit });
+        sortStage.push({ $limit: limit });
      
        const products = await Product.aggregate(sortStage);
 
+       const productsWithWishlistStatus = products.map(product => ({
+        ...product,
+        isWishlisted: wishlistedProducts.includes(product._id.toString())
+      }));
+
       res.render("shop", {
-          products,
+          products: productsWithWishlistStatus,
           userData,
           category: listedCategories,
           selectedCategory,

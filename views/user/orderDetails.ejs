@@ -193,6 +193,11 @@ body {
                                onclick="cancelOrderItem('<%= order.orderId %>', '<%= item.productName %>')">
                                ✖ Cancel
                             </button>
+                        <% } else if (order.orderStatus === 'Delivered' && item.itemStatus !== 'Returned' && item.itemStatus !== 'Cancelled') { %>
+                            <button class="btn btn-sm order-detail-btn-return" 
+                               onclick="returnOrderItem('<%= order.orderId %>', '<%= item.productName %>')">
+                               ↩ Return
+                            </button>
                         <% } else { %>
                             <%= item.itemStatus %>
                         <% } %>
@@ -246,6 +251,44 @@ body {
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                 <button type="button" class="btn btn-danger" id="confirmCancelOrder">Cancel Item</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="returnOrderModal" tabindex="-1" role="dialog" aria-labelledby="returnOrderModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="returnOrderModalLabel">Return Order Item</h5>
+                <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="returnOrderForm">
+                    <div class="form-group mb-3">
+                        <label for="returnReason" class="form-label">Reason for Return</label>
+                        <select class="form-control" id="returnReason" required>
+                            <option value="" disabled selected>Select a reason</option>
+                            <option value="Defective Product">Defective Product</option>
+                            <option value="Wrong Product">Wrong Product</option>
+                            <option value="Not Satisfied">Not Satisfied</option>
+                            <option value="Size/Fit Issues">Size/Fit Issues</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group mb-3 d-none" id="otherReasonDiv">
+                        <label for="otherReason" class="form-label">Please specify other reason</label>
+                        <textarea class="form-control" id="otherReason" rows="3"></textarea>
+                    </div>
+                    <input type="hidden" id="returnOrderId">
+                    <input type="hidden" id="returnProductName">
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" id="confirmReturnOrder">Return Item</button>
             </div>
         </div>
     </div>
@@ -371,4 +414,109 @@ document.addEventListener('DOMContentLoaded', function() {
         console.error('Cancel order modal element not found');
     }
 });
+
+document.getElementById('returnReason').addEventListener('change', function() {
+    const otherReasonDiv = document.getElementById('otherReasonDiv');
+    if (this.value === 'Other') {
+        otherReasonDiv.classList.remove('d-none');
+    } else {
+        otherReasonDiv.classList.add('d-none');
+    }
+});
+
+function returnOrderItem(orderId, productName) {
+    document.getElementById('returnOrderId').value = orderId;
+    document.getElementById('returnProductName').value = productName;
+    
+    document.getElementById('returnReason').value = '';
+    document.getElementById('otherReason').value = '';
+    document.getElementById('otherReasonDiv').classList.add('d-none');
+
+    const modal = new bootstrap.Modal(document.getElementById('returnOrderModal'));
+    modal.show();
+}
+
+document.getElementById('confirmReturnOrder').addEventListener('click', async function() {
+    const button = this;
+    const orderId = document.getElementById('returnOrderId').value;
+    const productName = document.getElementById('returnProductName').value;
+    const reasonSelect = document.getElementById('returnReason');
+    
+    if (!reasonSelect.value) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Required',
+            text: 'Please select a reason for return'
+        });
+        return;
+    }
+    
+    const reason = reasonSelect.value === 'Other' 
+        ? document.getElementById('otherReason').value.trim()
+        : reasonSelect.value;
+        
+    if (reasonSelect.value === 'Other' && !reason) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Required',
+            text: 'Please specify the other reason'
+        });
+        return;
+    }
+
+    try {
+        button.classList.add('btn-loading');
+        button.disabled = true;
+
+        const response = await fetch(`/orderDetails/${orderId}/return-item`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                productName: productName,
+                reason: reason
+            })
+        });
+
+        const data = await response.json();
+        
+        button.classList.remove('btn-loading');
+        button.disabled = false;
+        
+        if (data.success) {
+            const orderSummaryElement = document.querySelector('.order-detail-summary-text');
+            if (orderSummaryElement && data.updatedTotalPrice !== undefined) {
+                orderSummaryElement.textContent = `Total Amount: ₹${data.updatedTotalPrice.toFixed(2)}`;
+            }
+            
+            Swal.fire({
+                icon: 'success',
+                title: 'Success',
+                text: 'Order item returned successfully',
+                showConfirmButton: false,
+                timer: 1500
+            }).then(() => {
+                location.reload();
+            });
+        } else {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: data.message || 'Failed to return order item'
+            });
+        }
+    } catch (error) {
+        button.classList.remove('btn-loading');
+        button.disabled = false;
+        
+        console.error('Error returning order item:', error);
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'An error occurred while returning the order item'
+        });
+    }
+});
+
 </script>

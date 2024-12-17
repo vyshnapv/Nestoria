@@ -9,7 +9,6 @@ const Category = require("../../models/categoryModel");
 
 const createOrder = async (req, res) => {
     try {
-        // console.log('req.body',req.body)
         const userId = req.session.user;
         const { paymentMethod, addressId } = req.body;
 
@@ -22,6 +21,16 @@ const createOrder = async (req, res) => {
             return res.status(400).json({ success: false, message: "Your cart is empty." });
         }
 
+        for (const item of cart.items) {
+            const product = await Product.findById(item.product._id);
+            if (product.quantity < item.quantity) {
+                return res.status(400).json({ 
+                    success: false, 
+                    message: `Insufficient stock for ${product.productName}. Only ${product.quantity} available.` 
+                });
+            }
+        }
+
         const address = await Address.findOne({ userId });
         if (!address) {
             return res.status(404).json({ success: false, message: "Address not found." });
@@ -29,15 +38,23 @@ const createOrder = async (req, res) => {
 
         const selectedAddress = address.address[addressId];
 
+        const orderItems = [];
+        
+        for (const item of cart.items) {
+            const product = await Product.findById(item.product._id);
+            
+            product.quantity -= item.quantity;
+            await product.save();
 
-        const orderItems = cart.items.map((item) => ({
-            productId: item.product._id,
-            productName: item.product.productName,
-            quantity: item.quantity,
-            price: item.product.salePrice,
-            finalPrice: item.product.salePrice * item.quantity,
-            itemStatus: "Ordered",
-          }));
+            orderItems.push({
+                productId: item.product._id,
+                productName: item.product.productName,
+                quantity: item.quantity,
+                price: item.product.salePrice,
+                finalPrice: item.product.salePrice * item.quantity,
+                itemStatus: "Ordered",
+            });
+        }
 
         const totalPrice = orderItems.reduce((sum, item) => sum + item.finalPrice, 0);
 
@@ -46,35 +63,40 @@ const createOrder = async (req, res) => {
             userId,
             items: orderItems,
             totalPrice,
-            address:{
-                name:selectedAddress.name,
-                phone:selectedAddress.phone,
-                district:selectedAddress.district,
-                city:selectedAddress.city,
-                house:selectedAddress.house,
-                state:selectedAddress.state,
-                pincode:selectedAddress.pincode,
+            address: {
+                name: selectedAddress.name,
+                phone: selectedAddress.phone,
+                district: selectedAddress.district,
+                city: selectedAddress.city,
+                house: selectedAddress.house,
+                state: selectedAddress.state,
+                pincode: selectedAddress.pincode,
             },
             paymentMethod,
             paymentStatus: paymentMethod === "COD" ? "Pending" : "Paid",
             orderStatus: "Processing",
-          });
+        });
 
         await newOrder.save();
         await Cart.deleteOne({ userId });
 
-        res.status(200).json({ success: true, message: "Order placed successfully!", orderId: newOrder.orderId, orderTime: newOrder.createdAt });
+        res.status(200).json({ 
+            success: true, 
+            message: "Order placed successfully!", 
+            orderId: newOrder.orderId, 
+            orderTime: newOrder.createdAt 
+        });
 
-    }  catch (error) {
+    } catch (error) {
         console.error("Error placing order:", error);
         console.error("Error stack:", error.stack);
       
         if (error.name === 'ValidationError') {
-          return res.status(400).json({ success: false, message: error.message });
+            return res.status(400).json({ success: false, message: error.message });
         } else {
-          return res.status(500).json({ success: false, message: 'An error occurred while placing the order' });
+            return res.status(500).json({ success: false, message: 'An error occurred while placing the order' });
         }
-      }
+    }
 };
 
 //ordersuccess
@@ -332,6 +354,77 @@ const cancelOrderItem = async (req, res) => {
     }
 };
 
+//return order
+const returnOrderItem = async (req, res) => {
+    try {
+        const { orderId } = req.params;
+        const { productName, reason } = req.body;
+
+        // Find the order
+        const order = await Order.findOne({ orderId });
+        if (!order) {
+            return res.status(404).json({ success: false, message: 'Order not found' });
+        }
+
+        // Find the specific item to return
+        const itemToReturn = order.items.find(item => 
+            item.productName === productName && item.itemStatus === 'Delivered'
+        );
+
+        if (!itemToReturn) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Item cannot be returned' 
+            });
+        }
+
+        // Update item status to 'Returned'
+        itemToReturn.itemStatus = 'Returned';
+        itemToReturn.returnReason = reason;
+        itemToReturn.returnDate = new Date();
+
+        // Calculate updated total price (excluding returned items)
+        const updatedTotalPrice = order.items.reduce((total, item) => {
+            return item.itemStatus !== 'Returned' ? total + item.finalPrice : total;
+        }, 0);
+
+        // Update order total price
+        order.totalPrice = updatedTotalPrice;
+
+        // Save the updated order
+        await order.save();
+
+        // Optional: Create a return record in a separate collection if needed
+        const returnRecord = new Return({
+            orderId: order._id,
+            productId: itemToReturn.productId,
+            returnReason: reason,
+            returnDate: new Date(),
+            status: 'Pending'
+        });
+        await returnRecord.save();
+
+        // Optional: Update product inventory
+        const product = await Product.findById(itemToReturn.productId);
+        if (product) {
+            product.stock += itemToReturn.quantity;
+            await product.save();
+        }
+
+        res.json({ 
+            success: true, 
+            updatedTotalPrice: updatedTotalPrice,
+            message: 'Item returned successfully' 
+        });
+
+    } catch (error) {
+        console.error('Error in returnOrderItem:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'An error occurred while processing the return' 
+        });
+    }
+};
 
 
 module.exports={
@@ -340,4 +433,5 @@ module.exports={
     getViewOrders,
     getOrderDetails,
     cancelOrderItem,
+    returnOrderItem,
 }

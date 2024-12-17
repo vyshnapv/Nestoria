@@ -8,7 +8,9 @@ user_route.set('views', './views/user');
 const userController = require('../controllers/user/userController');
 const cartController = require('../controllers/user/cartController');
 const orderController = require('../controllers/user/orderController');
-const profileController = require("../controllers/user/profileController")
+const profileController = require("../controllers/user/profileController");
+const wishlistController = require("../controllers/user/wishlistController");
+
 const passport = require("passport");
 const { userAuth, userNotAuth, userAuth1 } = require("../middleware/userAuth");
 
@@ -76,5 +78,14 @@ user_route.get('/ordersuccess/:orderId', userAuth,orderController.orderSuccess);
 user_route.get("/viewOrders", userAuth,orderController.getViewOrders)
 user_route.get("/orderDetails/:orderId", userAuth,orderController.getOrderDetails)
 user_route.post('/orderDetails/:orderId/cancel-item', userAuth, orderController.cancelOrderItem);
+user_route.post('/orderDetails/:orderId/return-item', userAuth, orderController.returnOrderItem);
+
+//wishlist
+user_route.get("/wishlist",wishlistController.wishlist);
+user_route.post('/addWishlist', wishlistController.addToWishlist);
+user_route.post('/addWishlist', wishlistController.addToWishlist);
+user_route.delete('/removeFromWishlist',wishlistController.removeFromWishlist);
+
+
 
 module.exports=user_route;

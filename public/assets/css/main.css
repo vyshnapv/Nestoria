@@ -1673,7 +1673,7 @@ textarea.form-control {
 
 .rounded-pill {
   padding-right: .6em;
-  padding-left: .6em;
+  padding-left: .1em;
 }
 
 .badge.bg-dark {

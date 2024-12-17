@@ -80,37 +80,37 @@ const updateCartQuantity = async (req, res) => {
 
         const cart = await Cart.findOne({ userId });
         const product = await Product.findById(productId);
-        
+
         if (!cart || !product) {
             return res.status(404).json({ success: false, message: cart ? "Product not found." : "Cart not found." });
         }
 
         const item = cart.items.find(item => item.product.toString() === productId);
         if (!item) {
-            return res.status(404).json({ success: false, message: "Product not found in cart." });
+            return res.status(404).json({success: false, message: "Product not found in cart." });
         }
 
         if (quantity < 1) {
-            return res.status(400).json({ success: false, message: "Quantity must be at least 1." });
-        }
-        
-        const quantityDifference = quantity - item.quantity;
-
-        if (quantityDifference > 0 && product.quantity < quantityDifference) {
-            return res.status(400).json({ success: false, message: `${product.quantity} item available in stock.`, availableStock: item.quantity });
+            return res.status(400).json({success: false,message: "Quantity must be at least 1."});
         }
 
-        product.quantity -= quantityDifference;
+        if (quantity > product.quantity) {
+            return res.status(400).json({success: false, message: `Only ${product.quantity} item(s) available in stock.`,availableStock: product.quantity});
+        }
+
         item.quantity = quantity;
+        await cart.save();
 
-        await Promise.all([cart.save(), product.save()]);
+        const subtotal = cart.items.reduce((total, i) => {
+            const productPrice = i.product.salePrice;
+            return total + (productPrice * i.quantity);
+        }, 0);
 
-        const subtotal = cart.items.reduce((total, i) => total + (i.product.salePrice * i.quantity), 0);
-        res.status(200).json({ success: true, subtotal, itemTotal: product.salePrice * quantity });
+        res.status(200).json({success: true,subtotal,itemTotal: product.salePrice * quantity });
 
     } catch (error) {
         console.error("Error updating cart quantity:", error);
-        res.status(500).json({ success: false, message: "An error occurred while updating the quantity." });
+        res.status(500).json({success: false,message: "An error occurred while updating the quantity."});
     }
 };
 
