@@ -194,10 +194,18 @@ body {
                                ✖ Cancel
                             </button>
                         <% } else if (order.orderStatus === 'Delivered' && item.itemStatus !== 'Returned' && item.itemStatus !== 'Cancelled') { %>
-                            <button class="btn btn-sm order-detail-btn-return" 
-                               onclick="returnOrderItem('<%= order.orderId %>', '<%= item.productName %>')">
-                               ↩ Return
-                            </button>
+                            <% if (item.itemStatus === 'Delivered') { %>
+                                <button class="btn btn-sm order-detail-btn-return" 
+                                   onclick="returnOrderItem('<%= order.orderId %>', '<%= item.productName %>')">
+                                   ↩ Return
+                                </button>
+                            <% } else if (item.returnStatus === 'Return Requested') { %>
+                                <span class="text-warning">Return Requested</span>
+                            <% } else if (item.returnStatus === 'Return Accepted') { %>
+                                <span class="text-success">Return Accepted</span>
+                            <% } else if (item.returnStatus === 'Return Rejected') { %>
+                                <span class="text-danger">Return Rejected</span>
+                            <% } %>
                         <% } else { %>
                             <%= item.itemStatus %>
                         <% } %>
@@ -415,6 +423,8 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
+
+//return order
 document.getElementById('returnReason').addEventListener('change', function() {
     const otherReasonDiv = document.getElementById('otherReasonDiv');
     if (this.value === 'Other') {
@@ -485,17 +495,12 @@ document.getElementById('confirmReturnOrder').addEventListener('click', async fu
         button.disabled = false;
         
         if (data.success) {
-            const orderSummaryElement = document.querySelector('.order-detail-summary-text');
-            if (orderSummaryElement && data.updatedTotalPrice !== undefined) {
-                orderSummaryElement.textContent = `Total Amount: ₹${data.updatedTotalPrice.toFixed(2)}`;
-            }
-            
             Swal.fire({
                 icon: 'success',
-                title: 'Success',
-                text: 'Order item returned successfully',
+                title: 'Return Requested',
+                text: 'Your return request has been submitted. Our team will review it soon.',
                 showConfirmButton: false,
-                timer: 1500
+                timer: 2500
             }).then(() => {
                 location.reload();
             });
@@ -503,18 +508,18 @@ document.getElementById('confirmReturnOrder').addEventListener('click', async fu
             Swal.fire({
                 icon: 'error',
                 title: 'Error',
-                text: data.message || 'Failed to return order item'
+                text: data.message || 'Failed to submit return request'
             });
         }
     } catch (error) {
         button.classList.remove('btn-loading');
         button.disabled = false;
         
-        console.error('Error returning order item:', error);
+        console.error('Error submitting return request:', error);
         Swal.fire({
             icon: 'error',
             title: 'Error',
-            text: 'An error occurred while returning the order item'
+            text: 'An error occurred while submitting the return request'
         });
     }
 });

@@ -49,6 +49,15 @@ const OrderSchema = new mongoose.Schema({
             isApproved: {
                 type: Boolean,
             },
+            returnReason: { type: String },
+            returnStatus: { 
+             type: String, 
+             enum: ['Not Requested', 'Return Requested', 'Return Accepted', 'Return Rejected'],
+             default: 'Not Requested'
+           },
+           returnReason: { type: String },
+           returnRequestDate: { type: Date },
+           isApproved: { type: Boolean }
         },
     ],
     address: {

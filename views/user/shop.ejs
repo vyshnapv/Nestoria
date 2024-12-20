@@ -25,7 +25,6 @@
     border-radius: 3px;
     font-weight: bold;
 }
-/* Red color for active wishlist button */
 .btn-product-icon.wishlist-btn.active {
     color: red;
 }
@@ -40,13 +39,32 @@
     </div><!-- End .page-header -->
 
     <nav aria-label="breadcrumb" class="breadcrumb-nav mb-2">
-        <div class="container">
-            <ol class="breadcrumb">
+        <div class="container d-flex justify-content-between align-items-center">
+            <ol class="breadcrumb mb-0">
                 <li class="breadcrumb-item"><a href="/">Home</a></li>
                 <li class="breadcrumb-item active" aria-current="page">Shop</li>
             </ol>
-        </div><!-- End .container -->
-    </nav><!-- End .breadcrumb-nav -->
+    
+            <!-- Search Form -->
+            <form action="/shop" method="get" class="search-form d-flex align-items-center">
+                <div class="header-search-wrapper d-flex align-items-center" style="gap: 0; padding-top: 30px;">
+                    <label for="q" class="sr-only" >Search</label>
+                    <input type="search" class="form-control" name="q" id="q" placeholder="Search in..." value="<%= searchQuery || '' %>" required>
+                    <input type="hidden" name="page" value="1">
+                    <% if (selectedCategory) { %>
+                        <input type="hidden" name="Category" value="<%= selectedCategory %>">
+                    <% } %>
+                    <% if (priceSort) { %>
+                        <input type="hidden" name="price-sort" value="<%= priceSort %>">
+                    <% } %>
+                    <% if (nameSort) { %>
+                        <input type="hidden" name="name-sort" value="<%= nameSort %>">
+                    <% } %>
+                    <button type="submit" class="btn" style="margin-left: -60px; margin-top:-18px; font-size:x-large; font-weight:bold;"><i class="icon-search"></i></button>
+                </div>
+            </form>
+        </div>
+    </nav>
 
     <div class="page-content">
         <div class="container">
@@ -72,10 +90,15 @@
                                                     <img src="/uploads/cropped/<%= product.productImage[0] %>" alt="Product image" class="product-image">
                                                 </a>
                                                 <div class="product-action-vertical">
-                                                    <a href="#" 
-                                                       class="btn-product-icon btn-wishlist wishlist-btn <%= product.isWishlisted ? 'active' : '' %> icon-heart" 
-                                                       data-product-id="<%= product._id %>">
-                                                    </a>
+                                                    <% if (product.quantity > 0) { %>
+                                                        <a href="#" 
+                                                           class="btn-product-icon btn-wishlist wishlist-btn <%= product.isWishlisted ? 'active' : '' %> icon-heart" 
+                                                           data-product-id="<%= product._id %>">
+                                                        </a>
+                                                    <% } else { %>
+                                                        <a class="btn-product-icon wishlist-btn disabled icon-heart" style="pointer-events: none; opacity: 0.5;">
+                                                        </a>
+                                                    <% } %>
                                                 </div>
                     
                                                 <div class="product-action">
@@ -396,19 +419,6 @@ document.querySelectorAll('.wishlist-btn').forEach(button => {
             if (result.success) {
                 this.classList.toggle('active');
 
-                Swal.fire({
-                    title: 'Added to Wishlist!',
-                    text: `${productName} was added to your wishlist successfully!`,
-                    icon: 'success',
-                    showConfirmButton: true,
-                    confirmButtonText: 'View Wishlist',
-                    showCancelButton: true,
-                    cancelButtonText: 'Continue Shopping'
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        window.location.href = '/wishlist';
-                    }
-                });
             }
         } catch (error) {
             console.error("Error adding product to wishlist:", error);

@@ -135,7 +135,41 @@
     justify-content: center;
     align-items: center;
   }
+  .return-column {
+    padding: 8px;
+    text-align: center;
+  }
+
+  .return-btn {
+    padding: 6px 12px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9rem;
+  }
+  .return-btn:hover {
+    background-color: #0056b3;
+  }
+  .badge {
+  padding: 6px 12px;
+  font-size: 0.9em;
+  font-weight: normal;
+  border-radius: 4px;
+}
+
+.bg-success {
+  background-color: #28a745;
+  color: white;
+}
+
+.bg-danger {
+  background-color: #dc3545;
+  color: white;
+}
 </style>
+
 <div class="container">
   <h1>Orders List</h1>
   <form class="search-bar" method="GET" action="/admin/orderList">
@@ -164,10 +198,10 @@
           <th>Order Date</th>
           <th>Customer</th>
           <th>Total Price</th>
-          <th>Item Quantity</th>
           <th>Payment Status</th>
           <th>Payment</th>
           <th>Order Status</th>
+          <th>Return Info</th>
           <th>Details</th>
         </tr>
       </thead>
@@ -178,13 +212,33 @@
           <td><%= order.orderDate %></td>
           <td><%= order.customerName %></td>
           <td>₹<%= order.totalPrice %></td>
-          <td><%= order.itemsCount %></td>
           <td><%= order.paymentMethod %></td>
           <td><%= order.paymentStatus %></td>
           <td><%= order.orderStatus %></td>
+          <td class="return-column">
+            <% if (order.hasReturnRequest) { %>
+              <% if (order.returnItems.length > 0) { %>
+                <% if (order.returnItems.some(item => item.returnDisplayStatus === 'Accepted')) { %>
+                  <span class="badge bg-success">Accepted</span>
+                <% } else if (order.returnItems.some(item => item.returnDisplayStatus === 'Rejected')) { %>
+                  <span class="badge bg-danger">Rejected</span>
+                <% } else { %>
+                  <button class="return-btn" 
+                          data-order-id="<%= order.orderId %>" 
+                          data-return-items="<%= JSON.stringify(order.returnItems) %>"
+                          data-full-order-id="<%= order._id %>">
+                    View Return
+                  </button>
+                <% } %>
+              <% } %>
+            <% } else { %>
+              No Return Request
+            <% } %>
+          </td>
           <td><a href="/admin/orderDetails/<%= order.orderId %>" class="btn btn-sm btn-info">View</a></td>
         </tr>
-        <% }) %> <% } else { %>
+        <% }) %> 
+        <% } else { %>
         <tr>
           <td colspan="9" style="text-align: center">No orders found</td>
         </tr>
@@ -217,6 +271,100 @@
   </div>
   <% } %>
 </div>
+
+<div class="modal fade" id="returnDetailsModal" tabindex="-1" role="dialog">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Return Request Details</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body" id="returnDetailsContent">
+        <!-- Return details will be loaded here dynamically -->
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-success" id="acceptReturnBtn">Accept</button>
+        <button type="button" class="btn btn-danger" id="rejectReturnBtn">Reject</button>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="/assets/js/vendors/jquery-3.6.0.min.js"></script>
+<script src="/assets/js/vendors/bootstrap.bundle.min.js"></script>
+
+<script>
+  $(document).ready(function() {
+    let currentReturnItems = [];
+    let currentFullOrderId = '';
+
+    $('.return-btn').on('click', function() {
+      const orderId = $(this).data('order-id');
+      const fullOrderId = $(this).data('full-order-id');
+      currentReturnItems = $(this).data('return-items');
+
+      console.log('Original Order ID:', orderId);
+      console.log('Full Order ID:', fullOrderId);
+      console.log('Return Items:', currentReturnItems);
+
+
+      if (!currentReturnItems || currentReturnItems.length === 0) {
+         console.error('No return items found');
+         return;
+       }
+
+       currentFullOrderId = fullOrderId;
+
+      let returnDetailsHtml = `<p><strong>Order ID:</strong> ${orderId}</p>`;
+      returnDetailsHtml += '<table class="table">';
+      returnDetailsHtml += '<thead><tr><th>Product</th><th>Reason</th></tr></thead>';
+      returnDetailsHtml += '<tbody>';
+
+      currentReturnItems.forEach(item => {
+        returnDetailsHtml += `
+          <tr>
+            <td>${item.productName}</td>
+            <td>${item.returnReason || 'No reason provided'}</td>
+            <td>${item.returnStatus}</td>
+          </tr>
+        `;
+      });
+
+      returnDetailsHtml += '</tbody></table>';
+      
+      $('#returnDetailsContent').html(returnDetailsHtml);
+      $('#returnDetailsModal').modal('show');
+    });
+
+    $('#acceptReturnBtn, #rejectReturnBtn').on('click', function() {
+      const status = $(this).attr('id') === 'acceptReturnBtn' ? 'Accepted' : 'Rejected';
+      
+        $.ajax({
+          url: '/admin/updateReturnStatus',
+          method: 'POST',
+          data: { 
+            fullOrderId: currentFullOrderId, 
+            returnItems: currentReturnItems, 
+            status: status 
+          },
+          success: function(response) {
+            if (response.success) {
+              $('#returnDetailsModal').modal('hide');
+              location.reload();
+            } else {
+              alert(response.message);
+            }
+          },
+          error: function(xhr) {
+        console.error(xhr);
+        alert(xhr.responseJSON?.message || 'Failed to update return status');
+      }
+        });
+      });
+    })
+  </script>
 
 <script src="/assets/js/vendors/jquery-3.6.0.min.js"></script>
 <script src="/assets/js/vendors/bootstrap.bundle.min.js"></script>

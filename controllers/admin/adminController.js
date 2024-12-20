@@ -115,16 +115,34 @@ const loadOrdersList = async (req, res) => {
 
     const formattedOrders = await Promise.all(
       orders.map(async (order) => {
+
+
         const customerName = await getCustomerName(order.userId);
+
+        const hasReturnRequest = order.items.some(item => 
+          item.returnStatus && 
+          ['Return Requested', 'Return Accepted'].includes(item.returnStatus)
+        );
         return {
+          _id: order._id,
           orderId: order.orderId,
           orderDate: new Date(order.createdAt).toLocaleDateString('en-GB'),
           customerName: customerName || "Unknown Customer",
           totalPrice: order.totalPrice.toFixed(2),
-          itemsCount: order.items.length,
           paymentMethod: order.paymentMethod,
           orderStatus: order.orderStatus,
-          paymentStatus: order.paymentStatus
+          paymentStatus: order.paymentStatus,
+          hasReturnRequest: hasReturnRequest,
+          returnItems: order.items.filter(item =>
+            item.returnStatus && 
+            ['Return Requested', 'Return Accepted'].includes(item.returnStatus)
+          ).map(item => ({
+            ...item,
+            // Add a display status for more user-friendly representation
+            returnDisplayStatus: item.returnStatus === 'Return Accepted' ? 'Accepted' : 
+                                  item.returnStatus === 'Return Rejected' ? 'Rejected' : 
+                                  'Requested'
+          }))
         };
       })
     );
@@ -160,6 +178,75 @@ async function getCustomerName(userId) {
     return null;
   }
 };
+
+
+//return status update
+const updateReturnStatus = async (req, res) => {
+  try {
+    const { fullOrderId, returnItems, status } = req.body;
+
+    if (!['Accepted', 'Rejected'].includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid return status'
+      });
+    }
+
+    const order = await Order.findById(fullOrderId);
+
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: 'Order not found'
+      });
+    }
+
+    const updatedItems = order.items.map(item => {
+      const returnItem = returnItems.find(
+        r => r.productId.toString() === item.productId.toString()
+      );
+      
+      if (returnItem) {
+        const newReturnStatus= status === 'Accepted' ? 'Return Accepted' : 'Return Rejected';
+          
+      item.returnStatus = newReturnStatus;
+      item.isApproved = status === 'Accepted';
+    }
+      return item;
+    });
+
+    order.items = updatedItems;
+
+    const processingReturns = order.items.filter(item => item.returnReason);
+    // Update overall order status
+    const allItemsProcessed = processingReturns.every(
+      item =>  ['Return Accepted', 'Return Rejected'].includes(item.returnStatus)
+    );
+
+    if (allItemsProcessed) {
+      const hasAcceptedReturns = order.items.some(
+        item => item.returnStatus === 'Return Accepted'
+      );
+      order.orderStatus = hasAcceptedReturns ? 'Returned' : 'Delivered';
+    }
+    await order.save();
+    
+    res.status(200).json({
+      success: true,
+      message: 'Return status updated successfully',
+      updatedItems: order.items.filter(item => item.returnReason)
+    });
+
+  } catch (error) {
+    console.error('Detailed Error in updateReturnStatus:', error);
+    res.status(500).json({
+      success: false,
+      message: 'An error occurred while updating return status',
+      errorDetails: error.message
+    });
+  }
+};
+
 
 
 //orderdetails page 
@@ -316,6 +403,7 @@ module.exports={
     loadDashboard,
     pageerror,
     loadOrdersList,
+    updateReturnStatus,
     adminOrderDetails,
     updateOrderStatus
 }

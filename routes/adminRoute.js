@@ -49,5 +49,7 @@ admin_route.post("/editProduct/:id",adminAuth,multer.array("images",3),productCo
 admin_route.get('/orderList',adminAuth,adminController.loadOrdersList);
 admin_route.get('/orderDetails/:orderId',adminAuth, adminController.adminOrderDetails);
 admin_route.post('/updateOrderStatus',adminAuth, adminController.updateOrderStatus);
+admin_route.post('/updateReturnStatus', adminController.updateReturnStatus);
+
 
 module.exports=admin_route;

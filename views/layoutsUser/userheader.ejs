@@ -57,12 +57,14 @@
           }
         .dropdown-content a:hover {
           background-color: #ddd;
-         }
+          }
         .dropdown:hover .dropdown-content {
           display: block;
-         }
-         
-     </style>
+          }
+        .header-right .cart-dropdown {
+          margin-right: 30px; 
+          }
+        </style>
 </head>
 
 <body>
@@ -75,10 +77,6 @@
                             <li>
                                 <a href="#">Links</a>
                                 <ul>
-
-                                    <li>
-                                        <a href="/wishlist"><i class="fa fa-heart" style="color: rgb(254, 101, 101);"></i> Wishlist</a>
-                                      </li>
                                     <li><a href="">About Us</a></li>
                                     <li><a href="">Contact Us</a></li>
                                     <% if (userData) { %>
@@ -117,36 +115,18 @@
                                 <li>
                                     <a href="/shop" class="sf-with-ul">Shop</a>
                                 </li>
-                                <!-- <li>
-                                    <a href="/product" class="sf-with-ul">Product</a>
-                                </li> -->
-                                <!-- <li>
-                                    <a href="#" class="sf-with-ul">Pages</a>
-                                </li> -->
-                                <!-- <li>
-                                    <a href="blog.html" class="sf-with-ul">Blog</a>
-                                </li> -->
-                                <!-- <li>
-                                    <a href="elements-list.html" class="sf-with-ul">Elements</a>
-                                </li> -->
                             </ul><!-- End .menu -->
                         </nav><!-- End .main-nav -->
                     </div><!-- End .header-left -->
 
                     <div class="header-right">
-                        <div class="header-search">
-                            <a href="#" class="search-toggle" role="button" title="Search"><i class="icon-search"></i></a>
-                            <form action="#" method="get">
-                                <div class="header-search-wrapper" >
-                                    <label for="q" class="sr-only">Search</label>
-                                    <input type="search" class="form-control" name="q" id="q" placeholder="Search in..." required>
-                                </div><!-- End .header-search-wrapper -->
-                            </form>
-                        </div><!-- End .header-search -->
                         <div class="dropdown cart-dropdown ">
                             <a href="/cart" class="dropdown-toggle mt-4">
                                 <i class="icon-shopping-cart"></i>
                             </a>
+                        </div>
+                        <div>
+                            <a href="/wishlist"><i class="fa fa-heart" style="color: rgb(248, 23, 23);"></i> Wishlist</a>
                         </div>
                     </div><!-- End .header-right -->
                 </div><!-- End .container -->

@@ -265,7 +265,12 @@ const getOrderDetails = async (req, res) => {
                 quantity: item.quantity,
                 price: item.price.toFixed(2),
                 finalPrice: item.finalPrice.toFixed(2),
-                itemStatus: item.itemStatus
+                itemStatus: item.itemStatus,
+                returnStatus: item.returnStatus || 'Not Requested',
+                returnReason: item.returnReason || '',
+                returnRequestDate: item.returnRequestDate ? 
+                    new Date(item.returnRequestDate).toLocaleDateString() : null,
+                isApproved: item.isApproved 
             }))
         };
 
@@ -378,50 +383,24 @@ const returnOrderItem = async (req, res) => {
             });
         }
 
-        // Update item status to 'Returned'
-        itemToReturn.itemStatus = 'Returned';
         itemToReturn.returnReason = reason;
-        itemToReturn.returnDate = new Date();
+        itemToReturn.returnStatus = 'Return Requested';
+        itemToReturn.returnRequestDate = new Date();
+        itemToReturn.itemStatus = 'Return Request';
 
-        // Calculate updated total price (excluding returned items)
-        const updatedTotalPrice = order.items.reduce((total, item) => {
-            return item.itemStatus !== 'Returned' ? total + item.finalPrice : total;
-        }, 0);
-
-        // Update order total price
-        order.totalPrice = updatedTotalPrice;
-
-        // Save the updated order
         await order.save();
-
-        // Optional: Create a return record in a separate collection if needed
-        const returnRecord = new Return({
-            orderId: order._id,
-            productId: itemToReturn.productId,
-            returnReason: reason,
-            returnDate: new Date(),
-            status: 'Pending'
-        });
-        await returnRecord.save();
-
-        // Optional: Update product inventory
-        const product = await Product.findById(itemToReturn.productId);
-        if (product) {
-            product.stock += itemToReturn.quantity;
-            await product.save();
-        }
 
         res.json({ 
             success: true, 
-            updatedTotalPrice: updatedTotalPrice,
-            message: 'Item returned successfully' 
+            message: 'Return request submitted successfully',
+            returnStatus: 'Return Requested'
         });
 
     } catch (error) {
         console.error('Error in returnOrderItem:', error);
         res.status(500).json({ 
             success: false, 
-            message: 'An error occurred while processing the return' 
+            message: 'An error occurred while processing the return request' 
         });
     }
 };

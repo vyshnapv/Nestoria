@@ -394,6 +394,7 @@ const changePassword = async (req,res) =>{
         }
 
         const selectedCategory = req.query.Category;
+        const searchQuery = req.query.q ? req.query.q.trim() : '';
 
     const listedCategories = await Category.aggregate([
         { $match: { isListed: true } },
@@ -429,6 +430,13 @@ const changePassword = async (req,res) =>{
       } else {
         filter.category = { $in: categoryIds }; 
       }
+
+      if (searchQuery) {
+        filter.$or = [
+            { productName: { $regex: searchQuery, $options: 'i' } },
+            { description: { $regex: searchQuery, $options: 'i' } }
+        ];
+    }
   
       const page = parseInt(req.query.page) || 1; 
       const limit = 9; 
@@ -479,7 +487,8 @@ const changePassword = async (req,res) =>{
           currentPage: page,
           totalPages,
           priceSort,
-          nameSort
+          nameSort,
+          searchQuery
       });
   } catch (error) {
       console.error("Error in shop", error);
@@ -501,8 +510,18 @@ const productDetails=async(req,res)=>{
         return res.redirect("/shop");
       }
 
+    let isWishlisted = false;
+    if (userData) {
+        const wishlist = await Wishlist.findOne({ userId: userData._id });
+        if (wishlist) {
+            isWishlisted = wishlist.items.some(item => 
+                item.productId.toString() === productId
+            );
+        }
+    }
+
     const categories=await Category.find({isListed:true});
-    res.render("product",{product,userData,categories})
+    res.render("product",{product,userData,categories,isWishlisted})
     
   } catch (error) {
     console.error("Error in productdetails",error);
