@@ -9,10 +9,11 @@ const adminController = require('../controllers/admin/adminController');
 const customerController = require('../controllers/admin/customerController');
 const categoryController = require('../controllers/admin/categoryController');
 const productController = require('../controllers/admin/productController');
+const offerController = require('../controllers/admin/offerController');
 
 
- const { adminAuth ,adminAuth1} = require('../middleware/userAuth');
- const multer=require("../middleware/multer");
+const { adminAuth ,adminAuth1} = require('../middleware/userAuth');
+const multer=require("../middleware/multer");
  
 
 
@@ -50,6 +51,11 @@ admin_route.get('/orderList',adminAuth,adminController.loadOrdersList);
 admin_route.get('/orderDetails/:orderId',adminAuth, adminController.adminOrderDetails);
 admin_route.post('/updateOrderStatus',adminAuth, adminController.updateOrderStatus);
 admin_route.post('/updateReturnStatus', adminController.updateReturnStatus);
+admin_route.post('/updateAllProductsStatus', adminAuth, adminController.updateAllProductsStatus);
+admin_route.post('/cancelAllProducts', adminAuth, adminController.cancelAllProducts);
 
-
+//offer managemet
+admin_route.get('/offerManagement',adminAuth,offerController.offerManagement);
+admin_route.get('/productOffer',adminAuth,offerController.loadProductOffer);
+admin_route.get('/categoryOffer',adminAuth,offerController.loadCategoryOffer);
 module.exports=admin_route;

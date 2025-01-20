@@ -1,0 +1,194 @@
+<%- include('../layoutsAdmin/adminheader') %>
+<%- include('../layoutsAdmin/header') %>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@10/dist/sweetalert2.min.css">
+
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    background-color: #f4f7fa;
+  }
+
+  .table {
+    border-collapse: collapse;
+    width: 100%;
+    margin-top: 20px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+  }
+
+  .table th, .table td {
+    border: 1px solid #dee2e6;
+    padding: 12px;
+    text-align: left;
+    transition: background-color 0.3s;
+  }
+
+  .table th {
+    background-color: #364453;
+    color: white;
+    font-weight: bold;
+  }
+
+  .table tr {
+    background-color: #ffffff;
+  }
+
+  .table tr:nth-child(even) {
+    background-color: #f2f2f2;
+  }
+
+  .table tr:hover {
+    background-color: #e9ecef;
+  }
+
+  .btn {
+    transition: background-color 0.3s, color 0.3s;
+  }
+
+  .btn-info {
+    background-color: #17a2b8;
+    border: none;
+    color: white;
+  }
+
+  .btn-info:hover {
+    background-color: #138496;
+  }
+
+  .pagination-container {
+    margin-top: 20px;
+    text-align: center;
+  }
+
+  .pagination-container a, .pagination-container .current-page {
+    padding: 10px 15px;
+    margin: 0 5px;
+    border-radius: 5px;
+    text-decoration: none;
+  }
+
+  .pagination-container a {
+    background-color: #007bff;
+    color: white;
+  }
+
+  .pagination-container a:hover {
+    background-color: #0056b3;
+  }
+
+  .pagination-container .current-page {
+    background-color: #0056b3;
+    color: white;
+  }
+
+  .header-btn {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+
+  .header-btn .search-bar {
+    width: 500px;
+  }
+
+  .header-btn .btn-group {
+    margin-left: 20px;
+  }
+
+  .dropdown-menu {
+    z-index: 1050; 
+  }
+  .btn-sm{
+    padding-right: 20px;
+  }
+</style>
+
+<title>Offer Management</title>
+</head>
+<body>
+  <div class="container mt-4">
+    <div class="header-btn">
+      <form action="" method="get" class="d-inline">
+        <div class="input-group input-group-sm search-bar">
+          <input type="text" class="form-control border-1 rounded-pill" placeholder="Search offers" name="search">
+          <button class="btn btn-primary border-1 rounded-pill" type="submit">Search</button>
+        </div>
+      </form>
+      <div>
+        <div class="btn-group">
+          <button class="btn btn-primary btn-sm rounded dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+            Create New Offer
+          </button>
+          <ul class="dropdown-menu">
+            <li><a class="dropdown-item" href="/admin/productOffer">Product Offer</a></li>
+            <li><a class="dropdown-item" href="/admin/categoryOffer">Category Offer</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <h2 class="text-center">Offer Management</h2>
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Offer Name</th>
+          <th>Offer Type</th>
+          <th>Discount (%)</th>
+          <th>Expiry Date</th>
+          <th>Status</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Summer Sale</td>
+          <td>Product Offer</td>
+          <td>20%</td>
+          <td>2025-02-15</td>
+          <td>
+            <span class="badge bg-success">Active</span>
+          </td>
+          <td>
+            <div class="btn-group">
+              <button class="btn btn-info btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                Action
+              </button>
+              <ul class="dropdown-menu">
+                <li><a class="dropdown-item" href="#">Edit</a></li>
+                <li><a class="dropdown-item" href="#">Deactivate</a></li>
+                <li><a class="dropdown-item" href="#">Delete</a></li>
+              </ul>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td>Winter Offer</td>
+          <td>Category Offer</td>
+          <td>15%</td>
+          <td>2025-03-10</td>
+          <td>
+            <span class="badge bg-danger">Inactive</span>
+          </td>
+          <td>
+            <div class="btn-group">
+              <button class="btn btn-info btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                Action
+              </button>
+              <ul class="dropdown-menu">
+                <li><a class="dropdown-item" href="#">Edit</a></li>
+                <li><a class="dropdown-item" href="#">Deactivate</a></li>
+                <li><a class="dropdown-item" href="#">Delete</a></li>
+              </ul>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+</body>

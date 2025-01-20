@@ -58,8 +58,6 @@ const addToCart = async (req, res) => {
             return res.status(200).json({ success: true, message: "Product already added to cart!", cartCount: cart.items.length });
         } else {
             cart.items.push({ product: productId, quantity: 1 });
-            product.quantity -= 1; 
-            await product.save(); 
         }
 
         await cart.save();
@@ -124,13 +122,6 @@ const removeCartItem = async (req, res) => {
         const cart = await Cart.findOne({ userId });
         if (!cart) {
             return res.status(404).json({ success: false, message: "Cart not found." });
-        }
-
-        const item = cart.items.find(item => item.product.toString() === productId);
-        if (item) {
-            const product = await Product.findById(productId);
-            product.quantity += item.quantity;
-            await product.save();
         }
 
         cart.items = cart.items.filter(item => item.product.toString() !== productId);

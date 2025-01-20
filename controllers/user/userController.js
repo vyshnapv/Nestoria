@@ -432,11 +432,17 @@ const changePassword = async (req,res) =>{
       }
 
       if (searchQuery) {
+        // Create case-insensitive word boundary search
+        const searchTerms = searchQuery.trim().split(/\s+/);
+        
         filter.$or = [
-            { productName: { $regex: searchQuery, $options: 'i' } },
-            { description: { $regex: searchQuery, $options: 'i' } }
+            { 
+                productName: { 
+                    $regex: new RegExp(searchTerms.map(term => `\\b${term}`).join('|'), 'i') 
+                }
+            }
         ];
-    }
+      }
   
       const page = parseInt(req.query.page) || 1; 
       const limit = 9; 

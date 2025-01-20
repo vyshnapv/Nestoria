@@ -1,0 +1,299 @@
+<%- include('../layoutsAdmin/adminheader') %>
+<%- include('../layoutsAdmin/header') %>
+    <style>
+        :root {
+            --primary-color: rgb(66, 168, 66);
+            --primary-hover: #375336;
+            --secondary-color: #64748b;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f8fafc;
+            color: #1e293b;
+            font-size: 14px;
+        }
+
+        .container {
+            background: white;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            position: relative;
+            max-height: 100vh;
+            padding: 10px;
+        }
+
+        h1 {
+            color: #1e293b;
+            margin: 0 0 15px 0;
+            font-size: 33px; 
+            font-weight: 600;
+            padding-top: 5px;  
+        }
+
+        .back-btn {
+            position: absolute;
+            top: 15px;  
+            right:15px;  
+            padding: 6px 12px; 
+            background-color: rgb(92, 117, 158);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s;
+            font-size: 14px;
+        }
+
+        .back-btn:hover {
+            background-color: #776fbb;
+            color: white;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;           /* Increased gap */
+            padding: 0 15px; 
+        }
+
+        .form-row {
+            padding: 8px;
+            background: #f8fafc;
+            border-radius: 6px;
+        }
+        .form-row:nth-child(1) input,
+        .form-row:nth-child(2) input {
+           max-width: 500px;
+           width: 100%;
+        }
+
+        label {
+            font-weight: 500;
+            color: #475569;
+            flex: 1;
+            font-size: 14px;
+        }
+
+        input[type="text"],
+        input[type="number"],
+        input[type="date"] {
+            flex: 2;
+            padding: 7px 8px;
+            border: 1px solid #e2e8f0;
+            border-radius: 4px;
+            width: 100%;
+            font-size: 14px;
+        }
+
+        input[type="text"]:focus,
+        input[type="number"]:focus,
+        input[type="date"]:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 1px rgba(79, 70, 229, 0.1);
+        }
+
+        .two-columns {
+            display: flex;
+            justify-content: space-between;
+            gap: 15px; 
+            margin: 10px 0;
+        }
+
+        .column {
+            background: #f8fafc;
+            padding: 15px;
+            border-radius: 8px;
+            flex: 1;
+        }
+
+        .search-container {
+            position: relative;
+            margin-bottom: 6px;
+        }
+
+        .search-container .clear-btn {
+            position: absolute;
+            right: 4px;
+            top: 50%;
+            transform: translateY(-50%);
+            padding: 2px 6px;
+            font-size: 15px;
+            background: #e2e8f0;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+
+        .product-list {
+            max-height: 250px;  /* Increased height */
+            overflow-y: auto;
+            border: 1px solid #e2e8f0;
+            padding: 12px;      /* Increased padding */
+            border-radius: 4px;
+            background: white;
+            margin-top: 10px;
+        }
+
+        .product-list label {
+            display: flex;
+            align-items: center;
+            padding: 3px;
+            margin: 1px 0;
+            border-radius: 3px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 14px;
+        }
+
+        .product-list label:hover {
+            background: #f1f5f9;
+        }
+
+        .product-list input[type="checkbox"] {
+            margin-right: 6px;
+            width: 12px;
+            height: 12px;
+            border-radius: 2px;
+            border: 1px solid #94a3b8;
+        }
+
+        .right-column-content {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            height: 100%;
+        }
+
+        .date-container {
+            margin-bottom: 10px;
+        }
+
+        .selected-products {
+            flex-grow: 1;
+            background: white;
+            padding: 8px;      /* Increased padding */
+            border: 1px solid #e2e8f0;
+            border-radius: 4px;
+            height: calc(100% - 60px);  /* Adjusted height */
+            overflow-y: auto;
+            margin-top: 8px; 
+        }
+
+        .selected-products div {
+            margin-top: 6px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+        }
+
+        .tag {
+            background: var(--primary-color);
+            color: white;
+            padding: 3px 6px;
+            border-radius: 3px;
+            font-size: 13px;
+        }
+
+        .form-actions {
+            margin-top: -20px; 
+            padding-bottom: 10px; 
+        }
+        .create-btn {
+            padding: 8px 30px; 
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 15px;
+            
+        }
+
+        .create-btn:hover {
+            background-color: var(--primary-hover);
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                margin: 20px;
+                padding: 20px;
+            }
+
+            .two-columns {
+                flex-direction: column;
+                gap: 8px;
+            }
+
+            .form-row {
+                flex-direction: column;
+                align-items: stretch;
+                padding: 6px;
+            }
+            form {
+                padding: 0;
+            }
+        }
+    </style>
+
+    <div class="container">
+        <a href="/admin/offerManagement" class="back-btn">← Back to offerPage</a>
+        <h1>Create Product Offer</h1>
+        <form>
+            <div class="form-row">
+                <label for="offerName">Offer Name:</label>
+                <input type="text" id="offerName" placeholder="Enter offer name" required>
+            </div>
+            
+            <div class="form-row">
+                <label for="discountPercentage">Discount Percentage:</label>
+                <input type="number" id="discountPercentage" min="0" max="100" placeholder="Enter percentage" required>
+            </div>
+
+            <div class="form-row two-columns">
+                <div class="column">
+                    <label for="products">Select Products</label>
+                    <div class="search-container">
+                        <input type="text" id="searchProducts" placeholder="Search products...">
+                        <button type="button" class="clear-btn">clear</button>
+                    </div>
+                    <div class="product-list">
+                        <label><input type="checkbox"> Bourge Men's Thurl-01 Running Shoes</label>
+                        <label><input type="checkbox"> BRUTON Trendy Sports Shoes</label>
+                        <label><input type="checkbox"> ASIAN Men's NEXON-13 Casual Shoes</label>
+                        <label><input type="checkbox"> ASIAN Men's Thar-01 Sports Running Shoes</label>
+                        <label><input type="checkbox"> OFF LIMITS Hachiko | Sports Shoes</label>
+                        <label><input type="checkbox"> Campus Men's Camp Karl Running Shoe</label>
+                        <label><input type="checkbox"> Bata 8216 Boss-Grip Black Derby Shoes</label>
+                        <label><input type="checkbox"> Centino Men's 1421 Formal Shoes</label>
+                        <label><input type="checkbox"> ASIAN Rider-01 Sports Shoes for Men</label>
+                    </div>
+                </div>
+
+                <div class="column">
+                    <div class="right-column-content">
+                        <div class="date-container">
+                            <label for="expiryDate">Expiry Date</label>
+                            <input type="date" id="expiryDate" required>
+                        </div>
+                        
+                        <div class="selected-products">
+                            <label>Selected Products</label>
+                            <div>
+                                <span class="tag">Bourge Men's Thurl-01 Running Shoes</span>
+                                <span class="tag">ASIAN Men's NEXON-13 Casual Shoes</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="create-btn">Create Product Offer</button>
+            </div>
+        </form>
+    </div>

@@ -20,9 +20,6 @@ app.use('/uploads', express.static(path.join(__dirname, "public", 'uploads')));
 
 app.use(express.json());
 
-// app.use('/admin/dashboard',nocache())
-// app.use('/',nocache())
-
 app.use(nocache());
 
 app.use(express.urlencoded({ extended: true }));

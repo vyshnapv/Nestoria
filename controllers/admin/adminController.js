@@ -362,16 +362,6 @@ const updateOrderStatus = async (req, res) => {
       order.items[itemIndex].itemStatus = status;
 
       const allItemStatuses = order.items.map(item => item.itemStatus);
-      
-      if (allItemStatuses.every(itemStatus => itemStatus === 'Delivered')) {
-          order.orderStatus = 'Delivered';
-      } else if (allItemStatuses.every(itemStatus => itemStatus === 'Cancelled')) {
-          order.orderStatus = 'Cancelled';
-      } else if (allItemStatuses.every(itemStatus => itemStatus === 'Shipped')) {
-          order.orderStatus = 'Shipped';
-      } else if (allItemStatuses.some(itemStatus => itemStatus === 'Processing')) {
-          order.orderStatus = 'Processing';
-      }
 
       if (status === 'Cancelled' && 
           (order.paymentMethod !== 'COD' && order.paymentStatus === 'Paid')) {
@@ -395,6 +385,106 @@ const updateOrderStatus = async (req, res) => {
 };
 
 
+const updateAllProductsStatus = async (req, res) => {
+  try {
+    const { orderId, status } = req.body;
+
+    if (!['Processing', 'Shipped', 'Delivered'].includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid status'
+      });
+    }
+
+    const order = await Order.findOne({ orderId });
+
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: 'Order not found'
+      });
+    }
+
+    // Update status for all non-cancelled items
+    order.items = order.items.map(item => {
+      if (item.itemStatus !== 'Cancelled') {
+        item.itemStatus = status;
+      }
+      return item;
+    });
+
+    // Update overall order status
+    const nonCancelledItems = order.items.filter(item => item.itemStatus !== 'Cancelled');
+    if (nonCancelledItems.length > 0) {
+      order.orderStatus = status;
+    }
+
+    await order.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Order status updated successfully'
+    });
+
+  } catch (error) {
+    console.error('Error in updateAllProductsStatus:', error);
+    res.status(500).json({
+      success: false,
+      message: 'An error occurred while updating the order status'
+    });
+  }
+};
+
+//cancel all order
+const cancelAllProducts = async (req, res) => {
+  try {
+    const { orderId } = req.body;
+    const order = await Order.findOne({ orderId });
+
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: 'Order not found'
+      });
+    }
+
+    const productUpdates = order.items.map(async (item) => {
+      if (item.itemStatus !== 'Cancelled') {
+        const product = await Product.findById(item.productId);
+        if (product) {
+          product.quantity += item.quantity;
+          await product.save();
+        }
+        item.itemStatus = 'Cancelled';
+      }
+      return item;
+    });
+
+    await Promise.all(productUpdates);
+    order.orderStatus = 'Cancelled';
+
+    // Update payment status if necessary
+    if (order.paymentMethod !== 'COD' && order.paymentStatus === 'Paid') {
+      order.paymentStatus = 'Refund Pending';
+    }
+
+    await order.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'All products cancelled successfully'
+    });
+
+  } catch (error) {
+    console.error('Error in cancelAllProducts:', error);
+    res.status(500).json({
+      success: false,
+      message: 'An error occurred while cancelling the products'
+    });
+  }
+};
+
+
 
 module.exports={
     loadLogin,
@@ -405,5 +495,7 @@ module.exports={
     loadOrdersList,
     updateReturnStatus,
     adminOrderDetails,
-    updateOrderStatus
+    updateOrderStatus,
+    updateAllProductsStatus,
+    cancelAllProducts
 }

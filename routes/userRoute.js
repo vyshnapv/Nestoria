@@ -83,7 +83,6 @@ user_route.post('/orderDetails/:orderId/return-item', userAuth, orderController.
 //wishlist
 user_route.get("/wishlist",wishlistController.wishlist);
 user_route.post('/addWishlist', wishlistController.addToWishlist);
-user_route.post('/addWishlist', wishlistController.addToWishlist);
 user_route.delete('/removeFromWishlist',wishlistController.removeFromWishlist);
 
 

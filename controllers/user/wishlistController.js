@@ -25,7 +25,7 @@ const addToWishlist = async (req, res) => {
   try {
     const userId = req.session.user;
     if (!userId) {
-        return res.status(401).json({ success: false,message: "Please login to add items to your wishlist"});
+        return res.status(401).json({ success: false,message: "Please login to manage your wishlist"});
     }
     const { productId } = req.body;
     
@@ -41,7 +41,14 @@ const addToWishlist = async (req, res) => {
         userId,
         items: [{ productId }],
       });
-    } else {
+      await wishlist.save();
+      return res.status(200).json({ 
+        success: true,
+        message: "Product added to wishlist",
+        wishlistCount: 1,
+        isWishlisted: true 
+      });
+    }
       const existingItemIndex = wishlist.items.findIndex(
         (item) => item.productId.toString() === productId
       );
@@ -50,17 +57,22 @@ const addToWishlist = async (req, res) => {
         wishlist.items.push({ productId });
         await wishlist.save();
         
-        res.status(200).json({ success: true,message: "Product added to wishlist",wishlistCount: wishlist.items.length,isWishlisted: true });
+        return res.status(200).json({ success: true,message: "Product added to wishlist",wishlistCount: wishlist.items.length,isWishlisted: true });
       } else {
-        res.status(400).json({ success: false,message: "Product is already in your wishlist"  });
-      }
+        wishlist.items.splice(existingItemIndex, 1);
+      await wishlist.save();
+      return res.status(200).json({ 
+        success: true,
+        message: "Product removed from wishlist",
+        wishlistCount: wishlist.items.length,
+        isWishlisted: false 
+      });
     }
   } catch (error) {
     console.error("Error adding to wishlist:", error);
     res.status(500).json({success: false,message: "Error adding product to wishlist",});
   }
 };
-
 
 //remove from wishlist
 const removeFromWishlist = async (req, res) => {

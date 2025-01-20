@@ -1,0 +1,331 @@
+//product offer offerPage
+<div class="container">
+    <a href="/admin/offerManagement" class="back-btn">← Back to offerPage</a>
+    <h1>Create Product Offer</h1>
+    <form>
+        <div class="form-row">
+            <label for="offerName">Offer Name:</label>
+            <input type="text" id="offerName" placeholder="Enter offer name" required>
+        </div>
+        
+        <div class="form-row">
+            <label for="discountPercentage">Discount Percentage:</label>
+            <input type="number" id="discountPercentage" min="0" max="100" placeholder="Enter percentage" required>
+        </div>
+
+        <div class="form-row two-columns">
+            <div class="column">
+                <label for="products">Select Products</label>
+                <div class="search-container">
+                    <input type="text" id="searchProducts" placeholder="Search products...">
+                    <button type="button" class="clear-btn">clear</button>
+                </div>
+                <div class="product-list">
+                    <label><input type="checkbox"> Bourge Men's Thurl-01 Running Shoes</label>
+                    <label><input type="checkbox"> BRUTON Trendy Sports Shoes</label>
+                    <label><input type="checkbox"> ASIAN Men's NEXON-13 Casual Shoes</label>
+                    <label><input type="checkbox"> ASIAN Men's Thar-01 Sports Running Shoes</label>
+                    <label><input type="checkbox"> OFF LIMITS Hachiko | Sports Shoes</label>
+                    <label><input type="checkbox"> Campus Men's Camp Karl Running Shoe</label>
+                    <label><input type="checkbox"> Bata 8216 Boss-Grip Black Derby Shoes</label>
+                    <label><input type="checkbox"> Centino Men's 1421 Formal Shoes</label>
+                    <label><input type="checkbox"> ASIAN Rider-01 Sports Shoes for Men</label>
+                </div>
+            </div>
+
+            <div class="column">
+                <div class="right-column-content">
+                    <div class="date-container">
+                        <label for="expiryDate">Expiry Date</label>
+                        <input type="date" id="expiryDate" required>
+                    </div>
+                    
+                    <div class="selected-products">
+                        <label>Selected Products</label>
+                        <div>
+                            <span class="tag">Bourge Men's Thurl-01 Running Shoes</span>
+                            <span class="tag">ASIAN Men's NEXON-13 Casual Shoes</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="create-btn">Create Product Offer</button>
+        </div>
+    </form>
+</div>
+
+
+//this is my offer controllerPage
+const Product = require("../../models/productModel");
+const Offer = require("../../models/offerModel");
+const Category = require("../../models/categoryModel");
+
+//offer management page
+const offerManagement=async(req,res)=>{
+    try {
+        res.render("offerManagement")
+    } catch (error) {
+        res.redirect("/pageerror") 
+    }
+}
+
+
+//load product offer page 
+const loadProductOffer=async(req,res)=>{
+    try {
+        res.render("productOffer")
+    } catch (error) {
+        res.redirect("/pageerror")
+    }
+}
+
+//load category offer page
+const loadCategoryOffer= async(req,res)=>{
+    try {
+        res.render("categoryOffer")
+    } catch (error) {
+        res.redirect("/pageerror")
+    }
+}
+
+
+module.exports={
+    offerManagement,
+    loadProductOffer,
+    loadCategoryOffer
+}
+
+//this is my offermodel  
+const mongoose = require("mongoose");
+const { Schema } = mongoose;
+
+const offerSchema = new Schema(
+    {
+        productName: {
+            type: String,
+            required: true,
+        },
+        categoryName: {
+            type: String,
+            required: true,
+        },
+        offerType: {
+            type: String,
+            enum: ["Product", "Category"],
+            required: true,
+        },
+        offerName: {
+            type: String,
+            required: true,
+        },
+        discount: {
+            type: Number,
+            required: true,
+        },
+        expireDate: {
+            type: Date,
+            required: true,
+        },
+        productId: {
+            type: Schema.Types.ObjectId,
+            ref: "Product",
+            required: function () {
+                return this.offerType === "Product";
+            },
+        },
+        categoryId: {
+            type: Schema.Types.ObjectId,
+            ref: "Category",
+            required: function () {
+                return this.offerType === "Category";
+            },
+        },
+        referralCode: {
+            type: String,
+            required: false,
+        },
+        status: {
+            type: String,
+            enum: ["Active", "Expired", "Pending"],
+            default: "Pending",
+        },
+        isBlocked: {
+            type: Boolean,
+            default: false,
+        },
+    },
+    { timestamps: true }
+);
+
+const Offer = mongoose.model("Offer",offerSchema);
+module.exports = Offer;
+
+
+//this is my product page 
+</head>
+<div class="content-header">
+  <div>
+    <h2 class="content-title card-title">Products List</h2>
+  </div>
+</div>
+<header class="card-header text-center mb-20">
+   <form action="" method="get" class="d-inline">
+       <div class="input-group input-group-sm border border-1 border-grey rounded-pill" style="width: 500px; margin: 0 auto;">
+           <input type="text" class="form-control border-0 rounded-pill" placeholder="Search products or brands" name="search">
+           <button class="btn border-0" type="submit">Search</button>
+       </div>
+   </form>
+   <div class="mt-2">
+       <a href="/admin/addproducts" class="btn btn-primary btn-sm rounded">Add new products</a>
+   </div>
+</header>
+
+<div class="right mt-5">
+<table class="table table-striped">
+   <thead>
+       <tr>
+           <th scope="col"><b>Product Name</b></th>
+           <th scope="col"><b>Image</b></th>
+           <th scope="col"><b>Category</b></th>
+           <th scope="col"><b>Sale Price</b></th>
+           <th scope="col"><b>Quantity</b></th>
+           <th scope="col"><b>status</b></th>
+           <th scope="col"><b>Action</b></th>
+           <th scope="col"><b>Edit</b></th>
+       </tr>
+   </thead>
+   <tbody>
+       <% for (let i = data.length - 1; i >= 0; i--) { %>
+       <tr>
+           <td><%= data[i].productName %></td>
+           <td>
+               <img style="width: 50px; height: 60px;" src="/uploads/cropped/<%= data[i].productImage[0] %>" alt="">
+           </td>
+           <td><%= data[i].category.name %></td>
+           <td><%= data[i].salePrice %></td>
+           <td><%= data[i].quantity %></td>
+           
+           <td class="text-start ">
+               <% if (data[i].isBlocked) { %>
+                 <span class="badge rounded-pill alert-danger" style="width: 60px">Inactive</span>
+               <% } else { %>
+                 <span class="badge rounded-pill alert-success" style="width: 60px">Active</span>
+               <% } %>
+             </td>
+
+           <td>
+               <% if (data[i].isBlocked === false) { %>
+                 <button class="btn btn-danger" style="width: 80px;" onclick="handleBlockProduct('<%= data[i]._id %>', 'block')">
+                   <span class="text-white" style="text-decoration: none;">Block</span>
+                 </button>
+               <% } else { %>
+                 <button class="btn btn-success" style="width: 80px;" onclick="handleBlockProduct('<%= data[i]._id %>', 'unblock')">
+                   <span class="text-white" style="text-decoration: none;">unBlock</span>
+                 </button>
+               <% } %>
+             </td>
+           <td>
+               <button class="btn btn-info" style="width: 80px;">
+                   <a href="/admin/editProduct?id=<%=data[i]._id%>" class="text-white" style="text-decoration: none;">Edit</a>
+               </button>
+           </td>
+       </tr>
+       <% } %>
+   </tbody>
+</table>
+
+
+</div>
+<div class="pagination-container mt-30 mb-50">
+<nav aria-label="Page navigation example">
+   <ul class="pagination justify-content-start">
+       <% if (currentPage > 1) { %>
+           <li class="page-item">
+               <a class="page-link" href="?page=<%= currentPage - 1 %>&search=<%= search %>">
+                   <i class="material-icons md-chevron_left"></i>
+               </a>
+           </li>
+       <% } %>
+
+       <% for (let i = 1; i <= totalPages; i++) { %>
+           <% if (i === currentPage) { %>
+               <li class="page-item active">
+                   <a class="page-link" href="#"><%= i %></a>
+               </li>
+           <% } else { %>
+               <li class="page-item">
+                   <a class="page-link" href="?page=<%= i %>&search=<%= search %>"><%= i %></a>
+               </li>
+           <% } %>
+       <% } %>
+
+       <% if (currentPage < totalPages) { %>
+           <li class="page-item">
+               <a class="page-link" href="?page=<%= currentPage + 1 %>&search=<%= search %>">
+                   <i class="material-icons md-chevron_right"></i>
+               </a>
+           </li>
+       <% } %>
+   </ul>
+</nav>
+</div>
+
+<script>
+function handleBlockProduct(productId, action) {
+   const actionText = action === 'block' ? 'Block' : 'Unblock';
+   const actionUrl = action === 'block' ? `/admin/blockProduct?id=${productId}` : `/admin/unblockProduct?id=${productId}`;
+
+   Swal.fire({
+       title: `Are you sure you want to ${actionText} this product?`,
+       icon: 'warning',
+       showCancelButton: true,
+       confirmButtonColor: '#3085d6',
+       cancelButtonColor: '#d33',
+       confirmButtonText: `Yes, ${actionText} it!`,
+       customClass: {
+       popup: 'swal-popup', 
+       title: 'swal-title',  
+       content: 'swal-content'
+       }
+   }).then((result) => {
+       if (result.isConfirmed) {
+           fetch(actionUrl, {
+               method: 'PATCH',
+               headers: {
+                   'Content-Type': 'application/json',
+               },
+               body: JSON.stringify({ id: productId }),
+           })
+               .then(response => {
+                   if (!response.ok) {
+                       return response.json().then(data => {
+                           throw new Error(data.message || 'Failed to list /Unlist the product');
+                       });
+                   }
+                   return response.json();
+               })
+               .then(data => {
+                   Swal.fire(
+                       'Success!',
+                       `Product has been ${actionText.toLowerCase()}ed.`,
+                       'success'
+                   ).then(() => {
+                       location.reload(); 
+                   });
+               })
+               .catch(error => {
+                   Swal.fire(
+                       'Error!',
+                       error.message,
+                       'error'
+                   );
+               });
+            }
+         });
+       }
+</script>
+
+

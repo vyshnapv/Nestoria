@@ -403,22 +403,28 @@ document.querySelectorAll('.wishlist-btn').forEach(button => {
                     });
                     return;
                 }
-                if (result.message === "Product is already in your wishlist") {
-                    Swal.fire({
-                        title: 'Already in Wishlist!',
-                        text: `${productName} is already in your wishlist`,
-                        icon: 'info',
-                        confirmButtonText: 'OK'
-                    });
-                    return;
-                }
-                
                 throw new Error(result.message || 'Something went wrong');
             }
 
             if (result.success) {
-                this.classList.toggle('active');
+                if (result.isWishlisted) {
+                    this.classList.add('active');
+                } else {
+                    this.classList.remove('active');
+                }
+                
+                Swal.fire({
+                    title: result.isWishlisted ? 'Added to Wishlist!' : 'Removed from Wishlist',
+                    text: result.message,
+                    icon: 'success',
+                    timer: 1500,
+                    showConfirmButton: false
+                });
 
+                const wishlistCountElement = document.querySelector('.wishlist-count');
+                if (wishlistCountElement && result.wishlistCount !== undefined) {
+                    wishlistCountElement.textContent = result.wishlistCount;
+                }
             }
         } catch (error) {
             console.error("Error adding product to wishlist:", error);
