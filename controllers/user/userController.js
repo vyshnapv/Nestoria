@@ -379,7 +379,6 @@ const changePassword = async (req,res) =>{
     }
 }
 
-
 //shop page 
  const shop = async (req, res) => {
     try {
@@ -432,7 +431,6 @@ const changePassword = async (req,res) =>{
       }
 
       if (searchQuery) {
-        // Create case-insensitive word boundary search
         const searchTerms = searchQuery.trim().split(/\s+/);
         
         filter.$or = [
@@ -463,8 +461,90 @@ const changePassword = async (req,res) =>{
 
         const sortStage = [
             { $match: filter },
+            {
+                $lookup: {
+                    from: "offers",
+                    localField: "_id",
+                    foreignField: "productId",
+                    pipeline: [
+                        {
+                            $match: {
+                                status: "Active",
+                                expireDate: { $gt: new Date() }
+                            }
+                        }
+                    ],
+                    as: "productOffers"
+                }
+            },
+            {
+                $lookup: {
+                    from: "offers",
+                    localField: "category",
+                    foreignField: "categoryId",
+                    pipeline: [
+                        {
+                            $match: {
+                                status: "Active",
+                                expireDate: { $gt: new Date() }
+                            }
+                        }
+                    ],
+                    as: "categoryOffers"
+                }
+            },
+            {
+                $addFields: {
+                    highestOffer: {
+                        $let: {
+                            vars: {
+                                allOffers: { $concatArrays: ["$productOffers", "$categoryOffers"] }
+                            },
+                            in: {
+                                $ifNull: [
+                                    {
+                                        $max: "$$allOffers.discount"
+                                    },
+                                    0
+                                ]
+                            }
+                        }
+                    },
+                    offerPrice: {
+                        $let: {
+                            vars: {
+                                maxDiscount: {
+                                    $ifNull: [
+                                        {
+                                            $max: {
+                                                $map: {
+                                                    input: { $concatArrays: ["$productOffers", "$categoryOffers"] },
+                                                    as: "offer",
+                                                    in: "$$offer.discount"
+                                                }
+                                            }
+                                        },
+                                        0
+                                    ]
+                                }
+                            },
+                            in: {
+                                $subtract: [
+                                    "$regularPrice",
+                                    {
+                                        $multiply: [
+                                            "$regularPrice",
+                                            { $divide: ["$$maxDiscount", 100] }
+                                        ]
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                }
+            }
         ];
-
+  
         if (nameSort === 'aToZ') {
             sortStage.push({ $addFields: { lowerName: { $toLower: "$productName" } } });
             sortStage.push({ $sort: { lowerName: 1 } });

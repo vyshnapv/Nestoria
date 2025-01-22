@@ -60,6 +60,8 @@ admin_route.get('/offerManagement',adminAuth,offerController.offerManagement);
 //product offer
 admin_route.get('/productOffer',adminAuth,offerController.loadProductOffer);
 admin_route.post('/createProductOffer', adminAuth, offerController.createProductOffer);
+admin_route.get('/editProductOffer/:id', adminAuth, offerController.loadEditProductOffer);
+admin_route.put('/updateProductOffer/:id', adminAuth, offerController.updateProductOffer);
 
 //category offer
 admin_route.get('/categoryOffer',adminAuth,offerController.loadCategoryOffer);

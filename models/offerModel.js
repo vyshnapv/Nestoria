@@ -3,18 +3,6 @@ const { Schema } = mongoose;
 
 const offerSchema = new Schema(
     {
-        productName: {
-            type: String,
-            required: function() {
-                return this.offerType === "Product";
-            }
-        },
-        categoryName: {
-            type: String,
-            required: function() {
-                return this.offerType === "Category";
-            }
-        },
         offerType: {
             type: String,
             enum: ["Product", "Category"],
@@ -32,20 +20,20 @@ const offerSchema = new Schema(
             type: Date,
             required: true,
         },
-        productId: {
+        productIds: [{
             type: Schema.Types.ObjectId,
             ref: "Product",
             required: function () {
                 return this.offerType === "Product";
             },
-        },
-        categoryId: {
+        }],
+        categoryIds: [{
             type: Schema.Types.ObjectId,
             ref: "Category",
             required: function () {
                 return this.offerType === "Category";
             },
-        },
+        }],
         referralCode: {
             type: String,
             required: false,
@@ -63,6 +51,5 @@ const offerSchema = new Schema(
     { timestamps: true }
 );
 
-const Offer = mongoose.model("Offer",offerSchema);
+const Offer = mongoose.model("Offer", offerSchema);
 module.exports = Offer;
-

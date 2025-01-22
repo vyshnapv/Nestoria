@@ -29,6 +29,48 @@
     color: red;
 }
 
+.product-price {
+    display: flex;
+    align-items: center;
+    gap: 10px; 
+    justify-content: center;
+    
+}
+
+.price-offer {
+    color: #ff0019; 
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    gap: 4px;  
+    margin: 0;
+}
+
+.arrow-down {
+    color: #ff0019;  
+    font-size: 14px; 
+}
+
+.product-price .product-price:nth-child(2) {
+    text-decoration: line-through;
+    color: #999; 
+    font-size: 0.9em;
+}
+
+.product-price .product-price:nth-child(3) {
+   
+    color: #c96;
+}
+
+.product-price .product-price {
+    display: inline-block; 
+    margin: 0;
+    padding: 0;
+}
+.product-price > .product-price {
+    flex: none;
+}
+
 </style>
 
 <main class="main">
@@ -117,17 +159,32 @@
                                             </figure><!-- End .product-media -->
                     
                                             <div class="product-body">
-                                                <div class="product-cat">
-                                                    <a href="#">Category</a>
-                                                </div><!-- End .product-cat -->
+                                                
                     
                                                 <h3 class="product-title">
                                                     <a href="/product/<%= product._id %>"><%= product.productName %></a>
                                                 </h3><!-- End .product-title -->
                     
+
                                                 <div class="product-price">
-                                                    ₹<%= product.regularPrice %>
-                                                </div><!-- End .product-price -->
+                                                    <% if (product.highestOffer > 0) { %>
+                                                        <span class="price-offer">
+                                                            <i class="fas fa-arrow-down arrow-down"></i>
+                                                            <%= product.highestOffer %>%
+                                                        </span>
+                                                        <div class="product-price text-muted" style="text-decoration: line-through;">
+                                                            ₹<%= product.regularPrice %>
+                                                        </div>
+                                                        <div class="product-price">
+                                                            ₹<%= Math.round(product.offerPrice) %>
+                                                        </div>
+                                                    <% } else { %>
+                                                        <div class="product-price">
+                                                            ₹<%= product.regularPrice %>
+                                                        </div>
+                                                    <% } %>
+                                                </div>
+                                               
                     
                                                 <div class="ratings-container">
                                                     <div class="ratings">

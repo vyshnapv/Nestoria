@@ -6,6 +6,8 @@ const Category = require("../../models/categoryModel");
 const offerManagement=async(req,res)=>{
     try {
         const search=req.query.search || "";
+        const page = parseInt(req.query.page) || 1;
+        const limit = 7;
         const query={
             $or:[
                 {offerName:{$regex:search,$options:'i'}},
@@ -13,7 +15,15 @@ const offerManagement=async(req,res)=>{
             ]
         };
 
-        const offers=await Offer.find(query).sort({createdAt:-1});
+        const totalOffers = await Offer.countDocuments(query);
+        const totalPages = Math.ceil(totalOffers / limit);
+
+        const offers = await Offer.find(query)
+            .populate('productIds', 'productName')
+            .populate('categoryIds', 'categoryName')
+            .sort({ createdAt: -1 })
+            .skip((page - 1) * limit)
+            .limit(limit);
 
         const currentDate=new Date();
         const processedOffers = offers.map(offer=>{
@@ -25,7 +35,14 @@ const offerManagement=async(req,res)=>{
             };
         });
 
-        res.render("offerManagement",{offers:processedOffers})
+        res.render("offerManagement", {
+            offers: processedOffers,
+            currentPage: page,
+            totalPages: totalPages,
+            search: search,
+            hasNextPage: page < totalPages,
+            hasPrevPage: page > 1
+        });
     } catch (error) {
         console.error("Error in offer management:", error);
         res.redirect("/pageerror"); 
@@ -38,13 +55,7 @@ const loadProductOffer=async(req,res)=>{
     try {
         const activeProducts=await Product.find({
             isBlocked:false,
-            _id:{
-                $nin:await Offer.distinct("productId",{
-                    status:"Active",
-                    expireDate:{$gt:new Date()}
-                })
-            }
-        })
+        });
         res.render("productOffer",{products:activeProducts})
     } catch (error) {
         console.error("Error loading product offer page:", error);
@@ -80,26 +91,12 @@ const createProductOffer = async(req,res)=>{
                return res.status(404).json({success:false,message:`product not found or inactive:${productId}`});
             }
 
-            const existingOffer = await Offer.findOne({
-                productId: productId,
-                status: 'Active',
-                expireDate: { $gt: now }
-            });
-
-            if (existingOffer) {
-                return res.status(400).json({
-                    success: false,
-                    message: `Product ${product.productName} already has an active offer`
-                });
-            }
-
             const offer = new Offer({
-                productName: product.productName,
                 offerType: "Product",
                 offerName: offerName,
                 discount: discount,
                 expireDate: expiry,
-                productId: productId,
+                productIds: productIds,
                 status: 'Active'
             });
 
@@ -111,6 +108,88 @@ const createProductOffer = async(req,res)=>{
         res.status(500).json({success: false,message: "Failed to create offer. Please try again."});
     }
 }
+
+//load edit product offer
+const loadEditProductOffer = async (req, res) => {
+    try {
+        const offerId = req.params.id;
+        const offer = await Offer.findById(offerId).populate('productIds');
+        
+        if (!offer) {
+            return res.redirect('/admin/offerManagement');
+        }
+
+        const activeProducts = await Product.find({
+            isBlocked: false,
+        });
+
+        res.render('editProductOffer', {
+            offer: offer,
+            products: activeProducts
+        });
+    } catch (error) {
+        console.error("Error loading edit product offer page:", error);
+        res.redirect("/pageerror");
+    }
+};
+
+//update product offer
+const updateProductOffer = async (req, res) => {
+    try {
+        const offerId = req.params.id;
+        const { offerName, discountPercentage, selectedProducts, expiryDate } = req.body;
+
+        // Validation
+        if (!offerName || !discountPercentage || !selectedProducts || !expiryDate) {
+            return res.status(400).json({
+                success: false,
+                message: "Please fill all required fields"
+            });
+        }
+
+        const discount = parseFloat(discountPercentage);
+        if (isNaN(discount) || discount <= 0 || discount > 50) {
+            return res.status(400).json({ success: false, message: "Discount percentage must be between 0 and 50" });
+        }
+
+        const expiry = new Date(expiryDate);
+        const now = new Date();
+        if (expiry <= now) {
+            return res.status(400).json({ success: false, message: "Expiry date must be in the future" });
+        }
+
+        // Since we're only allowing one product in edit mode
+        const productIds = Array.isArray(selectedProducts) ? selectedProducts : [selectedProducts];
+        
+        for (const productId of productIds) {
+            const product = await Product.findOne({ _id: productId, isBlocked: false });
+            if (!product) {
+                return res.status(404).json({ success: false, message: `Product not found or inactive: ${productId}` });
+            }
+        }
+
+        const updatedOffer = await Offer.findByIdAndUpdate(
+            offerId,
+            {
+                offerName: offerName,
+                discount: discount,
+                expireDate: expiry,
+                productIds: productIds,
+                status: 'Active'
+            },
+            { new: true }
+        );
+
+        if (!updatedOffer) {
+            return res.status(404).json({ success: false, message: "Offer not found" });
+        }
+
+        res.status(200).json({ success: true, message: "Offer updated successfully" });
+    } catch (error) {
+        console.error("Error updating product offer:", error);
+        res.status(500).json({ success: false, message: "Failed to update offer" });
+    }
+};
 
 
 //load category offer page
@@ -189,11 +268,12 @@ const createCategoryOffer=async(req,res)=>{
     }
 }
 
-
 module.exports={
     offerManagement,
     loadProductOffer,
     createProductOffer,
+    loadEditProductOffer,
+    updateProductOffer,
     loadCategoryOffer,
     createCategoryOffer,
 }

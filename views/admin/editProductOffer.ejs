@@ -1,6 +1,7 @@
 <%- include('../layoutsAdmin/adminheader') %>
 <%- include('../layoutsAdmin/header') %>
     <style>
+        /* Reusing same styles as productOffer.ejs for consistency */
         :root {
             --primary-color: rgb(66, 168, 66);
             --primary-hover: #375336;
@@ -27,16 +28,16 @@
         h1 {
             color: #1e293b;
             margin: 0 0 15px 0;
-            font-size: 33px; 
+            font-size: 33px;
             font-weight: 600;
-            padding-top: 5px;  
+            padding-top: 5px;
         }
 
         .back-btn {
             position: absolute;
-            top: 15px;  
-            right:15px;  
-            padding: 6px 12px; 
+            top: 15px;
+            right: 15px;
+            padding: 6px 12px;
             background-color: rgb(92, 117, 158);
             color: white;
             border: none;
@@ -55,8 +56,8 @@
         form {
             display: flex;
             flex-direction: column;
-            gap: 10px;           /* Increased gap */
-            padding: 0 15px; 
+            gap: 10px;
+            padding: 0 15px;
         }
 
         .form-row {
@@ -64,6 +65,7 @@
             background: #f8fafc;
             border-radius: 6px;
         }
+
         .form-row:nth-child(1) input,
         .form-row:nth-child(2) input {
            max-width: 500px;
@@ -99,7 +101,7 @@
         .two-columns {
             display: flex;
             justify-content: space-between;
-            gap: 15px; 
+            gap: 15px;
             margin: 10px 0;
         }
 
@@ -129,10 +131,10 @@
         }
 
         .product-list {
-            max-height: 250px;  /* Increased height */
+            max-height: 250px;
             overflow-y: auto;
             border: 1px solid #e2e8f0;
-            padding: 12px;      /* Increased padding */
+            padding: 12px;
             border-radius: 4px;
             background: white;
             margin-top: 10px;
@@ -175,12 +177,12 @@
         .selected-products {
             flex-grow: 1;
             background: white;
-            padding: 8px;      /* Increased padding */
+            padding: 8px;
             border: 1px solid #e2e8f0;
             border-radius: 4px;
-            height: calc(100% - 60px);  /* Adjusted height */
+            height: calc(100% - 60px);
             overflow-y: auto;
-            margin-top: 8px; 
+            margin-top: 8px;
         }
 
         .selected-products div {
@@ -199,11 +201,12 @@
         }
 
         .form-actions {
-            margin-top: -20px; 
-            padding-bottom: 10px; 
+            margin-top: -20px;
+            padding-bottom: 10px;
         }
-        .create-btn {
-            padding: 8px 30px; 
+
+        .update-btn {
+            padding: 8px 30px;
             background-color: var(--primary-color);
             color: white;
             border: none;
@@ -211,11 +214,25 @@
             cursor: pointer;
             font-weight: 500;
             font-size: 15px;
-            
         }
 
-        .create-btn:hover {
+        .update-btn:hover {
             background-color: var(--primary-hover);
+        }
+
+        .error-message {
+            color: #ef4444;
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+            display: block;
+        }
+
+        .product-error {
+            color: #ef4444;
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+            display: block;
+            padding-left: 8px;
         }
 
         @media (max-width: 768px) {
@@ -234,99 +251,92 @@
                 align-items: stretch;
                 padding: 6px;
             }
+
             form {
                 padding: 0;
             }
         }
-        .error-message {
-            color: #ef4444;
-            font-size: 0.875rem;
-            margin-top: 0.25rem;
-            display: block;
-        }
-        
-        .product-error {
-            color: #ef4444;
-            font-size: 0.875rem;
-            margin-top: 0.25rem;
-            display: block;
-            padding-left: 8px;
-        }
     </style>
-   <div class="container">
-    <a href="/admin/offerManagement" class="back-btn">← Back to offerPage</a>
-    <h1>Create Product Offer</h1>
-    <form id="productOfferForm">
-        <div class="form-row">
-            <label for="offerName">Offer Name:</label>
-            <input type="text" id="offerName" name="offerName" placeholder="Enter offer name" >
-            <span class="error-message" id="offerNameError"></span>
-        </div>
-        
-        <div class="form-row">
-            <label for="discountPercentage">Discount Percentage:</label>
-            <input type="number" id="discountPercentage" name="discountPercentage" min="0" max="50" placeholder="Enter percentage">
-            <span class="error-message" id="discountError"></span>
-        </div>
-
-        <div class="form-row two-columns">
-            <div class="column">
-                <label for="products">Select Products (Multiple)</label>
-                <div class="search-container">
-                    <input type="text" id="searchProducts" placeholder="Search products...">
-                    <button type="button" class="clear-btn">Clear</button>
-                </div>
-                <div class="product-list">
-                    <% if (products && products.length > 0) { %>
-                        <% products.forEach(function(product) { %>
-                            <label class="product-item">
-                                <input type="checkbox" name="selectedProducts" value="<%= product._id %>">
-                                <%= product.productName %>
-                            </label>
-                        <% }); %>
-                    <% } else { %>
-                        <p>No products available for offer</p>
-                    <% } %>
-                </div>
-                <span class="error-message" id="productError"></span>
+    
+    <div class="container">
+        <a href="/admin/offerManagement" class="back-btn">← Back to offerPage</a>
+        <h1>Edit Product Offer</h1>
+        <form id="editProductOfferForm">
+            <div class="form-row">
+                <label for="offerName">Offer Name:</label>
+                <input type="text" id="offerName" name="offerName" value="<%= offer.offerName %>" >
+                <span class="error-message" id="offerNameError"></span>
             </div>
-
-            <div class="column">
-                <div class="right-column-content">
-                    <div class="date-container">
-                        <label for="expiryDate">Expiry Date</label>
-                        <input type="date" id="expiryDate" name="expiryDate" placeholder="YYYY-MM-DD">
-                        <span class="error-message" id="dateError"></span>
+            
+            <div class="form-row">
+                <label for="discountPercentage">Discount Percentage:</label>
+                <input type="number" id="discountPercentage" name="discountPercentage" min="0" max="50" value="<%= offer.discount %>">
+                <span class="error-message" id="discountError"></span>
+            </div>
+    
+            <div class="form-row two-columns">
+                <div class="column">
+                    <label for="products">Select Products (Multiple)</label>
+                    <div class="search-container">
+                        <input type="text" id="searchProducts" placeholder="Search products...">
+                        <button type="button" class="clear-btn">Clear</button>
                     </div>
-                    
-                    <div class="selected-products">
-                        <label>Selected Products</label>
-                        <div class="selected-items"></div>
+                    <div class="product-list">
+                        <% if (products && products.length > 0) { %>
+                            <% products.forEach(function(product) { %>
+                                <label class="product-item">
+                                    <input type="checkbox" name="selectedProducts" value="<%= product._id %>" 
+                                    <%= offer.productIds.some(p => p._id.toString() === product._id.toString()) ? 'checked' : '' %>>
+                                    <%= product.productName %>
+                                </label>
+                            <% }); %>
+                        <% } else { %>
+                            <p>No products available for offer</p>
+                        <% } %>
+                    </div>
+                    <span class="error-message" id="productError"></span>
+                </div>
+    
+                <div class="column">
+                    <div class="right-column-content">
+                        <div class="date-container">
+                            <label for="expiryDate">Expiry Date</label>
+                            <input type="date" id="expiryDate" name="expiryDate" value="<%= offer.expireDate.toISOString().split('T')[0] %>">
+                            <span class="error-message" id="dateError"></span>
+                        </div>
+                        
+                        <div class="selected-products">
+                            <label>Selected Products</label>
+                            <div class="selected-items"></div>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
-
-        <div class="form-actions">
-            <button type="submit" class="create-btn">Create Product Offer</button>
-        </div>
-    </form>
-</div>
+    
+            <div class="form-actions">
+                <button type="submit" class="update-btn">Update Product Offer</button>
+            </div>
+        </form>
+    </div>
+    
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            const form = document.getElementById('productOfferForm');
+            const form = document.getElementById('editProductOfferForm');
             const searchInput = document.getElementById('searchProducts');
             const clearBtn = document.querySelector('.clear-btn');
             const productList = document.querySelector('.product-list');
-            const selectedProductsDiv = document.querySelector('.selected-products div');
-        
+            const selectedProductsDiv = document.querySelector('.selected-items');
+    
             // Set minimum date for expiry
             const expiryDateInput = document.getElementById('expiryDate');
             const tomorrow = new Date();
             tomorrow.setDate(tomorrow.getDate() + 1);
-            expiryDateInput.min = tomorrow.toISOString().split('T')[0];    
-        
+            expiryDateInput.min = tomorrow.toISOString().split('T')[0];
+    
+            // Update selected products display initially
+            updateSelectedProducts();
+    
             // Live validation for offer name
             document.getElementById('offerName').addEventListener('input', function() {
                 const error = document.getElementById('offerNameError');
@@ -336,7 +346,7 @@
                     error.textContent = '';
                 }
             });
-        
+    
             // Live validation for discount percentage
             document.getElementById('discountPercentage').addEventListener('input', function() {
                 const error = document.getElementById('discountError');
@@ -347,7 +357,7 @@
                     error.textContent = '';
                 }
             });
-        
+    
             // Live validation for expiry date
             expiryDateInput.addEventListener('input', function() {
                 const error = document.getElementById('dateError');
@@ -357,87 +367,101 @@
                     error.textContent = '';
                 }
             });
-        
+    
             // Live validation for products
-            productList.addEventListener('change', function() {
-                const error = document.getElementById('productError');
-                const selectedProducts = document.querySelectorAll('input[name="selectedProducts"]:checked');
-                if (selectedProducts.length === 0) {
-                    error.textContent = 'Please select at least one product';
-                } else {
-                    error.textContent = '';
-                }
-                updateSelectedProducts();
+            productList.addEventListener('change', function(e) {
+               if (e.target.type === 'checkbox') {
+                   updateSelectedProducts();
+               }
             });
-        
+    
+            // Search functionality for product list
             searchInput.addEventListener('input', function(e) {
                 const searchTerm = e.target.value.toLowerCase();
                 const products = productList.querySelectorAll('label');
-                
+    
                 products.forEach(product => {
                     const productName = product.textContent.toLowerCase();
                     product.style.display = productName.includes(searchTerm) ? '' : 'none';
                 });
             });
-        
+    
+            // Clear search functionality
             clearBtn.addEventListener('click', function() {
                 searchInput.value = '';
                 const products = productList.querySelectorAll('label');
                 products.forEach(product => product.style.display = '');
             });
-        
+    
+            // Update selected products display
             function updateSelectedProducts() {
-                selectedProductsDiv.innerHTML = '';
-                const checkedBoxes = productList.querySelectorAll('input[name="selectedProducts"]:checked');
-                
-                checkedBoxes.forEach(checkbox => {
-                    const span = document.createElement('span');
-                    span.className = 'tag';
-                    span.textContent = checkbox.parentElement.textContent.trim();
-                    selectedProductsDiv.appendChild(span);
+               selectedProductsDiv.innerHTML = '';
+               const checkedBoxes = productList.querySelectorAll('input[name="selectedProducts"]:checked');
+
+               checkedBoxes.forEach(checkbox => {
+                   const productName = checkbox.parentElement.textContent.trim();
+                   const span = document.createElement('span');
+                   span.className = 'tag';
+                   span.textContent = productName;
+
+                   const removeBtn = document.createElement('button');
+                   removeBtn.className = 'remove-tag';
+                   removeBtn.style.cssText = 'margin-left: 5px; border: none; background: none; color: white; cursor: pointer;';
+                   removeBtn.innerHTML = '×';
+                   removeBtn.onclick = function(e) {
+                        e.preventDefault();
+                        checkbox.checked = false;
+                        updateSelectedProducts();
+                    };
+
+                  span.appendChild(removeBtn);
+                  selectedProductsDiv.appendChild(span);
                 });
             }
-        
+
+            updateSelectedProducts();
+    
+            // Form submission
             form.addEventListener('submit', async function(e) {
                 e.preventDefault();
-                
+    
                 // Reset error messages
                 document.querySelectorAll('.error-message').forEach(el => el.textContent = '');
-                
+    
                 const offerName = document.getElementById('offerName').value;
                 const discountPercentage = document.getElementById('discountPercentage').value;
                 const expiryDate = document.getElementById('expiryDate').value;
                 const selectedProducts = Array.from(
                     document.querySelectorAll('input[name="selectedProducts"]:checked')
                 ).map(checkbox => checkbox.value);
-        
+    
                 let isValid = true;
-        
+    
                 if (!offerName || offerName.trim().length < 3) {
                     document.getElementById('offerNameError').textContent = 'Offer name must be at least 3 characters long';
                     isValid = false;
                 }
-        
+    
                 if (!discountPercentage || discountPercentage < 0 || discountPercentage > 50) {
                     document.getElementById('discountError').textContent = 'Discount must be between 0 and 50';
                     isValid = false;
                 }
-        
+    
                 if (!expiryDate) {
                     document.getElementById('dateError').textContent = 'Please select an expiry date';
                     isValid = false;
                 }
-        
+    
                 if (selectedProducts.length === 0) {
                     document.getElementById('productError').textContent = 'Please select at least one product';
                     isValid = false;
                 }
-        
+    
                 if (!isValid) return;
-        
+    
                 try {
-                    const response = await fetch('/admin/createProductOffer', {
-                        method: 'POST',
+                    const response = await fetch('/admin/updateProductOffer/<%= offer._id %>', {
+                        method: 'PUT',
                         headers: {
                             'Content-Type': 'application/json'
                         },
@@ -448,9 +472,9 @@
                             expiryDate
                         })
                     });
-        
+    
                     const data = await response.json();
-        
+    
                     if (response.ok) {
                         await Swal.fire({
                             icon: 'success',
@@ -465,9 +489,10 @@
                     Swal.fire({
                         icon: 'error',
                         title: 'Error',
-                        text: error.message || 'Failed to create offer'
+                        text: error.message || 'Failed to update offer'
                     });
                 }
             });
         });
-        </script>
+    </script>
+    
