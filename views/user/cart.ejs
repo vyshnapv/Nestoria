@@ -40,7 +40,7 @@
 									<tbody>
                                       <% cart.items.forEach(item => { %>
                                         <% const product = item.product %>
-                                        <% const itemTotal = product.salePrice * item.quantity %>
+                                        <% const itemTotal = product.regularPrice * item.quantity %>
 										<tr data-product-id="<%= product._id %>">
 											<td class="product-col">
 												<div class="product">
@@ -55,7 +55,7 @@
 													</h3><!-- End .product-title -->
 												</div><!-- End .product -->
 											</td>
-											<td class="price-col">₹<%= product.salePrice %></td>
+											<td class="price-col">₹<%= product.regularPrice %></td>
 											<td class="quantity-col">
                                                 <div class="cart-product-quantity">
                                                     <input type="number" class="form-control quantity-input" value="<%= item.quantity %>" min="1" max="5" step="1" data-decimals="0" data-product-id="<%= product._id %>" required oninput="validity.valid||(value='1');">
@@ -97,7 +97,7 @@
                                         <tbody>
                                             <% cart.items.forEach(item => { %>
                                                 <% const product = item.product %>
-                                                <% const itemTotal = product.salePrice * item.quantity %>
+                                                <% const itemTotal = product.regularPrice * item.quantity %>
                                                 <tr>
                                                     <td><%= product.productName %></td>
                                                     <td><%= item.quantity %></td>
@@ -135,7 +135,6 @@
 
 <script>
  document.addEventListener('DOMContentLoaded', function() {
-  // Function to update cart summary
   function updateCartSummary(items) {
       const summaryTableBody = document.querySelector('.summary-cart tbody');
       const subtotalElement = document.querySelector('.summary-cart #subtotal');

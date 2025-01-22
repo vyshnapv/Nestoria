@@ -239,62 +239,238 @@
                 padding: 0;
             }
         }
+        .error-message {
+            color: #ef4444;
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+            display: block;
+        }
+        
+        .category-error {
+            color: #ef4444;
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+            display: block;
+            padding-left: 8px;
+        }
     </style>
 
-    <div class="container">
-        <a href="/admin/offerManagement" class="back-btn">← Back to offerPage</a>
-        <h1>Create Category Offer</h1>
-        <form>
-            <div class="form-row">
-                <label for="offerName">Offer Name:</label>
-                <input type="text" id="offerName" placeholder="Enter offer name" required>
+<div class="container">
+    <a href="/admin/offerManagement" class="back-btn">← Back to Offer Management</a>
+    <h1>Create Category Offer</h1>
+    
+    <form id="categoryOfferForm">
+        <div class="form-row">
+            <label for="offerName">Offer Name:</label>
+            <input type="text" id="offerName" name="offerName" placeholder="Enter offer name" >
+            <span class="error-message" id="offerNameError"></span>
+        </div>
+        
+        <div class="form-row">
+            <label for="discountPercentage">Discount Percentage:</label>
+            <input type="number" id="discountPercentage" name="discountPercentage" min="0" max="50" placeholder="Enter percentage (0-50)">
+            <span class="error-message" id="discountError"></span>
+        </div>
+
+        <div class="form-row two-columns">
+            <div class="column">
+                <label for="categories">Select Categories</label>
+                <div class="search-container">
+                    <input type="text" id="searchCategories" placeholder="Search categories...">
+                    <button type="button" class="clear-btn">Clear</button>
+                </div>
+                <div class="category-list">
+                    <% if (categories && categories.length > 0) { %>
+                        <% categories.forEach(category => { %>
+                            <label>
+                                <input type="checkbox" name="selectedCategories" value="<%= category._id %>">
+                                <%= category.name %>
+                            </label>
+                        <% }); %>
+                    <% } else { %>
+                        <p>No categories available for offers</p>
+                    <% } %>
+                </div>
+                <span class="category-error" id="categoryError"></span>
             </div>
+
+            <div class="column">
+                <div class="right-column-content">
+                    <div class="date-container">
+                        <label for="expiryDate">Expiry Date</label>
+                        <input type="date" id="expiryDate" name="expiryDate" placeholder="YYYY-MM-DD">
+                        <span class="error-message" id="dateError"></span>
+                    </div>
+                    
+                    <div class="selected-categories">
+                        <label>Selected Categories</label>
+                        <div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="create-btn">Create Category Offer</button>
+        </div>
+    </form>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const searchInput = document.getElementById('searchCategories');
+        const clearButton = document.querySelector('.clear-btn');
+        const categoryList = document.querySelector('.category-list');
+        const selectedCategoriesDiv = document.querySelector('.selected-categories div');
+        const form = document.getElementById('categoryOfferForm');
+
+        const expiryDateInput = document.getElementById('expiryDate');
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        expiryDateInput.min = tomorrow.toISOString().split('T')[0];
+        
+
+        document.getElementById('offerName').addEventListener('input', function() {
+            const error = document.getElementById('offerNameError');
+            if (this.value.trim().length < 3) {
+                error.textContent = 'Offer name must be at least 3 characters long';
+            } else {
+                error.textContent = '';
+            }
+        });
+
+        document.getElementById('discountPercentage').addEventListener('input', function() {
+            const error = document.getElementById('discountError');
+            const value = parseFloat(this.value);
+            if (isNaN(value) || value < 0 || value > 50) {
+                error.textContent = 'Discount must be between 0 and 50';
+            } else {
+                error.textContent = '';
+            }
+        });
+        
+        expiryDateInput.addEventListener('input', function() {
+            const error = document.getElementById('dateError');
+            if (!this.value) {
+                error.textContent = 'Please select an expiry date';
+            } else {
+                error.textContent = '';
+            }
+        });
+
+        categoryList.addEventListener('change', function() {
+            const error = document.getElementById('categoryError');
+            const selectedCategories = document.querySelectorAll('input[name="selectedCategories"]:checked');
+            if (selectedCategories.length === 0) {
+                error.textContent = 'Please select at least one category';
+            } else {
+                error.textContent = '';
+            }
+            updateSelectedCategories();
+        });
+
+        searchInput.addEventListener('input', function(e) {
+            const searchText = e.target.value.toLowerCase();
+            const categoryLabels = categoryList.querySelectorAll('label');
             
-            <div class="form-row">
-                <label for="discountPercentage">Discount Percentage:</label>
-                <input type="number" id="discountPercentage" min="0" max="100" placeholder="Enter percentage" required>
-            </div>
+            categoryLabels.forEach(label => {
+                const text = label.textContent.toLowerCase();
+                label.style.display = text.includes(searchText) ? '' : 'none';
+            });
+        });
 
-            <div class="form-row two-columns">
-                <div class="column">
-                    <label for="categories">Select Categories</label>
-                    <div class="search-container">
-                        <input type="text" id="searchCategories" placeholder="Search categories...">
-                        <button type="button" class="clear-btn">clear</button>
-                    </div>
-                    <div class="category-list">
-                        <label><input type="checkbox"> Running Shoes</label>
-                        <label><input type="checkbox"> Sports Shoes</label>
-                        <label><input type="checkbox"> Casual Shoes</label>
-                        <label><input type="checkbox"> Formal Shoes</label>
-                        <label><input type="checkbox"> Sneakers</label>
-                        <label><input type="checkbox"> Walking Shoes</label>
-                        <label><input type="checkbox"> Athletic Shoes</label>
-                        <label><input type="checkbox"> Boots</label>
-                        <label><input type="checkbox"> Sandals</label>
-                    </div>
-                </div>
+        // Clear search
+        clearButton.addEventListener('click', function() {
+            searchInput.value = '';
+            const categoryLabels = categoryList.querySelectorAll('label');
+            categoryLabels.forEach(label => label.style.display = '');
+        });
 
-                <div class="column">
-                    <div class="right-column-content">
-                        <div class="date-container">
-                            <label for="expiryDate">Expiry Date</label>
-                            <input type="date" id="expiryDate" required>
-                        </div>
-                        
-                        <div class="selected-categories">
-                            <label>Selected Categories</label>
-                            <div>
-                                <span class="tag">Running Shoes</span>
-                                <span class="tag">Sports Shoes</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+        // Update selected categories display
+        function updateSelectedCategories() {
+            selectedCategoriesDiv.innerHTML = '';
+            const checkedBoxes = categoryList.querySelectorAll('input[type="checkbox"]:checked');
+            
+            checkedBoxes.forEach(checkbox => {
+                const span = document.createElement('span');
+                span.className = 'tag';
+                span.textContent = checkbox.parentElement.textContent.trim();
+                selectedCategoriesDiv.appendChild(span);
+            });
+        }
 
-            <div class="form-actions">
-                <button type="submit" class="create-btn">Create Category Offer</button>
-            </div>
-        </form>
-    </div>
+        // Form validation and submission
+        form.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const offerName = document.getElementById('offerName').value;
+            const discountPercentage = document.getElementById('discountPercentage').value;
+            const expiryDate = document.getElementById('expiryDate').value;
+            const selectedCategories = Array.from(
+                document.querySelectorAll('input[name="selectedCategories"]:checked')
+            ).map(checkbox => checkbox.value);
+
+            // Validation
+            let isValid = true;
+
+            if (!offerName || offerName.trim().length < 3) {
+                document.getElementById('offerNameError').textContent = 'Offer name must be at least 3 characters long';
+                isValid = false;
+            }
+
+            if (!discountPercentage || discountPercentage < 0 || discountPercentage > 50) {
+                document.getElementById('discountError').textContent = 'Discount must be between 0 and 50';
+                isValid = false;
+            }
+
+            if (!expiryDate) {
+                document.getElementById('dateError').textContent = 'Please select an expiry date';
+                isValid = false;
+            }
+
+            if (selectedCategories.length === 0) {
+                document.getElementById('categoryError').textContent = 'Please select at least one category';
+                isValid = false;
+            }
+
+            if (!isValid) return;
+
+            try {
+                const response = await fetch('/admin/createCategoryOffer', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        offerName,
+                        discountPercentage,
+                        selectedCategories,
+                        expiryDate
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Success',
+                        text: data.message
+                    }).then(() => {
+                        window.location.href = '/admin/offerManagement';
+                    });
+                } else {
+                    throw new Error(data.message);
+                }
+            } catch (error) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: error.message || 'Failed to create offer'
+                });
+            }
+        });
+    });
+</script>
+    

@@ -11,12 +11,12 @@ const path = require("path")
 const loadCart = async (req, res) => {
     try {
         const userData = await User.findById(req.session.user);
-        const cart =  await Cart.findOne({ userId: req.session.user }).populate({path:'items.product',select: 'productName productImage salePrice quantity'})|| { items: [] };
+        const cart =  await Cart.findOne({ userId: req.session.user }).populate({path:'items.product',select: 'productName productImage regularPrice quantity'})|| { items: [] };
         
         let subtotal = 0;
         if (cart && cart.items) {
             subtotal = cart.items.reduce((total, item) => {
-                return total + (item.product.salePrice * item.quantity);
+                return total + (item.product.regularPrice * item.quantity); 
             }, 0);
         }
 
@@ -100,11 +100,11 @@ const updateCartQuantity = async (req, res) => {
         await cart.save();
 
         const subtotal = cart.items.reduce((total, i) => {
-            const productPrice = i.product.salePrice;
+            const productPrice = i.product.regularPrice; 
             return total + (productPrice * i.quantity);
         }, 0);
 
-        res.status(200).json({success: true,subtotal,itemTotal: product.salePrice * quantity });
+        res.status(200).json({success: true,subtotal,itemTotal: product.regularPrice * quantity });
 
     } catch (error) {
         console.error("Error updating cart quantity:", error);
@@ -127,7 +127,7 @@ const removeCartItem = async (req, res) => {
         cart.items = cart.items.filter(item => item.product.toString() !== productId);
         await cart.save();
 
-        const subtotal = cart.items.reduce((total, item) => total + (item.product.salePrice * item.quantity), 0);
+        const subtotal = cart.items.reduce((total, item) => total + (item.product.regularPrice * item.quantity), 0);
         res.status(200).json({ success: true, subtotal });
 
     } catch (error) {
@@ -144,13 +144,13 @@ const loadCheckout = async (req, res) => {
       const cart = await Cart.findOne({ userId: req.session.user })
         .populate({
           path: 'items.product',
-          select: 'productName productImage salePrice quantity'
+          select: 'productName productImage regularPrice quantity'
         }) || { items: [] };
   
       let subtotal = 0;
       if (cart && cart.items) {
         subtotal = cart.items.reduce((total, item) => {
-          return total + (item.product.salePrice * item.quantity);
+            return total + (item.product.regularPrice * item.quantity);
         }, 0);
       }
   

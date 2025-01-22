@@ -5,11 +5,15 @@ const offerSchema = new Schema(
     {
         productName: {
             type: String,
-            required: true,
+            required: function() {
+                return this.offerType === "Product";
+            }
         },
         categoryName: {
             type: String,
-            required: true,
+            required: function() {
+                return this.offerType === "Category";
+            }
         },
         offerType: {
             type: String,

@@ -56,6 +56,13 @@ admin_route.post('/cancelAllProducts', adminAuth, adminController.cancelAllProdu
 
 //offer managemet
 admin_route.get('/offerManagement',adminAuth,offerController.offerManagement);
+
+//product offer
 admin_route.get('/productOffer',adminAuth,offerController.loadProductOffer);
+admin_route.post('/createProductOffer', adminAuth, offerController.createProductOffer);
+
+//category offer
 admin_route.get('/categoryOffer',adminAuth,offerController.loadCategoryOffer);
+admin_route.post('/createCategoryOffer',adminAuth,offerController.createCategoryOffer);
+
 module.exports=admin_route;

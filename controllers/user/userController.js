@@ -456,9 +456,9 @@ const changePassword = async (req,res) =>{
 
 
         if (priceSort === 'lowToHigh') {
-            sortOption.salePrice = 1;
+            sortOption.regularPrice = 1;
         } else if (priceSort === 'highToLow') {
-            sortOption.salePrice = -1;
+            sortOption.regularPrice = -1;
         }
 
         const sortStage = [

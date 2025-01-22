@@ -49,7 +49,6 @@ const addProducts = async (req, res) => {
                 description: products.description,
                 category: categoryId._id,
                 regularPrice: products.regularPrice,
-                salePrice: products.salePrice,
                 createdOn: new Date(),
                 quantity: products.quantity,
                 size: products.size,
@@ -206,7 +205,6 @@ const editProduct = async (req, res)=>{
            description:data.description,
            category: product.category,
            regularPrice:data.regularPrice,
-           salePrice:data.salePrice,
            quantity:data.quantity,
            color:data.color,
         }  

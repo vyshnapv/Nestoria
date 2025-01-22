@@ -85,13 +85,6 @@
                             </div>
                             <div class="col-lg-4">
                                 <div class="mb-4">
-                                    <label class="form-label">Sale Price</label>
-                                    <input placeholder="$" name="salePrice" type="text" class="form-control border" value="<%= product.salePrice %>">
-                                    <div id="salePrice-error" class="error-message"></div>
-                                </div>
-                            </div>
-                            <div class="col-lg-4">
-                                <div class="mb-4">
                                     <label class="form-label">Quantity</label>
                                     <input placeholder="" name="quantity" type="text" class="form-control border" value="<%= product.quantity %>">
                                     <div id="quantity-error" class="error-message"></div>
@@ -389,20 +382,6 @@ function validateForm() {
           displayErrorMessage('regularPrice-error', 'Please enter a price greater than zero.');
           isValid = false;
         }
-
-        const salePrice = document.getElementsByName('salePrice')[0].value;
-        if (!priceRegex.test(salePrice)) {
-            displayErrorMessage('salePrice-error', 'Please enter a valid sale price.');
-            isValid = false;
-         } else if(parseFloat(salePrice) < 0){
-            displayErrorMessage('salePrice-error', 'Please enter a valid price (negative numbers are not allowed).');
-            isValid = false;
-         }
-         else if (parseFloat(salePrice) > parseFloat(regularPrice)) {
-             displayErrorMessage('salePrice-error', 'Sale price cannot be greater than regular price.');
-            isValid = false;
-          }
-
     const quantity = document.getElementsByName('quantity')[0].value;
     const quantityRegex = /^[1-9][0-9]*$/; 
     if (!quantityRegex.test(quantity)) {

@@ -143,49 +143,44 @@
         </tr>
       </thead>
       <tbody>
-        <tr>
-          <td>Summer Sale</td>
-          <td>Product Offer</td>
-          <td>20%</td>
-          <td>2025-02-15</td>
-          <td>
-            <span class="badge bg-success">Active</span>
-          </td>
-          <td>
-            <div class="btn-group">
-              <button class="btn btn-info btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                Action
-              </button>
-              <ul class="dropdown-menu">
-                <li><a class="dropdown-item" href="#">Edit</a></li>
-                <li><a class="dropdown-item" href="#">Deactivate</a></li>
-                <li><a class="dropdown-item" href="#">Delete</a></li>
-              </ul>
-            </div>
-          </td>
-        </tr>
-        <tr>
-          <td>Winter Offer</td>
-          <td>Category Offer</td>
-          <td>15%</td>
-          <td>2025-03-10</td>
-          <td>
-            <span class="badge bg-danger">Inactive</span>
-          </td>
-          <td>
-            <div class="btn-group">
-              <button class="btn btn-info btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                Action
-              </button>
-              <ul class="dropdown-menu">
-                <li><a class="dropdown-item" href="#">Edit</a></li>
-                <li><a class="dropdown-item" href="#">Deactivate</a></li>
-                <li><a class="dropdown-item" href="#">Delete</a></li>
-              </ul>
-            </div>
-          </td>
-        </tr>
-      </tbody>
+        <% if (offers && offers.length > 0) { %>
+            <% offers.forEach(offer => { %>
+                <tr>
+                    <td><%= offer.offerName %></td>
+                    <td><%= offer.offerType %> Offer</td>
+                    <td><%= offer.discount %>%</td>
+                    <td><%= offer.formattedExpiryDate %></td>
+                    <td>
+                        <% if (offer.status === 'Active') { %>
+                            <span class="badge bg-success">Active</span>
+                        <% } else if (offer.status === 'Expired') { %>
+                            <span class="badge bg-danger">Expired</span>
+                        <% } else { %>
+                            <span class="badge bg-warning">Pending</span>
+                        <% } %>
+                    </td>
+                    <td>
+                        <div class="btn-group">
+                            <button class="btn btn-info btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                Action
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="#" onclick="editOffer('<%= offer._id %>')">Edit</a></li>
+                                <li><a class="dropdown-item" href="#" onclick="toggleOfferStatus('<%= offer._id %>', '<%= offer.status %>')">
+                                    <%= offer.status === 'Active' ? 'Deactivate' : 'Activate' %>
+                                </a></li>
+                                <li><a class="dropdown-item" href="#" onclick="deleteOffer('<%= offer._id %>')">Delete</a></li>
+                            </ul>
+                        </div>
+                    </td>
+                </tr>
+            <% }); %>
+        <% } else { %>
+            <tr>
+                <td colspan="6" class="text-center">No offers found</td>
+            </tr>
+        <% } %>
+    </tbody>
     </table>
   </div>
 

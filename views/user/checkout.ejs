@@ -299,14 +299,14 @@
                             <div class="cart-items-list">
                                 <% cart.items.forEach(item => { %>
                                 <% const product = item.product %>
-                                <% const itemTotal = product.salePrice * item.quantity %>
+                                <% const itemTotal = product.regularPrice * item.quantity %>
                                 <div class="cart-item-card">
                                     <div class="product-media">
                                         <img src="/uploads/cropped/<%= product.productImage[0] %>" alt="<%= product.productName %>">
                                     </div>
                                     <div class="product-details">
                                         <p class="price">Product Name: <%= product.productName %></p>
-                                        <p class="price">Price: ₹<%= product.salePrice %></p>
+                                        <p class="price">Price: ₹<%= product.regularPrice %></p>
                                         <p class="quantity">Quantity: <%= item.quantity %></p>
                                         <p class="total">Total: ₹<%= itemTotal %></p>
                                     </div>
@@ -399,7 +399,7 @@
                                 <tbody>
                                     <% cart.items.forEach(item => { %>
                                     <% const product = item.product %>
-                                    <% const itemTotal = product.salePrice * item.quantity %>
+                                    <% const itemTotal = product.regularPrice * item.quantity %>
                                     <tr>
                                         <td><%= product.productName %></td>
                                         <td>₹<%= itemTotal.toFixed(2) %></td>

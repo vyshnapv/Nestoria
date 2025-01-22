@@ -238,62 +238,237 @@
                 padding: 0;
             }
         }
+        .error-message {
+            color: #ef4444;
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+            display: block;
+        }
+        
+        .product-error {
+            color: #ef4444;
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+            display: block;
+            padding-left: 8px;
+        }
     </style>
-
     <div class="container">
         <a href="/admin/offerManagement" class="back-btn">← Back to offerPage</a>
         <h1>Create Product Offer</h1>
-        <form>
+        <form id="productOfferForm">
             <div class="form-row">
                 <label for="offerName">Offer Name:</label>
-                <input type="text" id="offerName" placeholder="Enter offer name" required>
+                <input type="text" id="offerName" name="offerName" placeholder="Enter offer name" >
+                <span class="error-message" id="offerNameError"></span>
             </div>
             
             <div class="form-row">
                 <label for="discountPercentage">Discount Percentage:</label>
-                <input type="number" id="discountPercentage" min="0" max="100" placeholder="Enter percentage" required>
+                <input type="number" id="discountPercentage" name="discountPercentage" min="0" max="50" placeholder="Enter percentage">
+                <span class="error-message" id="discountError"></span>
             </div>
-
+    
             <div class="form-row two-columns">
                 <div class="column">
                     <label for="products">Select Products</label>
                     <div class="search-container">
                         <input type="text" id="searchProducts" placeholder="Search products...">
-                        <button type="button" class="clear-btn">clear</button>
+                        <button type="button" class="clear-btn">Clear</button>
                     </div>
                     <div class="product-list">
-                        <label><input type="checkbox"> Bourge Men's Thurl-01 Running Shoes</label>
-                        <label><input type="checkbox"> BRUTON Trendy Sports Shoes</label>
-                        <label><input type="checkbox"> ASIAN Men's NEXON-13 Casual Shoes</label>
-                        <label><input type="checkbox"> ASIAN Men's Thar-01 Sports Running Shoes</label>
-                        <label><input type="checkbox"> OFF LIMITS Hachiko | Sports Shoes</label>
-                        <label><input type="checkbox"> Campus Men's Camp Karl Running Shoe</label>
-                        <label><input type="checkbox"> Bata 8216 Boss-Grip Black Derby Shoes</label>
-                        <label><input type="checkbox"> Centino Men's 1421 Formal Shoes</label>
-                        <label><input type="checkbox"> ASIAN Rider-01 Sports Shoes for Men</label>
+                        <% if (products && products.length > 0) { %>
+                            <% products.forEach(function(product) { %>
+                                <label>
+                                    <input type="checkbox" name="selectedProducts" value="<%= product._id %>">
+                                    <%= product.productName %>
+                                </label>
+                            <% }); %>
+                        <% } else { %>
+                            <p>No products available for offer</p>
+                        <% } %>
                     </div>
+                    <span class="error-message" id="productError"></span>
                 </div>
-
+    
                 <div class="column">
                     <div class="right-column-content">
                         <div class="date-container">
                             <label for="expiryDate">Expiry Date</label>
-                            <input type="date" id="expiryDate" required>
+                            <input type="date" id="expiryDate" name="expiryDate" placeholder="YYYY-MM-DD">
+                            <span class="error-message" id="dateError"></span>
                         </div>
                         
                         <div class="selected-products">
                             <label>Selected Products</label>
-                            <div>
-                                <span class="tag">Bourge Men's Thurl-01 Running Shoes</span>
-                                <span class="tag">ASIAN Men's NEXON-13 Casual Shoes</span>
-                            </div>
+                            <div></div>
                         </div>
                     </div>
                 </div>
             </div>
-
+    
             <div class="form-actions">
                 <button type="submit" class="create-btn">Create Product Offer</button>
             </div>
         </form>
     </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('productOfferForm');
+            const searchInput = document.getElementById('searchProducts');
+            const clearBtn = document.querySelector('.clear-btn');
+            const productList = document.querySelector('.product-list');
+            const selectedProductsDiv = document.querySelector('.selected-products div');
+        
+            // Set minimum date for expiry
+            const expiryDateInput = document.getElementById('expiryDate');
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            expiryDateInput.min = tomorrow.toISOString().split('T')[0];    
+        
+            // Live validation for offer name
+            document.getElementById('offerName').addEventListener('input', function() {
+                const error = document.getElementById('offerNameError');
+                if (this.value.trim().length < 3) {
+                    error.textContent = 'Offer name must be at least 3 characters long';
+                } else {
+                    error.textContent = '';
+                }
+            });
+        
+            // Live validation for discount percentage
+            document.getElementById('discountPercentage').addEventListener('input', function() {
+                const error = document.getElementById('discountError');
+                const value = parseFloat(this.value);
+                if (isNaN(value) || value < 0 || value > 50) {
+                    error.textContent = 'Discount must be between 0 and 50';
+                } else {
+                    error.textContent = '';
+                }
+            });
+        
+            // Live validation for expiry date
+            expiryDateInput.addEventListener('input', function() {
+                const error = document.getElementById('dateError');
+                if (!this.value) {
+                    error.textContent = 'Please select an expiry date';
+                } else {
+                    error.textContent = '';
+                }
+            });
+        
+            // Live validation for products
+            productList.addEventListener('change', function() {
+                const error = document.getElementById('productError');
+                const selectedProducts = document.querySelectorAll('input[name="selectedProducts"]:checked');
+                if (selectedProducts.length === 0) {
+                    error.textContent = 'Please select at least one product';
+                } else {
+                    error.textContent = '';
+                }
+                updateSelectedProducts();
+            });
+        
+            searchInput.addEventListener('input', function(e) {
+                const searchTerm = e.target.value.toLowerCase();
+                const products = productList.querySelectorAll('label');
+                
+                products.forEach(product => {
+                    const productName = product.textContent.toLowerCase();
+                    product.style.display = productName.includes(searchTerm) ? '' : 'none';
+                });
+            });
+        
+            clearBtn.addEventListener('click', function() {
+                searchInput.value = '';
+                const products = productList.querySelectorAll('label');
+                products.forEach(product => product.style.display = '');
+            });
+        
+            function updateSelectedProducts() {
+                selectedProductsDiv.innerHTML = '';
+                const checkedBoxes = productList.querySelectorAll('input[name="selectedProducts"]:checked');
+                
+                checkedBoxes.forEach(checkbox => {
+                    const span = document.createElement('span');
+                    span.className = 'tag';
+                    span.textContent = checkbox.parentElement.textContent.trim();
+                    selectedProductsDiv.appendChild(span);
+                });
+            }
+        
+            form.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                // Reset error messages
+                document.querySelectorAll('.error-message').forEach(el => el.textContent = '');
+                
+                const offerName = document.getElementById('offerName').value;
+                const discountPercentage = document.getElementById('discountPercentage').value;
+                const expiryDate = document.getElementById('expiryDate').value;
+                const selectedProducts = Array.from(
+                    document.querySelectorAll('input[name="selectedProducts"]:checked')
+                ).map(checkbox => checkbox.value);
+        
+                let isValid = true;
+        
+                if (!offerName || offerName.trim().length < 3) {
+                    document.getElementById('offerNameError').textContent = 'Offer name must be at least 3 characters long';
+                    isValid = false;
+                }
+        
+                if (!discountPercentage || discountPercentage < 0 || discountPercentage > 50) {
+                    document.getElementById('discountError').textContent = 'Discount must be between 0 and 50';
+                    isValid = false;
+                }
+        
+                if (!expiryDate) {
+                    document.getElementById('dateError').textContent = 'Please select an expiry date';
+                    isValid = false;
+                }
+        
+                if (selectedProducts.length === 0) {
+                    document.getElementById('productError').textContent = 'Please select at least one product';
+                    isValid = false;
+                }
+        
+                if (!isValid) return;
+        
+                try {
+                    const response = await fetch('/admin/createProductOffer', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            offerName,
+                            discountPercentage,
+                            selectedProducts,
+                            expiryDate
+                        })
+                    });
+        
+                    const data = await response.json();
+        
+                    if (response.ok) {
+                        await Swal.fire({
+                            icon: 'success',
+                            title: 'Success',
+                            text: data.message
+                        });
+                        window.location.href = '/admin/offerManagement';
+                    } else {
+                        throw new Error(data.message);
+                    }
+                } catch (error) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: error.message || 'Failed to create offer'
+                    });
+                }
+            });
+        });
+        </script>

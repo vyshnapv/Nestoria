@@ -69,9 +69,6 @@
                                                 <h3 class="banner-title text-white">
                                                     <a href="/product/<%= product._id %>" style="color: black;">
                                                         <%= product.productName %><br>
-                                                        <% if (product.regularPrice && product.salePrice) { %>
-                                                            Up to <%= Math.round((product.regularPrice - product.salePrice) / product.regularPrice * 100) %>% off
-                                                        <% } %>
                                                     </a>
                                                 </h3>
                                                 <a href="/product/<%= product._id %>" class="btn btn-outline-white banner-link" style="color: black;">
@@ -137,12 +134,7 @@
                                 <div class="product-body">
                                     <h3 class="product-title"><a href="/product/<%= product._id %>"><%= product.productName %></a></h3>
                                     <div class="product-price">
-                                        <% if (product.salePrice) { %>
-                                            <span class="old-price">$<%= product.regularPrice %></span>
-                                            <span class="new-price">$<%= product.salePrice %></span>
-                                        <% } else { %>
-                                            $<%= product.regularPrice %>
-                                        <% } %>
+                                        $<%= product.regularPrice %>
                                     </div>
                                 </div>
                                 <div class="product-action">
@@ -187,12 +179,7 @@
                                 <div class="product-body">
                                     <h3 class="product-title"><a href="/product/<%= product._id %>"><%= product.productName %></a></h3>
                                     <div class="product-price">
-                                        <% if (product.salePrice) { %>
-                                            <span class="old-price">$<%= product.regularPrice %></span>
-                                            <span class="new-price">$<%= product.salePrice %></span>
-                                        <% } else { %>
-                                            $<%= product.regularPrice %>
-                                        <% } %>
+                                        $<%= product.regularPrice %>
                                     </div>
                                 </div>
                                 <div class="product-action">

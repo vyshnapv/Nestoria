@@ -50,8 +50,8 @@ const createOrder = async (req, res) => {
                 productId: item.product._id,
                 productName: item.product.productName,
                 quantity: item.quantity,
-                price: item.product.salePrice,
-                finalPrice: item.product.salePrice * item.quantity,
+                price: item.product.regularPrice, 
+                finalPrice: item.product.regularPrice * item.quantity,
                 itemStatus: "Ordered",
             });
         }
