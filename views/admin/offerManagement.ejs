@@ -161,23 +161,21 @@
                     <td><%= offer.discount %>%</td>
                     <td><%= offer.formattedExpiryDate %></td>
                     <td>
-                        <% if (offer.status === 'Active') { %>
-                            <span class="badge bg-success">Active</span>
-                        <% } else if (offer.status === 'Expired') { %>
-                            <span class="badge bg-danger">Expired</span>
-                        <% } else { %>
-                            <span class="badge bg-warning">Pending</span>
-                        <% } %>
-                    </td>
+                      <% if (offer.status === 'Active') { %>
+                          <span class="badge bg-success">Active</span>
+                      <% } else { %>
+                          <span class="badge bg-danger">Inactive</span>
+                      <% } %>
+                  </td>
                     <td>
                         <div class="btn-group">
                             <button class="btn btn-info btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                                 Action
                             </button>
                             <ul class="dropdown-menu">
-                              <li><a class="dropdown-item" href="#" onclick="editOffer('<%= offer._id %>')">Edit</a></li>
+                              <li><a class="dropdown-item" href="#" onclick="editOffer('<%= offer._id %>', '<%= offer.offerType %>')">Edit</a></li>
                                 <li><a class="dropdown-item" href="#" onclick="toggleOfferStatus('<%= offer._id %>', '<%= offer.status %>')">
-                                    <%= offer.status === 'Active' ? 'Deactivate' : 'Activate' %>
+                                    <%= offer.status === 'Active' ? 'Inactive' :'Active' %>
                                 </a></li>
                                 <li><a class="dropdown-item" href="#" onclick="deleteOffer('<%= offer._id %>')">Delete</a></li>
                             </ul>
@@ -227,20 +225,140 @@
       </div>
   <% } %>
   </div>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script>
-    function editOffer(offerId) {
-        try {
-            if (!offerId) {
-                console.error('No offer ID provided');
-                return;
-            }
-            window.location.href = `/admin/editProductOffer/${offerId}`;
-        } catch (error) {
-            console.error('Error in editOffer:', error);
-            // Optionally show an error message to the user
-            alert('Error accessing edit page. Please try again.');
+  //edit product and category offer
+  function editOffer(offerId, offerType) {
+    try {
+        if (!offerId || !offerType) {
+            console.error('Invalid offer ID or type');
+            return;
         }
+
+        let editUrl = '/admin/';
+        if (offerType === 'Product') {
+            editUrl += `editProductOffer/${offerId}`;
+        } else if (offerType === 'Category') {
+            editUrl += `editCategoryOffer/${offerId}`;
+        } else {
+            console.error('Unknown offer type');
+            alert('Unknown offer type. Cannot redirect.');
+            return;
+        }
+
+        window.location.href = editUrl;
+    } catch (error) {
+        console.error('Error in editOffer:', error);
+        alert('Error accessing edit page. Please try again.');
     }
+}
+  //active or inactive functionality
+  function toggleOfferStatus(offerId, currentStatus) {
+    Swal.fire({
+        title: 'Change Offer Status?',
+        text: `Change offer status to ${currentStatus === 'Active' ? 'Inactive' : 'Active'}?`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Proceed',
+        cancelButtonText: 'Cancel',
+        width:400
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch(`/admin/toggleOfferStatus/${offerId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire({
+                        title: 'Status Updated', 
+                        text: `Offer ${data.newStatus}.`, 
+                        icon: 'success',
+                        timer: 1500,
+                        showConfirmButton: false,
+                        width: 350
+                    }).then(() => {
+                        location.reload();
+                    });
+                } else {
+                    Swal.fire({
+                        title: 'Update Failed',
+                        text: data.message || 'Could not update offer status',
+                        icon: 'error',
+                        width: 250
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                Swal.fire({
+                    title: 'Error',
+                    text: 'Something went wrong',
+                    icon: 'error',
+                    width: 250
+                });
+            });
+        }
+    });
+}
+
+//delete functinality
+function deleteOffer(offerId) {
+    Swal.fire({
+        title: 'Delete Offer?',
+        text: 'Are you sure you want to delete this offer?',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Delete',
+        cancelButtonText: 'Cancel',
+        width: 400
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch(`/admin/deleteOffer/${offerId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire({
+                        title: 'Deleted!', 
+                        text: 'Offer has been deleted.', 
+                        icon: 'success',
+                        timer: 1500,
+                        showConfirmButton: false,
+                        width: 350
+                    }).then(() => {
+                        location.reload();
+                    });
+                } else {
+                    Swal.fire({
+                        title: 'Delete Failed',
+                        text: data.message || 'Could not delete offer',
+                        icon: 'error',
+                        width: 250
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                Swal.fire({
+                    title: 'Error',
+                    text: 'Something went wrong',
+                    icon: 'error',
+                    width: 250
+                });
+            });
+        }
+    });
+}
     </script>
   <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>

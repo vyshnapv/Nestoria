@@ -90,7 +90,7 @@ const createProductOffer = async(req,res)=>{
             if(!product){
                return res.status(404).json({success:false,message:`product not found or inactive:${productId}`});
             }
-
+        }
             const offer = new Offer({
                 offerType: "Product",
                 offerName: offerName,
@@ -101,7 +101,7 @@ const createProductOffer = async(req,res)=>{
             });
 
             await offer.save();
-        }
+        
         res.status(200).json({success: true,message: "Offers created successfully"});
     } catch (error) {
         console.error("Error creating offer:", error);
@@ -197,12 +197,6 @@ const loadCategoryOffer= async(req,res)=>{
     try {
         const activeCategories=await Category.find({
             isListed:true,
-            _id:{
-                $nin:await Offer.distinct("categoryId",{
-                    status:"Active",
-                    expireDate:{$gt:new Date()}
-                })
-            }
         });
         res.render("categoryOffer",{categories:activeCategories})
     } catch (error) {
@@ -238,28 +232,17 @@ const createCategoryOffer=async(req,res)=>{
             if(!category){
                 return res.status(404).json({success:false,message:`Category not found or inactive: ${categoryId}`})
             }
-            const existingOffer=await Offer.findOne({
-                categoryId:categoryId,
-                status:"Active",
-                expireDate:{$gt:now}
-            });
-
-            if(existingOffer){
-                return res.status(400).json({success:false,message:`Category ${category.name} already has an active offer`})
-            }
-
+        }
             const offer=new Offer({
-                categoryName:category.name,
                 offerType:"Category",
                 offerName:offerName,
                 discount:discount,
                 expireDate:expiry,
-                categoryId:categoryId,
+                categoryIds:categoryIds,
                 status:"Active"
             });
 
             await offer.save();
-        }
 
         res.status(200).json({success:true,message:"Category offers created successfully"});
     } catch (error) {
@@ -267,6 +250,124 @@ const createCategoryOffer=async(req,res)=>{
         res.status(500).json({success:false,message:"Failed to create offer.Please try again."})
     }
 }
+
+// Load edit category offer
+const loadEditCategoryOffer = async (req, res) => {
+    try {
+        const offerId = req.params.id;
+        const offer = await Offer.findById(offerId).populate('categoryIds')
+        
+        if (!offer) {
+            return res.redirect('/admin/offerManagement');
+        }
+
+        const activeCategories = await Category.find({
+            isListed: true
+        });
+
+        res.render('editCategoryOffer', {
+            offer: offer,
+            categories: activeCategories
+        });
+    } catch (error) {
+        console.error("Error loading edit category offer page:", error);
+        res.redirect("/pageerror");
+    }
+};
+
+// Update category offer
+const updateCategoryOffer = async (req, res) => {
+    try {
+        const offerId = req.params.id;
+        const { offerName, discountPercentage, selectedCategories, expiryDate } = req.body;
+
+        // Validation
+        if (!offerName || !discountPercentage || !selectedCategories || !expiryDate) {
+            return res.status(400).json({
+                success: false,
+                message: "Please fill all required fields"
+            });
+        }
+
+        const discount = parseFloat(discountPercentage);
+        if (isNaN(discount) || discount <= 0 || discount > 50) {
+            return res.status(400).json({ success: false, message: "Discount percentage must be between 0 and 50" });
+        }
+
+        const expiry = new Date(expiryDate);
+        const now = new Date();
+        if (expiry <= now) {
+            return res.status(400).json({ success: false, message: "Expiry date must be in the future" });
+        }
+
+        // Validate category
+        const categoryIds = Array.isArray(selectedCategories) ? selectedCategories: selectedCategories;
+
+        for(const categoryId of categoryIds){
+           const category = await Category.findOne({ _id: categoryId, isListed: true });
+             if (!category) {
+               return res.status(404).json({ success: false, message: "Category not found or inactive" });
+            }
+        }
+        const updatedOffer = await Offer.findByIdAndUpdate(
+            offerId,
+            {
+                offerName: offerName,
+                discount: discount,
+                expireDate: expiry,
+                categoryIds: categoryIds,
+                status: 'Active'
+            },
+            { new: true }
+        );
+
+        if (!updatedOffer) {
+            return res.status(404).json({ success: false, message: "Offer not found" });
+        }
+
+        res.status(200).json({ success: true, message: "Offer updated successfully" });
+    } catch (error) {
+        console.error("Error updating category offer:", error);
+        res.status(500).json({ success: false, message: "Failed to update offer" });
+    }
+};
+
+//status updation
+const toggleOfferStatus=async(req,res)=>{
+    try {
+         const offerId=req.params.id;
+         const offer= await Offer.findById(offerId);
+
+         if(!offer){
+            return res.status(404).json({success:false,message:"Offer not found"});
+         }
+
+         offer.status=offer.status==="Active" ? "Inactive" : "Active";
+         await offer.save();
+
+         res.status(200).json({success:true, message: "Offer status updated successfully",newStatus: offer.status});
+    } catch (error) {
+        console.error("Error togglong offer status",error)
+        res.status(500).json({ success: false, message: "Failed to update offer status" });
+    }
+}
+
+//delete offer
+const deleteOffer = async (req, res) => {
+    try {
+        const offerId = req.params.id;
+        const offer = await Offer.findByIdAndDelete(offerId);
+
+        if (!offer) {
+            return res.status(404).json({ success: false, message: "Offer not found" });
+        }
+
+        res.status(200).json({ success: true, message: "Offer deleted successfully" });
+    } catch (error) {
+        console.error("Error deleting offer:", error);
+        res.status(500).json({ success: false, message: "Failed to delete offer" });
+    }
+};
 
 module.exports={
     offerManagement,
@@ -276,4 +377,8 @@ module.exports={
     updateProductOffer,
     loadCategoryOffer,
     createCategoryOffer,
+    loadEditCategoryOffer,
+    updateCategoryOffer,
+    toggleOfferStatus,
+    deleteOffer
 }

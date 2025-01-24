@@ -40,8 +40,8 @@ const offerSchema = new Schema(
         },
         status: {
             type: String,
-            enum: ["Active", "Expired", "Pending"],
-            default: "Pending",
+            enum:['Active', 'Inactive'],
+            default: "Active'",
         },
         isBlocked: {
             type: Boolean,

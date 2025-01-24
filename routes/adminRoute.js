@@ -56,6 +56,8 @@ admin_route.post('/cancelAllProducts', adminAuth, adminController.cancelAllProdu
 
 //offer managemet
 admin_route.get('/offerManagement',adminAuth,offerController.offerManagement);
+admin_route.put('/toggleOfferStatus/:id',adminAuth, offerController.toggleOfferStatus);
+admin_route.delete('/deleteOffer/:id', adminAuth, offerController.deleteOffer);
 
 //product offer
 admin_route.get('/productOffer',adminAuth,offerController.loadProductOffer);
@@ -66,5 +68,7 @@ admin_route.put('/updateProductOffer/:id', adminAuth, offerController.updateProd
 //category offer
 admin_route.get('/categoryOffer',adminAuth,offerController.loadCategoryOffer);
 admin_route.post('/createCategoryOffer',adminAuth,offerController.createCategoryOffer);
+admin_route.get('/editCategoryOffer/:id', adminAuth, offerController.loadEditCategoryOffer);
+admin_route.put('/updateCategoryOffer/:id', adminAuth, offerController.updateCategoryOffer);
 
 module.exports=admin_route;

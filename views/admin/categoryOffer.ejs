@@ -281,7 +281,7 @@
                 </div>
                 <div class="category-list">
                     <% if (categories && categories.length > 0) { %>
-                        <% categories.forEach(category => { %>
+                        <% categories.forEach(function(category ) { %>
                             <label>
                                 <input type="checkbox" name="selectedCategories" value="<%= category._id %>">
                                 <%= category.name %>
@@ -319,11 +319,12 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        const form = document.getElementById('categoryOfferForm');
         const searchInput = document.getElementById('searchCategories');
         const clearButton = document.querySelector('.clear-btn');
         const categoryList = document.querySelector('.category-list');
         const selectedCategoriesDiv = document.querySelector('.selected-categories div');
-        const form = document.getElementById('categoryOfferForm');
+       
 
         const expiryDateInput = document.getElementById('expiryDate');
         const tomorrow = new Date();

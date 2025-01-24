@@ -164,13 +164,12 @@
                                                 <h3 class="product-title">
                                                     <a href="/product/<%= product._id %>"><%= product.productName %></a>
                                                 </h3><!-- End .product-title -->
-                    
 
                                                 <div class="product-price">
-                                                    <% if (product.highestOffer > 0) { %>
+                                                    <% if (product.highestDiscount > 0) { %>
                                                         <span class="price-offer">
                                                             <i class="fas fa-arrow-down arrow-down"></i>
-                                                            <%= product.highestOffer %>%
+                                                            <%= product.highestDiscount %>%
                                                         </span>
                                                         <div class="product-price text-muted" style="text-decoration: line-through;">
                                                             ₹<%= product.regularPrice %>
@@ -184,8 +183,6 @@
                                                         </div>
                                                     <% } %>
                                                 </div>
-                                               
-                    
                                                 <div class="ratings-container">
                                                     <div class="ratings">
                                                         <div class="ratings-val" style="width: 20%;"></div><!-- End .ratings-val -->
@@ -207,8 +204,8 @@
                         <ul class="pagination justify-content-center">
                             <% if (currentPage > 1) { %>
                                 <li class="page-item">
-                                    <a class="page-link page-link-prev" 
-                                       href="?page=<%= currentPage - 1 %>&price-sort=<%= priceSort %>&name-sort=<%= nameSort %>&Category=<%= selectedCategory %>" 
+                                    <a class="page-link page-link-prev"
+                                       href="?page=<%= currentPage - 1 %>&price-sort=<%= priceSort || '' %>&name-sort=<%= nameSort || '' %>&Category=<%= selectedCategory || '' %>&q=<%= searchQuery || '' %>"
                                        aria-label="Previous">
                                         <span aria-hidden="true"><i class="icon-long-arrow-left"></i></span>Prev
                                     </a>
@@ -220,20 +217,20 @@
                                     </a>
                                 </li>
                             <% } %>
-                    
+                            
                             <% for (let i = 1; i <= totalPages; i++) { %>
                                 <li class="page-item <%= currentPage === i ? 'active' : '' %>">
-                                    <a class="page-link" 
-                                       href="?page=<%= i %>&price-sort=<%= priceSort %>&name-sort=<%= nameSort %>&Category=<%= selectedCategory %>">
+                                    <a class="page-link"
+                                       href="?page=<%= i %>&price-sort=<%= priceSort || '' %>&name-sort=<%= nameSort || '' %>&Category=<%= selectedCategory || '' %>&q=<%= searchQuery || '' %>">
                                         <%= i %>
                                     </a>
                                 </li>
                             <% } %>
-                    
+                            
                             <% if (currentPage < totalPages) { %>
                                 <li class="page-item">
-                                    <a class="page-link page-link-next" 
-                                       href="?page=<%= currentPage + 1 %>&price-sort=<%= priceSort %>&name-sort=<%= nameSort %>&Category=<%= selectedCategory %>" 
+                                    <a class="page-link page-link-next"
+                                       href="?page=<%= currentPage + 1 %>&price-sort=<%= priceSort || '' %>&name-sort=<%= nameSort || '' %>&Category=<%= selectedCategory || '' %>&q=<%= searchQuery || '' %>"
                                        aria-label="Next">
                                         Next <span aria-hidden="true"><i class="icon-long-arrow-right"></i></span>
                                     </a>
@@ -247,7 +244,6 @@
                             <% } %>
                         </ul>
                     </nav>
-                    
                     
                 </div><!-- End .col-lg-9 -->
 

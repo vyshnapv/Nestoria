@@ -1,0 +1,497 @@
+ejsCopy<%- include('../layoutsAdmin/adminheader') %>
+<%- include('../layoutsAdmin/header') %>
+    <style>
+           :root {
+            --primary-color: rgb(66, 168, 66);
+            --primary-hover: #375336;
+            --secondary-color: #64748b;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f8fafc;
+            color: #1e293b;
+            font-size: 14px;
+        }
+
+        .container {
+            background: white;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            position: relative;
+            max-height: 100vh;
+            padding: 10px;
+        }
+
+        h1 {
+            color: #1e293b;
+            margin: 0 0 15px 0;
+            font-size: 33px;
+            font-weight: 600;
+            padding-top: 5px;
+        }
+
+        .back-btn {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            padding: 6px 12px;
+            background-color: rgb(92, 117, 158);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s;
+            font-size: 14px;
+        }
+
+        .back-btn:hover {
+            background-color: #776fbb;
+            color: white;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            padding: 0 15px;
+        }
+
+        .form-row {
+            padding: 8px;
+            background: #f8fafc;
+            border-radius: 6px;
+        }
+
+        .form-row:nth-child(1) input,
+        .form-row:nth-child(2) input {
+           max-width: 500px;
+           width: 100%;
+        }
+
+        label {
+            font-weight: 500;
+            color: #475569;
+            flex: 1;
+            font-size: 14px;
+        }
+
+        input[type="text"],
+        input[type="number"],
+        input[type="date"] {
+            flex: 2;
+            padding: 7px 8px;
+            border: 1px solid #e2e8f0;
+            border-radius: 4px;
+            width: 100%;
+            font-size: 14px;
+        }
+
+        input[type="text"]:focus,
+        input[type="number"]:focus,
+        input[type="date"]:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 1px rgba(79, 70, 229, 0.1);
+        }
+
+        .two-columns {
+            display: flex;
+            justify-content: space-between;
+            gap: 15px;
+            margin: 10px 0;
+        }
+
+        .column {
+            background: #f8fafc;
+            padding: 15px;
+            border-radius: 8px;
+            flex: 1;
+        }
+
+        .search-container {
+            position: relative;
+            margin-bottom: 6px;
+        }
+
+        .search-container .clear-btn {
+            position: absolute;
+            right: 4px;
+            top: 50%;
+            transform: translateY(-50%);
+            padding: 2px 6px;
+            font-size: 15px;
+            background: #e2e8f0;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+
+        .category-list {
+            max-height: 250px;
+            overflow-y: auto;
+            border: 1px solid #e2e8f0;
+            padding: 12px;
+            border-radius: 4px;
+            background: white;
+            margin-top: 10px;
+        }
+
+        .category-list label {
+            display: flex;
+            align-items: center;
+            padding: 3px;
+            margin: 1px 0;
+            border-radius: 3px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 14px;
+        }
+
+        .category-list label:hover {
+            background: #f1f5f9;
+        }
+
+        .category-list input[type="checkbox"] {
+            margin-right: 6px;
+            width: 12px;
+            height: 12px;
+            border-radius: 2px;
+            border: 1px solid #94a3b8;
+        }
+
+        .right-column-content {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            height: 100%;
+        }
+
+        .date-container {
+            margin-bottom: 10px;
+        }
+
+        .selected-categories {
+            flex-grow: 1;
+            background: white;
+            padding: 8px;
+            border: 1px solid #e2e8f0;
+            border-radius: 4px;
+            height: calc(100% - 60px);
+            overflow-y: auto;
+            margin-top: 8px;
+        }
+
+        .selected-categories div {
+            margin-top: 6px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+        }
+
+        .tag {
+            background: var(--primary-color);
+            color: white;
+            padding: 3px 6px;
+            border-radius: 3px;
+            font-size: 13px;
+        }
+
+        .form-actions {
+            margin-top: -20px;
+            padding-bottom: 10px;
+        }
+
+        .update-btn {
+            padding: 8px 30px;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 15px;
+        }
+
+        .update-btn:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .error-message {
+            color: #ef4444;
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+            display: block;
+        }
+
+        .category-error {
+            color: #ef4444;
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+            display: block;
+            padding-left: 8px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                margin: 20px;
+                padding: 20px;
+            }
+
+            .two-columns {
+                flex-direction: column;
+                gap: 8px;
+            }
+
+            .form-row {
+                flex-direction: column;
+                align-items: stretch;
+                padding: 6px;
+            }
+
+            form {
+                padding: 0;
+            }
+        }
+    </style>
+
+<div class="container">
+    <a href="/admin/offerManagement" class="back-btn">← Back to Offer Management</a>
+    <h1>Edit Category Offer</h1>
+    
+    <form id="editCategoryOfferForm">
+        <div class="form-row">
+            <label for="offerName">Offer Name:</label>
+            <input type="text" id="offerName" name="offerName" value="<%= offer.offerName %>" >
+            <span class="error-message" id="offerNameError"></span>
+        </div>
+        
+        <div class="form-row">
+            <label for="discountPercentage">Discount Percentage:</label>
+            <input type="number" id="discountPercentage" name="discountPercentage" min="0" max="50" value="<%= offer.discount %>">
+            <span class="error-message" id="discountError"></span>
+        </div>
+
+        <div class="form-row two-columns">
+            <div class="column">
+                <label for="categories">Select Categories</label>
+                <div class="search-container">
+                    <input type="text" id="searchCategories" placeholder="Search categories...">
+                    <button type="button" class="clear-btn">Clear</button>
+                </div>
+                <div class="category-list">
+                    <% if (categories && categories.length > 0) { %>
+                        <% categories.forEach(function(category){ %>
+                            <label>
+                                <input type="checkbox" name="selectedCategories" value="<%= category._id %>" 
+                                <%= offer.categoryIds.some(c=>c._id.toString() === category._id.toString()) ? 'checked' : '' %>>
+                                <%= category.name %>
+                            </label>
+                        <% }); %>
+                    <% } else { %>
+                        <p>No categories available for offers</p>
+                    <% } %>
+                </div>
+                <span class="category-error" id="categoryError"></span>
+            </div>
+
+            <div class="column">
+                <div class="right-column-content">
+                    <div class="date-container">
+                        <label for="expiryDate">Expiry Date</label>
+                        <input type="date" id="expiryDate" name="expiryDate" value="<%= offer.expireDate.toISOString().split('T')[0] %>">
+                        <span class="error-message" id="dateError"></span>
+                    </div>
+                    
+                    <div class="selected-categories">
+                        <label>Selected Categories</label>
+                        <div class="selected-items"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="update-btn">Update Category Offer</button>
+        </div>
+    </form>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.getElementById('editCategoryOfferForm');
+        const searchInput = document.getElementById('searchCategories');
+        const clearButton = document.querySelector('.clear-btn');
+        const categoryList = document.querySelector('.category-list');
+        const selectedCategoriesDiv = document.querySelector('.selected-items');
+
+        // Set minimum date for expiry
+        const expiryDateInput = document.getElementById('expiryDate');
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        expiryDateInput.min = tomorrow.toISOString().split('T')[0];
+
+        // Update selected categories display initially
+        updateSelectedCategories();
+
+        // Live validation for offer name
+        document.getElementById('offerName').addEventListener('input', function() {
+            const error = document.getElementById('offerNameError');
+            if (this.value.trim().length < 3) {
+                error.textContent = 'Offer name must be at least 3 characters long';
+            } else {
+                error.textContent = '';
+            }
+        });
+
+        // Live validation for discount percentage
+        document.getElementById('discountPercentage').addEventListener('input', function() {
+            const error = document.getElementById('discountError');
+            const value = parseFloat(this.value);
+            if (isNaN(value) || value < 0 || value > 50) {
+                error.textContent = 'Discount must be between 0 and 50';
+            } else {
+                error.textContent = '';
+            }
+        });
+
+        // Live validation for expiry date
+        expiryDateInput.addEventListener('input', function() {
+            const error = document.getElementById('dateError');
+            if (!this.value) {
+                error.textContent = 'Please select an expiry date';
+            } else {
+                error.textContent = '';
+            }
+        });
+
+        // Live validation for categories
+        categoryList.addEventListener('change', function(e) {
+            if (e.target.type === 'checkbox') {
+                updateSelectedCategories();
+            }
+        });
+
+        // Search functionality for category list
+        searchInput.addEventListener('input', function(e) {
+            const searchTerm = e.target.value.toLowerCase();
+            const categories = categoryList.querySelectorAll('label');
+
+            categories.forEach(category => {
+                const categoryName = category.textContent.toLowerCase();
+                category.style.display = categoryName.includes(searchTerm) ? '' : 'none';
+            });
+        });
+
+        // Clear search functionality
+        clearButton.addEventListener('click', function() {
+            searchInput.value = '';
+            const categories = categoryList.querySelectorAll('label');
+            categories.forEach(category => category.style.display = '');
+        });
+
+        // Update selected categories display
+        function updateSelectedCategories() {
+            selectedCategoriesDiv.innerHTML = '';
+            const checkedBoxes = categoryList.querySelectorAll('input[name="selectedCategories"]:checked');
+
+            checkedBoxes.forEach(checkbox => {
+                const categoryName = checkbox.parentElement.textContent.trim();
+                const span = document.createElement('span');
+                span.className = 'tag';
+                span.textContent = categoryName;
+
+                const removeBtn = document.createElement('button');
+                removeBtn.className = 'remove-tag';
+                removeBtn.style.cssText = 'margin-left: 5px; border: none; background: none; color: white; cursor: pointer;';
+                removeBtn.innerHTML = '×';
+                removeBtn.onclick = function(e) {
+                    e.preventDefault();
+                    checkbox.checked = false;
+                    updateSelectedCategories();
+                };
+
+                span.appendChild(removeBtn);
+                selectedCategoriesDiv.appendChild(span);
+            });
+        }
+
+        updateSelectedCategories();
+
+        // Form submission
+        form.addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            // Reset error messages
+            document.querySelectorAll('.error-message').forEach(el => el.textContent = '');
+
+            const offerName = document.getElementById('offerName').value;
+            const discountPercentage = document.getElementById('discountPercentage').value;
+            const expiryDate = document.getElementById('expiryDate').value;
+            const selectedCategories = Array.from(
+                document.querySelectorAll('input[name="selectedCategories"]:checked')
+            ).map(checkbox => checkbox.value);
+
+            let isValid = true;
+
+            if (!offerName || offerName.trim().length < 3) {
+                document.getElementById('offerNameError').textContent = 'Offer name must be at least 3 characters long';
+                isValid = false;
+            }
+
+            if (!discountPercentage || discountPercentage < 0 || discountPercentage > 50) {
+                document.getElementById('discountError').textContent = 'Discount must be between 0 and 50';
+                isValid = false;
+            }
+
+            if (!expiryDate) {
+                document.getElementById('dateError').textContent = 'Please select an expiry date';
+                isValid = false;
+            }
+
+            if (selectedCategories.length === 0) {
+                document.getElementById('categoryError').textContent = 'Please select a category';
+                isValid = false;
+            }
+
+            if (!isValid) return;
+
+            try {
+                const response = await fetch('/admin/updateCategoryOffer/<%= offer._id %>', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        offerName,
+                        discountPercentage,
+                        selectedCategories,
+                        expiryDate
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    await Swal.fire({
+                        icon: 'success',
+                        title: 'Success',
+                        text: data.message
+                    });
+                    window.location.href = '/admin/offerManagement';
+                } else {
+                    throw new Error(data.message);
+                }
+            } catch (error) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: error.message || 'Failed to update offer'
+                });
+            }
+        });
+    });
+</script>

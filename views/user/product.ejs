@@ -111,6 +111,23 @@
        .product-details-tab {
            margin-top: 20px;
         }
+        .offer-badge {
+           margin-bottom: 10px;
+        }
+        .badge {
+            font-size: 14px;
+            padding: 5px 10px;
+        }
+        .regular-price {
+            text-decoration: line-through;
+            color: #6c757d;
+            margin-right: 10px;
+        }
+        .offer-price {
+            color: #28a745;
+            font-size: 24px;
+            font-weight: bold;
+        }
 </style>
 
 <main class="main">
@@ -162,7 +179,15 @@
 
                     
                     <div class="price">
-                        <p class="price">₹<%= product.regularPrice %></p>    
+                        <% if (product.offer) { %>
+                            <div class="offer-badge">
+                                <span class="badge bg-danger">-<%= product.offer.discount %>%</span>
+                            </div>
+                            <p class="regular-price text-muted" style="text-decoration: line-through;">₹<%= product.regularPrice %></p>
+                            <p class="offer-price">₹<%= (product.regularPrice * (1 - product.offer.discount / 100)).toFixed(2) %></p>
+                        <% } else { %>
+                            <p class="price">₹<%= product.regularPrice %></p>
+                        <% } %>
                     </div>
 
                     <div class="category">
