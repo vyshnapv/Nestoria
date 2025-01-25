@@ -4,6 +4,7 @@ const Category = require("../../models/categoryModel");
 const Product = require("../../models/productModel");
 const Cart = require("../../models/cartModel");
 const Address = require("../../models/addressModel");
+const Offer=require("../../models/offerModel")
 const fs = require("fs");
 const path = require("path")
 
@@ -11,23 +12,60 @@ const path = require("path")
 const loadCart = async (req, res) => {
     try {
         const userData = await User.findById(req.session.user);
-        const cart =  await Cart.findOne({ userId: req.session.user }).populate({path:'items.product',select: 'productName productImage regularPrice quantity'})|| { items: [] };
+        const cart = await Cart.findOne({ userId: req.session.user }).populate({
+            path: 'items.product',
+            populate: {
+                path: 'category',
+                model: 'Category'
+            }
+        }) || { items: [] };
         
+        const currentDate = new Date();
+        const offers = await Offer.find({
+            status: 'Active',
+            expireDate: { $gt: currentDate }
+        });
+
+        // Process cart items with offers
+        const processedItems = cart.items.map(item => {
+            const productOffer = offers.find(offer => 
+                (offer.productIds?.includes(item.product._id)) ||
+                (offer.categoryIds?.includes(item.product.category._id))
+            );
+
+            const highestDiscount = productOffer ? productOffer.discount : 0;
+            const offerPrice = productOffer 
+                ? item.product.regularPrice * (1 - productOffer.discount / 100)
+                : item.product.regularPrice;
+
+            return {
+                ...item.toObject(),
+                product: {
+                    ...item.product.toObject(),
+                    highestDiscount,
+                    offerPrice
+                }
+            };
+        });
+
         let subtotal = 0;
-        if (cart && cart.items) {
-            subtotal = cart.items.reduce((total, item) => {
-                return total + (item.product.regularPrice * item.quantity); 
+        if (processedItems) {
+            subtotal = processedItems.reduce((total, item) => {
+                return total + (item.product.offerPrice * item.quantity); 
             }, 0);
         }
 
-        res.render('cart', { userData ,cart,subtotal});
+        res.render('cart', { 
+            userData, 
+            cart: { items: processedItems },
+            subtotal 
+        });
 
     } catch (error) {
-        console.error("Error loading home page", error);
+        console.error("Error loading cart page", error);
         res.redirect("/pageNotFound");
     }
 };
-
 //add to cart
 const addToCart = async (req, res) => {
     try {
@@ -140,26 +178,56 @@ const removeCartItem = async (req, res) => {
 //checkout page 
 const loadCheckout = async (req, res) => {
     try {
-      const userData =await User.findById(req.session.user);
+      const userData = await User.findById(req.session.user);
       const cart = await Cart.findOne({ userId: req.session.user })
         .populate({
           path: 'items.product',
-          select: 'productName productImage regularPrice quantity'
+          populate: {
+            path: 'category',
+            model: 'Category'
+          }
         }) || { items: [] };
   
+      const currentDate = new Date();
+      const offers = await Offer.find({
+        status: 'Active',
+        expireDate: { $gt: currentDate }
+      });
+
+      // Process cart items with offers
+      const processedItems = cart.items.map(item => {
+        const productOffer = offers.find(offer => 
+            (offer.productIds?.includes(item.product._id)) ||
+            (offer.categoryIds?.includes(item.product.category._id))
+        );
+
+        const highestDiscount = productOffer ? productOffer.discount : 0;
+        const offerPrice = productOffer 
+            ? item.product.regularPrice * (1 - productOffer.discount / 100)
+            : item.product.regularPrice;
+
+        return {
+            ...item.toObject(),
+            product: {
+                ...item.product.toObject(),
+                highestDiscount,
+                offerPrice
+            }
+        };
+      });
+
       let subtotal = 0;
-      if (cart && cart.items) {
-        subtotal = cart.items.reduce((total, item) => {
-            return total + (item.product.regularPrice * item.quantity);
+      if (processedItems) {
+        subtotal = processedItems.reduce((total, item) => {
+            return total + (item.product.offerPrice * item.quantity); 
         }, 0);
       }
   
-      
       const addresses = await Address.findOne({ userId: req.session.user }) || { address: [] };
   
       res.render("checkout", {
         userData,
-        cart,
+        cart: { items: processedItems },
         subtotal,
         addresses
       });

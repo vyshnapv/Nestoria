@@ -343,45 +343,22 @@
     }
 
     // Add to cart
-    document.querySelectorAll('#addToCart').forEach(button => {
-        button.addEventListener('click' , async (e) => {
-             e.preventDefault();
+    document.addEventListener('DOMContentLoaded', () => {
+    // Add to Cart Handler
+    function handleAddToCart(button) {
+        const productId = button.getAttribute('data-product-id');
+        const productName = button.closest('.product, .product-details') 
+            ?.querySelector('.product-title a, .product-title')?.textContent;
 
-             const productId = button.getAttribute('data-product-id');
-             const productName = button.closest('.product').querySelector('.product-title a').textContent;
-
-             try{
-                const response = await fetch('/addToCart', {
-                    method:'POST',
-                    headers:{
-                        'Content-Type': 'application/json'
-                    },
-                    body : JSON.stringify({ productId })
-                });
-
-                const result = await response.json();
-
-                if (!response.ok) {
-    
-                    if (response.status === 401) {
-                    Swal.fire({
-                        title: 'Login Required!',
-                        text: 'Please login to add items to your cart',
-                        icon: 'info',
-                        showCancelButton: true,
-                        confirmButtonText: 'Login Now',
-                        cancelButtonText: 'Continue Shopping'
-                    }).then((result) => {
-                        if (result.isConfirmed) {
-                            window.location.href = '/login';  
-                        }
-                    });
-                    return;
-                }
-                throw new Error(result.message || 'Something went wrong');
-            }
-            
-                if (result.success) {
+        fetch('/addToCart', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ productId })
+        })
+        .then(response => response.json())
+        .then(result => {
+            if (result.success) {
+                // Update cart count
                 const cartCountElement = document.querySelector('.cart-count');
                 if (cartCountElement && result.cartCount) {
                     cartCountElement.textContent = result.cartCount;
@@ -400,71 +377,49 @@
                         window.location.href = '/cart';
                     }
                 });
-
+            } else {
+                throw new Error(result.message || 'Failed to add product');
+            }
+        })
+        .catch(error => {
+            if (error.message.includes('login')) {
+                Swal.fire({
+                    title: 'Login Required!',
+                    text: 'Please login to add items to your cart',
+                    icon: 'info',
+                    showCancelButton: true,
+                    confirmButtonText: 'Login Now',
+                    cancelButtonText: 'Continue Shopping'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        window.location.href = '/login';  
+                    }
+                });
             } else {
                 Swal.fire({
                     title: 'Error!',
-                    text: result.message || 'Failed to add product to cart',
-                    icon: 'error',
-                    confirmButtonText: 'OK'
+                    text: error.message,
+                    icon: 'error'
                 });
             }
-        } catch (error) {
-            console.error("Error adding product to cart:", error);
-            Swal.fire({
-                title: 'Error!',
-                text: error.message || 'An error occurred while adding the product to the cart.',
-                icon: 'error',
-                confirmButtonText: 'OK'
-            });
-        }
-    });
-});
+        });
+    }
 
-// Add to wishlist functionality
-document.querySelectorAll('.wishlist-btn').forEach(button => {
-    button.addEventListener('click', async function (e) {
-        e.preventDefault();
-        
-        const productId = this.getAttribute('data-product-id');
-        const productName = this.closest('.product').querySelector('.product-title a').textContent;
+    // Wishlist Handler
+    function handleWishlist(button) {
+        const productId = button.getAttribute('data-product-id');
+        const productName = button.closest('.product, .product-details')
+            ?.querySelector('.product-title a, .product-title')?.textContent;
 
-        try {
-            const response = await fetch('/addWishlist', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ productId })
-            });
-
-            const result = await response.json();
-
-            if (!response.ok) {
-                if (response.status === 401) {
-                    Swal.fire({
-                        title: 'Login Required!',
-                        text: 'Please login to add items to your wishlist',
-                        icon: 'info',
-                        showCancelButton: true,
-                        confirmButtonText: 'Login Now',
-                        cancelButtonText: 'Continue Shopping'
-                    }).then((result) => {
-                        if (result.isConfirmed) {
-                            window.location.href = '/login';  
-                        }
-                    });
-                    return;
-                }
-                throw new Error(result.message || 'Something went wrong');
-            }
-
+        fetch('/addWishlist', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ productId })
+        })
+        .then(response => response.json())
+        .then(result => {
             if (result.success) {
-                if (result.isWishlisted) {
-                    this.classList.add('active');
-                } else {
-                    this.classList.remove('active');
-                }
+                button.classList.toggle('active');
                 
                 Swal.fire({
                     title: result.isWishlisted ? 'Added to Wishlist!' : 'Removed from Wishlist',
@@ -478,16 +433,47 @@ document.querySelectorAll('.wishlist-btn').forEach(button => {
                 if (wishlistCountElement && result.wishlistCount !== undefined) {
                     wishlistCountElement.textContent = result.wishlistCount;
                 }
+            } else {
+                throw new Error(result.message || 'Failed to update wishlist');
             }
-        } catch (error) {
-            console.error("Error adding product to wishlist:", error);
-            Swal.fire({
-                title: 'Error!',
-                text: error.message || 'An error occurred while adding the product to the wishlist.',
-                icon: 'error',
-                confirmButtonText: 'OK'
-            });
-        }
+        })
+        .catch(error => {
+            if (error.message.includes('login')) {
+                Swal.fire({
+                    title: 'Login Required!',
+                    text: 'Please login to manage your wishlist',
+                    icon: 'info',
+                    showCancelButton: true,
+                    confirmButtonText: 'Login Now',
+                    cancelButtonText: 'Continue Shopping'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        window.location.href = '/login';  
+                    }
+                });
+            } else {
+                Swal.fire({
+                    title: 'Error!',
+                    text: error.message,
+                    icon: 'error'
+                });
+            }
+        });
+    }
+
+    // Event Listeners
+    document.querySelectorAll('#addToCart, .addToCart').forEach(button => {
+        button.addEventListener('click', (e) => {
+            e.preventDefault();
+            handleAddToCart(button);
+        });
+    });
+
+    document.querySelectorAll('.wishlist-btn, .btn-wishlist').forEach(button => {
+        button.addEventListener('click', (e) => {
+            e.preventDefault();
+            handleWishlist(button);
+        });
     });
 });
 

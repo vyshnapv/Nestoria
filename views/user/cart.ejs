@@ -38,34 +38,41 @@
 									</thead>
 
 									<tbody>
-                                      <% cart.items.forEach(item => { %>
-                                        <% const product = item.product %>
-                                        <% const itemTotal = product.regularPrice * item.quantity %>
-										<tr data-product-id="<%= product._id %>">
-											<td class="product-col">
-												<div class="product">
-													<figure class="product-media">
-														<a href="/product/<%= product._id %>">
-															<img src="/uploads/cropped/<%= product.productImage[0] %>" alt="<%= product.productName %>">
-														</a>
-													</figure>
-
-													<h3 class="product-title">
-														<a href="/product/<%= product._id %>"><%= product.productName %></a>
-													</h3><!-- End .product-title -->
-												</div><!-- End .product -->
-											</td>
-											<td class="price-col">₹<%= product.regularPrice %></td>
-											<td class="quantity-col">
-                                                <div class="cart-product-quantity">
-                                                    <input type="number" class="form-control quantity-input" value="<%= item.quantity %>" min="1" max="5" step="1" data-decimals="0" data-product-id="<%= product._id %>" required oninput="validity.valid||(value='1');">
-                                                </div><!-- End .cart-product-quantity -->
-                                            </td>
-											<td class="total-col" id="total-<%= product._id %>">₹<%= itemTotal %></td>
-											<td class="remove-col"><button class="btn-remove"><i class="icon-close"></i></button></td>
-										</tr>
-										<% }) %>
-									</tbody>
+                                        <% cart.items.forEach(item => { %>
+                                            <% const product = item.product %>
+                                            <% const price = product.highestDiscount > 0 ? product.offerPrice : product.regularPrice %>
+                                            <% const itemTotal = price * item.quantity %>
+                                            <tr data-product-id="<%= product._id %>">
+                                                <td class="product-col">
+                                                    <div class="product">
+                                                        <figure class="product-media">
+                                                            <a href="/product/<%= product._id %>">
+                                                                <img src="/uploads/cropped/<%= product.productImage[0] %>" alt="<%= product.productName %>">
+                                                            </a>
+                                                        </figure>
+                                    
+                                                        <h3 class="product-title">
+                                                            <a href="/product/<%= product._id %>"><%= product.productName %></a>
+                                                        </h3>
+                                                    </div>
+                                                </td>
+                                                <% if (product.highestDiscount > 0) { %>
+                                                    <td class="price-col">
+                                                        ₹<%= product.offerPrice.toFixed(2) %>
+                                                    </td>
+                                                <% } else { %>
+                                                    <td class="price-col">₹<%= product.regularPrice %></td>
+                                                <% } %>
+                                                <td class="quantity-col">
+                                                    <div class="cart-product-quantity">
+                                                        <input type="number" class="form-control quantity-input" value="<%= item.quantity %>" min="1" max="5" step="1" data-decimals="0" data-product-id="<%= product._id %>" required oninput="validity.valid||(value='1');">
+                                                    </div>
+                                                </td>
+                                                <td class="total-col" id="total-<%= product._id %>">₹<%= itemTotal.toFixed(2) %></td>
+                                                <td class="remove-col"><button class="btn-remove"><i class="icon-close"></i></button></td>
+                                            </tr>
+                                        <% }) %>
+                                    </tbody>
 								</table><!-- End .table table-wishlist -->
 
 	                			<div class="cart-bottom">
@@ -97,7 +104,8 @@
                                         <tbody>
                                             <% cart.items.forEach(item => { %>
                                                 <% const product = item.product %>
-                                                <% const itemTotal = product.regularPrice * item.quantity %>
+                                                <% const price = product.highestDiscount > 0 ? product.offerPrice : product.regularPrice %>
+                                                <% const itemTotal = price * item.quantity %>
                                                 <tr>
                                                     <td><%= product.productName %></td>
                                                     <td><%= item.quantity %></td>
@@ -135,39 +143,41 @@
 
 <script>
  document.addEventListener('DOMContentLoaded', function() {
-  function updateCartSummary(items) {
-      const summaryTableBody = document.querySelector('.summary-cart tbody');
-      const subtotalElement = document.querySelector('.summary-cart #subtotal');
-      
-      while (summaryTableBody.firstChild) {
-          summaryTableBody.removeChild(summaryTableBody.firstChild);
-      }
-      
-      let subtotal = 0;
-      
-     
-      items.forEach(item => {
-          const row = document.createElement('tr');
-          const price = parseFloat(item.querySelector('.price-col').textContent.replace('₹', ''));
-          const quantity = parseInt(item.querySelector('.quantity-input').value);
-          const productName = item.querySelector('.product-title a').textContent;
-          const itemTotal = price * quantity;
-          subtotal += itemTotal;
-          
-          row.innerHTML = `
-              <td>${productName}</td>
-              <td>${quantity}</td>
-              <td>₹${itemTotal.toFixed(2)}</td>
-          `;
-          
-          summaryTableBody.appendChild(row);
-      });
-      
-      if (subtotalElement) {
-          subtotalElement.innerHTML = `<strong>₹${subtotal.toFixed(2)}</strong>`;
-      }
-  }
-
+    function updateCartSummary(items) {
+    const summaryTableBody = document.querySelector('.summary-cart tbody');
+    const subtotalElement = document.querySelector('.summary-cart #subtotal');
+    
+    while (summaryTableBody.firstChild) {
+        summaryTableBody.removeChild(summaryTableBody.firstChild);
+    }
+    
+    let subtotal = 0;
+    
+    items.forEach(item => {
+        const row = document.createElement('tr');
+        
+        // Check for offer price first
+        const priceElement = item.querySelector('.price-col');
+        const price = parseFloat(priceElement.textContent.replace('₹', ''));
+        
+        const quantity = parseInt(item.querySelector('.quantity-input').value);
+        const productName = item.querySelector('.product-title a').textContent;
+        const itemTotal = price * quantity;
+        subtotal += itemTotal;
+        
+        row.innerHTML = `
+            <td>${productName}</td>
+            <td>${quantity}</td>
+            <td>₹${itemTotal.toFixed(2)}</td>
+        `;
+        
+        summaryTableBody.appendChild(row);
+    });
+    
+    if (subtotalElement) {
+        subtotalElement.innerHTML = `<strong>₹${subtotal.toFixed(2)}</strong>`;
+    }
+}
 
   document.querySelectorAll('.quantity-input').forEach(input => {
       input.addEventListener('change', async (event) => {
@@ -188,7 +198,7 @@
               if (result.success) {
                   const price = parseFloat(priceElement.textContent.replace('₹', ''));
                   const newTotal = price * quantity;
-                  totalElement.textContent = `₹${newTotal}`;
+                  totalElement.textContent = `₹${newTotal.toFixed(2)}`;
 
                   
                   const allItems = document.querySelectorAll('.table-cart tbody tr');

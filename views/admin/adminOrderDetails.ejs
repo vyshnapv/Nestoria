@@ -150,7 +150,15 @@
         <div class="details-card order-summary">
           <p><strong>Order ID:</strong> <%= order.orderId %></p>
           <p><strong>Order Date:</strong> <%= order.orderDate %></p>
-          <p><strong>Total Amount:</strong> ₹ <%= order.totalAmount %></p>
+          <p>
+            <strong>Total Amount:</strong> 
+            ₹ <%= order.totalAmount %>
+            <% if (order.items.some(item => item.highestDiscount > 0)) { %>
+                <span style="color: green; margin-left: 10px;">
+                    (Offer Applied)
+                </span>
+            <% } %>
+        </p>
           <p><strong>Payment Method:</strong> <%= order.paymentMethod %></p>
           <p><strong>Payment Status:</strong> <%= order.paymentStatus %></p>
           <p><strong>Customer Name:</strong> <%= order.customer.name %></p>
@@ -191,7 +199,15 @@
             <div class="order-item-details">
               <p><strong>Category:</strong> <%= item.category %></p>
               <p><strong>Quantity:</strong> <%= item.quantity %></p>
-              <p><strong>Price:</strong> ₹ <%= item.price %></p>
+              <p>
+                <strong>Price:</strong> 
+                <% if (item.highestDiscount > 0) { %>
+                  <span style="text-decoration: line-through;">₹<%= item.price %></span>
+                  <span style="color: green;">₹<%= item.offerPrice %> (<%= item.highestDiscount %>% off)</span>
+                <% } else { %>
+                  ₹<%= item.price %>
+                <% } %>
+              </p>
               <p><strong>Final Price:</strong> ₹ <%= item.finalPrice %></p>
               <p><strong>Status:</strong> <span id="status-text-<%= item.productId %>"><%= item.status %></span></p>
               

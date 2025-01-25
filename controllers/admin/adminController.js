@@ -3,6 +3,7 @@ const Admin = require("../../models/adminModel");
 const Order = require('../../models/orderModel');
 const User = require('../../models/userModel');
 const Product = require("../../models/productModel");
+const Offer = require("../../models/offerModel")
 
 //admin loadlogin
 const loadLogin=(req,res)=>
@@ -77,6 +78,13 @@ const loadOrdersList = async (req, res) => {
 
     const searchTerm = search.trim();
 
+    // Get current active offers
+    const currentDate = new Date();
+    const offers = await Offer.find({
+      status: 'Active',
+      expireDate: { $gt: currentDate }
+    });
+
     let orders = [];
     let totalOrders = 0;
 
@@ -104,8 +112,8 @@ const loadOrdersList = async (req, res) => {
       .skip(skip)
       .limit(limit)
       .lean();
-  } else {
-    totalOrders = await Order.countDocuments();
+    } else {
+      totalOrders = await Order.countDocuments();
       orders = await Order.find()
         .sort({ createdAt: -1 })
         .skip(skip)
@@ -115,20 +123,48 @@ const loadOrdersList = async (req, res) => {
 
     const formattedOrders = await Promise.all(
       orders.map(async (order) => {
-
-
         const customerName = await getCustomerName(order.userId);
+
+        // Calculate total price with offers
+        const totalPriceWithOffers = order.items.reduce((total, item) => {
+          // Find applicable offer for this item
+          const productOffer = offers.find(offer => 
+            (offer.productIds?.includes(item.productId)) ||
+            (offer.categoryIds?.includes(item.category))
+          );
+
+          // Calculate price with offer
+          const offerPrice = productOffer 
+            ? item.price * (1 - productOffer.discount / 100)
+            : item.price;
+          
+          return total + (item.quantity * offerPrice);
+        }, 0);
+
+        // Check for highest discount
+        const highestDiscount = order.items.reduce((maxDiscount, item) => {
+          const productOffer = offers.find(offer => 
+            (offer.productIds?.includes(item.productId)) ||
+            (offer.categoryIds?.includes(item.category))
+          );
+
+          return productOffer 
+            ? Math.max(maxDiscount, productOffer.discount)
+            : maxDiscount;
+        }, 0);
 
         const hasReturnRequest = order.items.some(item => 
           item.returnStatus && 
           ['Return Requested', 'Return Accepted'].includes(item.returnStatus)
         );
+
         return {
           _id: order._id,
           orderId: order.orderId,
           orderDate: new Date(order.createdAt).toLocaleDateString('en-GB'),
           customerName: customerName || "Unknown Customer",
-          totalPrice: order.totalPrice.toFixed(2),
+          totalPrice: totalPriceWithOffers.toFixed(2),
+          highestDiscount: highestDiscount,
           paymentMethod: order.paymentMethod,
           orderStatus: order.orderStatus,
           paymentStatus: order.paymentStatus,
@@ -138,7 +174,6 @@ const loadOrdersList = async (req, res) => {
             ['Return Requested', 'Return Accepted'].includes(item.returnStatus)
           ).map(item => ({
             ...item,
-            // Add a display status for more user-friendly representation
             returnDisplayStatus: item.returnStatus === 'Return Accepted' ? 'Accepted' : 
                                   item.returnStatus === 'Return Rejected' ? 'Rejected' : 
                                   'Requested'
@@ -159,7 +194,12 @@ const loadOrdersList = async (req, res) => {
       startOrder: skip + 1,
       endOrder: Math.min(skip + limit, totalOrders)
     };
-    res.render('orders', { orders: formattedOrders , pagination, search:searchTerm });
+    
+    res.render('orders', { 
+      orders: formattedOrders, 
+      pagination, 
+      search: searchTerm 
+    });
   } catch (error) {
     console.error('Error in loadOrdersList:', error);
     res.status(500).render('error', {
@@ -252,69 +292,103 @@ const updateReturnStatus = async (req, res) => {
 //orderdetails page 
 const adminOrderDetails = async (req, res) => {
   try {
-    const { orderId } = req.params;
-    
-    const order = await Order.findOne({ orderId })
-      .populate({
-        path: 'items.productId',
-        model: 'Product',
-        populate: {
-          path: 'category',
-          model: 'Category',
-          select: 'name'
-        },
-        select: 'productName category productImage isBlocked'
+      const { orderId } = req.params;
+      
+      const currentDate = new Date();
+      const offers = await Offer.find({
+          status: 'Active',
+          expireDate: { $gt: currentDate }
       });
 
-    if (!order) {
-      return res.status(404).render('error', {
-        message: 'Order not found',
-        error: { status: 404 }
-      });
-    }
+      const order = await Order.findOne({ orderId })
+          .populate({
+              path: 'items.productId',
+              model: 'Product',
+              populate: {
+                  path: 'category',
+                  model: 'Category',
+                  select: 'name'
+              },
+              select: 'productName category productImage isBlocked'
+          });
 
-    const customer = await User.findById(order.userId).select('name email phone');
+      if (!order) {
+          return res.status(404).render('error', {
+              message: 'Order not found',
+              error: { status: 404 }
+          });
+      }
 
-    const formattedOrder = {
-      orderId: order.orderId,
-      orderDate: new Date(order.createdAt).toLocaleDateString('en-GB'),
-      totalAmount: order.totalPrice.toFixed(2),
-      paymentMethod: order.paymentMethod,
-      paymentStatus: order.paymentStatus,
-      customer: {
-        name: customer?.name || 'Unknown Customer',
-        email: customer?.email || 'N/A',
-        phone: customer?.phone || 'N/A'
-      },
-      address: order.address,
-      items: order.items.map(item => {
-        return {
-          productId: item.productId?._id || '',
-          productName: item.productId?.productName || 'Product Unavailable',
-          category: item.productId?.category?.name || 'Uncategorized',
-          image: item.productId?.productImage?.[0] 
-            ? `/uploads/cropped/${item.productId.productImage[0]}` 
-            : '/placeholder-image.jpg',
-          quantity: item.quantity,
-          price: item.price.toFixed(2),
-          finalPrice: item.finalPrice.toFixed(2),
-          status: item.itemStatus,
-          isAvailable: !item.productId?.isBlocked
-        };
-      })
-    };
+      const customer = await User.findById(order.userId).select('name email phone');
 
-    res.render('adminOrderDetails', { order: formattedOrder });
+      const formattedOrder = {
+          orderId: order.orderId,
+          orderDate: new Date(order.createdAt).toLocaleDateString('en-GB'),
+          paymentMethod: order.paymentMethod,
+          paymentStatus: order.paymentStatus,
+          customer: {
+              name: customer?.name || 'Unknown Customer',
+              email: customer?.email || 'N/A',
+              phone: customer?.phone || 'N/A'
+          },
+          address: order.address,
+          items: order.items.map(item => {
+              const productOffer = offers.find(offer => 
+                  (offer.productIds?.includes(item.productId?._id)) ||
+                  (offer.categoryIds?.includes(item.productId?.category))
+              );
+
+              const highestDiscount = productOffer ? productOffer.discount : 0;
+              const offerPrice = productOffer 
+                  ? item.price * (1 - productOffer.discount / 100)
+                  : item.price;
+              
+              // Calculate final price with offer
+              const finalPrice = productOffer 
+                  ? item.quantity * offerPrice 
+                  : item.finalPrice;
+
+              return {
+                  productId: item.productId?._id || '',
+                  productName: item.productId?.productName || 'Product Unavailable',
+                  category: item.productId?.category?.name || 'Uncategorized',
+                  image: item.productId?.productImage?.[0] 
+                      ? `/uploads/cropped/${item.productId.productImage[0]}` 
+                      : '/placeholder-image.jpg',
+                  quantity: item.quantity,
+                  price: item.price.toFixed(2),
+                  offerPrice: offerPrice.toFixed(2),
+                  highestDiscount,
+                  finalPrice: finalPrice.toFixed(2),
+                  status: item.itemStatus,
+                  isAvailable: !item.productId?.isBlocked
+              };
+          }),
+          // Calculate total with offer prices
+          totalAmount: order.items.reduce((total, item) => {
+              const productOffer = offers.find(offer => 
+                  (offer.productIds?.includes(item.productId?._id)) ||
+                  (offer.categoryIds?.includes(item.productId?.category))
+              );
+
+              const offerPrice = productOffer 
+                  ? item.price * (1 - productOffer.discount / 100)
+                  : item.price;
+              
+              return total + (item.quantity * offerPrice);
+          }, 0).toFixed(2)
+      };
+
+      res.render('adminOrderDetails', { order: formattedOrder });
 
   } catch (error) {
-    console.error('Error in adminOrderDetails:', error);
-    res.status(500).render('error', {
-      message: 'An error occurred while fetching order details',
-      error: process.env.NODE_ENV === 'development' ? error : {}
-    });
+      console.error('Error in adminOrderDetails:', error);
+      res.status(500).render('error', {
+          message: 'An error occurred while fetching order details',
+          error: process.env.NODE_ENV === 'development' ? error : {}
+      });
   }
 };
-
 
 //update orderstatus
 const updateOrderStatus = async (req, res) => {

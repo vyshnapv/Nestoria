@@ -4,6 +4,7 @@ const Address = require("../../models/addressModel");
 const Cart = require("../../models/cartModel");
 const Order = require("../../models/orderModel");
 const Product = require("../../models/productModel");
+const Offer=require("../../models/offerModel")
 const Category = require("../../models/categoryModel");
 
 
@@ -142,11 +143,17 @@ const orderSuccess = async (req,res)=>{
 //get view order page 
 const getViewOrders = async (req, res) => {
     try {
-        const userData =await User.findById(req.session.user);
+        const userData = await User.findById(req.session.user);
     
         const page = parseInt(req.query.page) || 1;
         const limit = 5; 
         const skip = (page - 1) * limit;
+
+        const currentDate = new Date();
+        const offers = await Offer.find({
+            status: 'Active',
+            expireDate: { $gt: currentDate }
+        });
 
         const totalOrders = await Order.countDocuments({ userId: userData._id });
         const totalPages = Math.ceil(totalOrders / limit);
@@ -158,7 +165,27 @@ const getViewOrders = async (req, res) => {
             .lean();
 
         const formattedOrders = orders.map(order => {
-            let totalPrice = order.items.reduce((sum, price) => sum += price.finalPrice, 0);
+            let totalPrice = 0;
+            const itemsWithOffers = order.items.map(item => {
+                const productOffer = offers.find(offer => 
+                    (offer.productIds?.includes(item.productId)) ||
+                    (offer.categoryIds?.includes(item.category))
+                );
+
+                const highestDiscount = productOffer ? productOffer.discount : 0;
+                const finalItemPrice = productOffer 
+                    ? item.finalPrice * (1 - productOffer.discount / 100)
+                    : item.finalPrice;
+
+                totalPrice += finalItemPrice;
+
+                return {
+                    ...item,
+                    highestDiscount,
+                    finalPrice: finalItemPrice
+                };
+            });
+
             return {
                 orderId: order.orderId,
                 date: new Date(order.createdAt).toLocaleDateString('en-US', {
@@ -169,15 +196,7 @@ const getViewOrders = async (req, res) => {
                 totalPrice: totalPrice.toFixed(2),
                 paymentStatus: order.paymentStatus,
                 orderStatus: order.orderStatus,
-                items: order.items.map(item => ({
-                    productName: item.productName,
-                    quantity: item.quantity,
-                    price: item.price,
-                    finalPrice: item.finalPrice,
-                    itemStatus: item.itemStatus
-                })),
-                address: order.address,
-                paymentMethod: order.paymentMethod
+                items: itemsWithOffers
             };
         });
 
@@ -190,18 +209,12 @@ const getViewOrders = async (req, res) => {
             helpers: {
                 getStatusClass: (status) => {
                     switch (status.toLowerCase()) {
-                        case 'paid':
-                            return 'paid';
-                        case 'pending':
-                            return 'pending';
-                        case 'processing':
-                            return 'processing';
-                        case 'shipped':
-                            return 'shipped';
-                        case 'delivered':
-                            return 'delivered';
-                        default:
-                            return '';
+                        case 'paid': return 'paid';
+                        case 'pending': return 'pending';
+                        case 'processing': return 'processing';
+                        case 'shipped': return 'shipped';
+                        case 'delivered': return 'delivered';
+                        default: return '';
                     }
                 }
             }
@@ -222,6 +235,12 @@ const getOrderDetails = async (req, res) => {
         const userData =await User.findById(req.session.user);
 
         const { orderId } = req.params;
+
+        const currentDate = new Date();
+        const offers = await Offer.find({
+            status: 'Active',
+            expireDate: { $gt: currentDate }
+        });
         
         const order = await Order.findOne({ orderId }).populate({
             path: 'items.productId',
@@ -231,7 +250,7 @@ const getOrderDetails = async (req, res) => {
                 model: 'Category',
                 select: 'name'
               },
-            select: 'productName category productImage'
+            select: 'productName category productImage regularPrice'
         });
 
         if (!order) {
@@ -241,6 +260,32 @@ const getOrderDetails = async (req, res) => {
             });
         }
 
+        const processedItems = order.items.map(item => {
+            const productOffer = offers.find(offer => 
+                (offer.productIds?.includes(item.productId._id)) ||
+                (offer.categoryIds?.includes(item.productId.category._id))
+            );
+
+            const highestDiscount = productOffer ? productOffer.discount : 0;
+            const originalPrice = item.productId.regularPrice;
+            const offerPrice = productOffer 
+                ? originalPrice * (1 - productOffer.discount / 100)
+                : originalPrice;
+
+                return {
+                    ...item.toObject(),
+                    originalPrice,
+                    highestDiscount,
+                    offerPrice,
+                    productId: {
+                        ...item.productId.toObject(),
+                        originalPrice,
+                        highestDiscount,
+                        offerPrice
+                    }
+                };
+            });
+    
         const activeTotalPrice = order.items.reduce((total, item) => {
             return item.itemStatus !== 'Cancelled' ? total + item.finalPrice : total;
         }, 0);
@@ -258,13 +303,16 @@ const getOrderDetails = async (req, res) => {
             paymentStatus: order.paymentStatus,
             orderStatus: order.orderStatus,
             totalPrice: activeTotalPrice.toFixed(2),
-            items: order.items.map(item => ({
+            items: processedItems.map(item => ({
                 productName: item.productName,
                 category: item.productId.category,
                 image: item.productId.productImage[0], 
                 quantity: item.quantity,
+                originalPrice: item.originalPrice.toFixed(2),
                 price: item.price.toFixed(2),
                 finalPrice: item.finalPrice.toFixed(2),
+                highestDiscount: item.highestDiscount,
+                offerPrice: item.offerPrice.toFixed(2),
                 itemStatus: item.itemStatus,
                 returnStatus: item.returnStatus || 'Not Requested',
                 returnReason: item.returnReason || '',

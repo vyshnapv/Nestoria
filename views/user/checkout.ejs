@@ -298,19 +298,24 @@
                             <h2 class="checkout-title">Order Summary</h2>
                             <div class="cart-items-list">
                                 <% cart.items.forEach(item => { %>
-                                <% const product = item.product %>
-                                <% const itemTotal = product.regularPrice * item.quantity %>
-                                <div class="cart-item-card">
-                                    <div class="product-media">
-                                        <img src="/uploads/cropped/<%= product.productImage[0] %>" alt="<%= product.productName %>">
+                                    <% const product = item.product %>
+                                    <% const price = product.highestDiscount > 0 ? product.offerPrice : product.regularPrice %>
+                                    <% const itemTotal = price * item.quantity %>
+                                    <div class="cart-item-card">
+                                        <div class="product-media">
+                                            <img src="/uploads/cropped/<%= product.productImage[0] %>" alt="<%= product.productName %>">
+                                        </div>
+                                        <div class="product-details">
+                                            <p class="price">Product Name: <%= product.productName %></p>
+                                            <% if (product.highestDiscount > 0) { %>
+                                                <p class="price">Price: ₹<%= product.offerPrice.toFixed(2) %></p>
+                                            <% } else { %>
+                                                <p class="price">Price: ₹<%= product.regularPrice.toFixed(2) %></p>
+                                            <% } %>
+                                            <p class="quantity">Quantity: <%= item.quantity %></p>
+                                            <p class="total">Total: ₹<%= itemTotal.toFixed(2) %></p>
+                                        </div>
                                     </div>
-                                    <div class="product-details">
-                                        <p class="price">Product Name: <%= product.productName %></p>
-                                        <p class="price">Price: ₹<%= product.regularPrice %></p>
-                                        <p class="quantity">Quantity: <%= item.quantity %></p>
-                                        <p class="total">Total: ₹<%= itemTotal %></p>
-                                    </div>
-                                </div>
                                 <% }) %>
                             </div>
                         </div>
@@ -399,7 +404,8 @@
                                 <tbody>
                                     <% cart.items.forEach(item => { %>
                                     <% const product = item.product %>
-                                    <% const itemTotal = product.regularPrice * item.quantity %>
+                                    <% const price = product.highestDiscount > 0 ? product.offerPrice : product.regularPrice %>
+                                    <% const itemTotal = price * item.quantity %>
                                     <tr>
                                         <td><%= product.productName %></td>
                                         <td>₹<%= itemTotal.toFixed(2) %></td>
