@@ -327,16 +327,13 @@
             const productList = document.querySelector('.product-list');
             const selectedProductsDiv = document.querySelector('.selected-items');
     
-            // Set minimum date for expiry
             const expiryDateInput = document.getElementById('expiryDate');
             const tomorrow = new Date();
             tomorrow.setDate(tomorrow.getDate() + 1);
             expiryDateInput.min = tomorrow.toISOString().split('T')[0];
-    
-            // Update selected products display initially
+
             updateSelectedProducts();
     
-            // Live validation for offer name
             document.getElementById('offerName').addEventListener('input', function() {
                 const error = document.getElementById('offerNameError');
                 if (this.value.trim().length < 3) {
@@ -346,7 +343,6 @@
                 }
             });
     
-            // Live validation for discount percentage
             document.getElementById('discountPercentage').addEventListener('input', function() {
                 const error = document.getElementById('discountError');
                 const value = parseFloat(this.value);
@@ -357,7 +353,6 @@
                 }
             });
     
-            // Live validation for expiry date
             expiryDateInput.addEventListener('input', function() {
                 const error = document.getElementById('dateError');
                 if (!this.value) {
@@ -366,15 +361,14 @@
                     error.textContent = '';
                 }
             });
-    
-            // Live validation for products
+
             productList.addEventListener('change', function(e) {
                if (e.target.type === 'checkbox') {
                    updateSelectedProducts();
                }
             });
     
-            // Search functionality for product list
+
             searchInput.addEventListener('input', function(e) {
                 const searchTerm = e.target.value.toLowerCase();
                 const products = productList.querySelectorAll('label');
@@ -385,14 +379,12 @@
                 });
             });
     
-            // Clear search functionality
             clearBtn.addEventListener('click', function() {
                 searchInput.value = '';
                 const products = productList.querySelectorAll('label');
                 products.forEach(product => product.style.display = '');
             });
     
-            // Update selected products display
             function updateSelectedProducts() {
                selectedProductsDiv.innerHTML = '';
                const checkedBoxes = productList.querySelectorAll('input[name="selectedProducts"]:checked');
@@ -420,11 +412,9 @@
 
             updateSelectedProducts();
     
-            // Form submission
             form.addEventListener('submit', async function(e) {
                 e.preventDefault();
     
-                // Reset error messages
                 document.querySelectorAll('.error-message').forEach(el => el.textContent = '');
     
                 const offerName = document.getElementById('offerName').value;

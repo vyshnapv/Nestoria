@@ -434,18 +434,15 @@ const shop = async (req, res) => {
             }];
         }
 
-        // Sorting options
         const sortOption = {};
         if (priceSort === 'lowToHigh') sortOption.regularPrice = 1;
         if (priceSort === 'highToLow') sortOption.regularPrice = -1;
         if (nameSort === 'aToZ') sortOption.productName = 1;
         if (nameSort === 'zToA') sortOption.productName = -1;
 
-        // Calculate total products with current filters
         const totalProducts = await Product.countDocuments(filter);
         const totalPages = Math.ceil(totalProducts / limit);
 
-        // Fetch current date for offer calculations
         const currentDate = new Date();
         const offers = await Offer.find({
             status: 'Active',
@@ -453,7 +450,6 @@ const shop = async (req, res) => {
         });
 
 
-        // Fetch products with pagination and sorting
         const products = await Product.find(filter)
             .sort(sortOption)
             .skip(skip)
@@ -461,7 +457,6 @@ const shop = async (req, res) => {
             .populate('category');
 
 
-        // Process offers for products
         const productsWithOffers = products.map(product => {
             const productOffer = offers.find(offer => 
                 (offer.productIds?.includes(product._id)) ||

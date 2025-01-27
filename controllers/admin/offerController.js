@@ -157,8 +157,6 @@ const updateProductOffer = async (req, res) => {
         if (expiry <= now) {
             return res.status(400).json({ success: false, message: "Expiry date must be in the future" });
         }
-
-        // Since we're only allowing one product in edit mode
         const productIds = Array.isArray(selectedProducts) ? selectedProducts : [selectedProducts];
         
         for (const productId of productIds) {
@@ -300,7 +298,6 @@ const updateCategoryOffer = async (req, res) => {
             return res.status(400).json({ success: false, message: "Expiry date must be in the future" });
         }
 
-        // Validate category
         const categoryIds = Array.isArray(selectedCategories) ? selectedCategories: selectedCategories;
 
         for(const categoryId of categoryIds){

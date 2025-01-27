@@ -1,4 +1,3 @@
-//this is my coupon management page 
 <%- include('../layoutsAdmin/adminheader') %>
 <%- include('../layoutsAdmin/header') %>
     <title>Coupon Management</title>
@@ -154,7 +153,7 @@
                                         <li><a class="dropdown-item edit-coupon" href="#" data-id="<%= coupon._id %>">Edit</a></li>
                                         <li>
                                             <a class="dropdown-item" href="#" data-id="<%= coupon._id %>">
-                                                <%= coupon.status === 'Active' ? 'Deactivate' : 'Activate' %>
+                                                <%= coupon.status === 'Active' ? 'Inactive' : 'Active' %>
                                             </a>
                                         </li>
                                         <li><a class="dropdown-item text-danger delete-coupon" href="#" data-id="<%= coupon._id %>">Delete</a></li>
@@ -317,7 +316,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const addCouponForm = document.getElementById('addCouponForm');
     const editCouponForm = document.getElementById('editCouponForm');
 
-    // Validation Functions
     const validateInput = {
         title: (title) => {
             if (!title.trim()) return "Coupon title is required";
@@ -354,7 +352,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // Error Handling Functions
     const displayError = (input, message) => {
         const existingError = input.parentElement.querySelector('.error-message');
         if (existingError) existingError.remove();
@@ -373,7 +370,6 @@ document.addEventListener('DOMContentLoaded', () => {
         input.classList.remove('is-invalid');
     };
 
-    // Form Input Setups
     const setupDateInputs = (validFromInput, expiryDateInput) => {
         const today = new Date().toISOString().split('T')[0];
         validFromInput.setAttribute('min', today);
@@ -384,7 +380,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
-    // Add Coupon Form Setup
     const addInputs = {
         title: document.getElementById('title'),
         code: document.getElementById('code'),
@@ -398,7 +393,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     setupDateInputs(addInputs.validFrom, addInputs.expiryDate);
 
-    // Edit Coupon Form Setup
     const editInputs = {
         title: document.getElementById('editTitle'),
         code: document.getElementById('editCode'),
@@ -412,12 +406,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     setupDateInputs(editInputs.validFrom, editInputs.expiryDate);
 
-    // Clear Input Errors
     Object.values({...addInputs, ...editInputs}).forEach(input => {
         input.addEventListener('input', () => clearError(input));
     });
 
-    // Create Coupon Handler
     const handleCouponSubmission = async (form, inputs, isEdit = false) => {
         let isValid = true;
         const titleError = validateInput.title(inputs.title.value);
@@ -502,7 +494,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // Event Listeners
     addCouponForm.addEventListener('submit', (e) => {
         e.preventDefault();
         handleCouponSubmission(addCouponForm, addInputs);
@@ -516,70 +507,22 @@ document.addEventListener('DOMContentLoaded', () => {
     couponTable.addEventListener('click', async (e) => {
         const target = e.target;
         const couponRow = target.closest('tr');
+        const couponId = target.getAttribute('data-id');
 
-        if (target.textContent === 'Activate' || target.textContent === 'Deactivate') {
-            const couponId = target.getAttribute('data-id');
-
-            try {
-            const response = await fetch(`/admin/toggleCouponStatus/${couponId}`, { 
-                method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            });
-            if (!response.ok) {
-                const errorData = await response.text(); // Changed from .json()
-                console.error('Error response:', errorData);
-                throw new Error(errorData || 'Failed to update status');
-            }
-                
-            const result = await response.json();
-    
-            const statusBadge = couponRow.querySelector('.badge');
-            const actionLink = target;
-    
-            statusBadge.textContent = result.coupon.status;
-            statusBadge.classList.toggle('bg-success', result.coupon.status === 'Active');
-            statusBadge.classList.toggle('bg-danger', result.coupon.status !== 'Active');        
-
-            actionLink.textContent = result.coupon.status === 'Active' ? 'Deactivate' : 'Activate';
-
-            Swal.fire({
-                icon: 'success',
-                title: 'Status Updated',
-                text: `Coupon ${result.coupon.status.toLowerCase()} successfully`
-            });
-         } catch (error) {
-            console.error('Full error:', error);
-            Swal.fire({
-                icon: 'error',
-                title: 'Error',
-                text: error.message || 'Failed to update coupon status'
-            });
-        }
-    }
-        // Edit Coupon
         if (target.textContent === 'Edit') {
             try {
                 const response = await fetch(`/admin/getCoupon/${couponId}`);
-                if (!response.ok) {
-                  throw new Error('Failed to fetch coupon details');
-                }
+                
                 const coupon = await response.json();
                 
-                editInputs.title.value = coupon.title;
-                editInputs.code.value = coupon.couponCode;
-                editInputs.description.value = coupon.description || '';
-                editInputs.validFrom.value = coupon.validFrom ? coupon.validFrom.split('T')[0] : '';
-                editInputs.expiryDate.value = coupon.expiryDate ? coupon.expiryDate.split('T')[0] : '';
-                editInputs.discountPercentage.value = coupon.percentage;
-                editInputs.minPurchase.value = coupon.minPrice || '';
-                editInputs.maxDiscount.value = coupon.maxRedeemAmount || '';
+                Object.keys(editInputs).forEach(key => {
+                    const value = key === 'code' ? coupon.couponCode : coupon[key];
+                    editInputs[key].value = key.includes('Date') ? value.split('T')[0] : value;
+                });
 
                 editCouponForm.dataset.couponId = couponId;
                 new bootstrap.Modal(document.getElementById('editCouponModal')).show();
             } catch (error) {
-                console.error('Coupon fetch error:', error);
                 Swal.fire({
                     icon: 'error',
                     title: 'Error',
@@ -588,47 +531,38 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
-        // Toggle Coupon Status
-        if (target.textContent === 'Activate' || target.textContent === 'Deactivate') {
+        if (target.textContent === 'Active' || target.textContent === 'Inactive') {
             try {
-                const response = await fetch(`/admin/toggleCouponStatus/${couponId}`, { 
-                    method: 'PATCH',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    }
-                });
-
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.message || 'Failed to update status');
-                }
-                    
+                const response = await fetch(`/admin/toggleCouponStatus/${couponId}`, { method: 'PATCH' });
                 const result = await response.json();
-        
-                const statusBadge = couponRow.querySelector('.badge');
-                const actionLink = target;
-        
-                statusBadge.textContent = result.coupon.status;
-                statusBadge.classList.toggle('bg-success', result.coupon.status === 'Active');
-                statusBadge.classList.toggle('bg-danger', result.coupon.status !== 'Active');        
 
-                actionLink.textContent = result.coupon.status === 'Active' ? 'Deactivate' : 'Activate';
+                if (response.ok) {
+                    const statusBadge = couponRow.querySelector('.badge');
+                    const actionLink = target;
+                    
+                    statusBadge.textContent = result.coupon.status;
+                    statusBadge.classList.toggle('bg-success');
+                    statusBadge.classList.toggle('bg-danger');
+                    
+                    actionLink.textContent = result.coupon.status === 'Active' ? 'Inactive' : 'Active';
 
                     Swal.fire({
                         icon: 'success',
                         title: 'Status Updated',
                         text: `Coupon ${result.coupon.status.toLowerCase()} successfully`
                     });
+                } else {
+                    throw new Error(result.message);
+                }
             } catch (error) {
                 Swal.fire({
                     icon: 'error',
                     title: 'Error',
-                    text: error.message || 'Failed to update coupon status'
+                    text: 'Failed to update coupon status'
                 });
             }
         }
 
-        // Delete Coupon
         if (target.textContent === 'Delete') {
             Swal.fire({
                 title: 'Are you sure?',
@@ -667,189 +601,4 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 </script>
-
-//this is my controller page 
-const Product = require("../../models/productModel");
-const Offer = require("../../models/offerModel");
-const Category = require("../../models/categoryModel");
-const Coupon = require("../../models/couponModel")
-
-
-const couponManagement = async(requestAnimationFrame,res)=>{
-    try {
-        const coupons = await Coupon.find(); 
-        res.render("couponManagement",{coupons})
-    } catch (error) {
-        console.error("Error in offer management:", error);
-        res.redirect("/pageerror"); 
-    }
-}
-
-const createCoupon=async(req,res)=>{
-    try {
-        const {title,code,description,validFrom,expiryDate,discountPercentage,minPurchase,maxDiscount}=req.body;
-
-        const newCoupon=new Coupon({
-            title,
-            couponCode:code,
-            description,
-            percentage:discountPercentage,
-            minPrice:minPurchase,
-            maxRedeemAmount:maxDiscount,
-            validFrom:new Date(validFrom),
-            expiryDate:new Date(expiryDate),
-            status:"Active"
-        });
-
-        await newCoupon.save();
-        res.status(201).json({message:"coupon created successfully",coupon:newCoupon})
-    } catch (error) {
-         console.error("Error creating coupon:", error);
-        res.status(500).json({ message: "Failed to create coupon", error: error.message });
-    }
-}
-
-//updateCoupon
-const updateCoupon=async(req,res)=>{
-    try {
-        const { id } = req.params;
-        const { title, code, description, validFrom, expiryDate, discountPercentage, minPurchase, maxDiscount } = req.body;
-
-        const coupon = await Coupon.findByIdAndUpdate(id, {
-            title,
-            couponCode: code,
-            description,
-            percentage: discountPercentage,
-            minPrice: minPurchase,
-            maxRedeemAmount: maxDiscount,
-            validFrom: new Date(validFrom),
-            expiryDate: new Date(expiryDate)
-        }, { new: true });
-
-        if (!coupon) {
-            return res.status(404).json({ message: "Coupon not found" });
-        }
-
-        res.status(200).json({ message: "Coupon updated successfully", coupon });
-    } catch (error) {
-        console.error("Error updating coupon:", error);
-        res.status(500).json({ message: "Failed to update coupon", error: error.message });
-    }
-}
-
-//toggle status 
-const toggleCouponStatus = async (req, res) => {
-    try {
-        const { id } = req.params;
-        const coupon = await Coupon.findById(id);
-
-        if (!coupon) {
-            return res.status(404).json({ message: "Coupon not found" });
-        }
-
-        coupon.status = coupon.status === 'Active' ? 'Inactive' : 'Active';
-        await coupon.save();
-
-        res.status(200).json({ 
-            message: "Coupon status updated", 
-            coupon: { 
-                status: coupon.status,
-                _id: coupon._id 
-            }
-        });
-    } catch (error) {
-        console.error("Error toggling coupon status:", error);
-        res.status(500).json({ message: "Failed to update coupon status", error: error.message });
-    }
-};
-
-//delete coupon 
-const deleteCoupon = async (req, res) => {
-    try {
-        const { id } = req.params;
-        const coupon = await Coupon.findByIdAndDelete(id);
-
-        if (!coupon) {
-            return res.status(404).json({ message: "Coupon not found" });
-        }
-
-        res.status(200).json({ message: "Coupon deleted successfully" });
-    } catch (error) {
-        console.error("Error deleting coupon:", error);
-        res.status(500).json({ message: "Failed to delete coupon", error: error.message });
-    }
-};
-
-const getCoupon = async (req, res) => {
-    try {
-        const { id } = req.params;
-        const coupon = await Coupon.findById(id);
-
-        if (!coupon) {
-            return res.status(404).json({ message: "Coupon not found" });
-        }
-
-        res.status(200).json(coupon);
-    } catch (error) {
-        console.error("Error fetching coupon:", error);
-        res.status(500).json({ message: "Failed to fetch coupon", error: error.message });
-    }
-};
-
-module.exports={
-    couponManagement,
-    createCoupon,
-    updateCoupon,
-    toggleCouponStatus,
-    deleteCoupon,
-    getCoupon
-}
-
-//this is coupon schema 
-const mongoose = require('mongoose');
-
-const couponSchema = mongoose.Schema({
-    title: {
-        type: String,
-        required: true
-    },
-    couponCode: {
-        type: String,
-        required: true,
-        unique: true
-    },
-    description: {
-        type: String
-    },
-    percentage: {
-        type: Number,
-        required: true,
-        min: 1,
-        max: 80
-    },
-    minPrice: {
-        type: Number,
-        default: 0
-    },
-    maxRedeemAmount: {
-        type: Number,
-    },
-    expiryDate: {
-        type: Date,
-        required: true,
-        index: {expires: 0}
-    },
-    status: {
-        type: String,
-        enum: ['Active', 'Inactive'],
-        default: 'Active'
-    },
-    addedDate: {
-        type: Date,
-        default: Date.now
-    }
-});
-
-module.exports = mongoose.model("Coupon",couponSchema);
-
 

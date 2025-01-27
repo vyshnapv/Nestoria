@@ -388,7 +388,6 @@
             categoryLabels.forEach(label => label.style.display = '');
         });
 
-        // Update selected categories display
         function updateSelectedCategories() {
             selectedCategoriesDiv.innerHTML = '';
             const checkedBoxes = categoryList.querySelectorAll('input[type="checkbox"]:checked');
@@ -401,7 +400,6 @@
             });
         }
 
-        // Form validation and submission
         form.addEventListener('submit', async function(e) {
             e.preventDefault();
             
@@ -412,7 +410,6 @@
                 document.querySelectorAll('input[name="selectedCategories"]:checked')
             ).map(checkbox => checkbox.value);
 
-            // Validation
             let isValid = true;
 
             if (!offerName || offerName.trim().length < 3) {

@@ -26,7 +26,6 @@ const loadCart = async (req, res) => {
             expireDate: { $gt: currentDate }
         });
 
-        // Process cart items with offers
         const processedItems = cart.items.map(item => {
             const productOffer = offers.find(offer => 
                 (offer.productIds?.includes(item.product._id)) ||
@@ -194,7 +193,6 @@ const loadCheckout = async (req, res) => {
         expireDate: { $gt: currentDate }
       });
 
-      // Process cart items with offers
       const processedItems = cart.items.map(item => {
         const productOffer = offers.find(offer => 
             (offer.productIds?.includes(item.product._id)) ||

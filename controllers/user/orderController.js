@@ -413,13 +413,11 @@ const returnOrderItem = async (req, res) => {
         const { orderId } = req.params;
         const { productName, reason } = req.body;
 
-        // Find the order
         const order = await Order.findOne({ orderId });
         if (!order) {
             return res.status(404).json({ success: false, message: 'Order not found' });
         }
 
-        // Find the specific item to return
         const itemToReturn = order.items.find(item => 
             item.productName === productName && item.itemStatus === 'Delivered'
         );

@@ -129,10 +129,10 @@
         }
 
         .product-list {
-            max-height: 250px;  /* Increased height */
+            max-height: 250px; 
             overflow-y: auto;
             border: 1px solid #e2e8f0;
-            padding: 12px;      /* Increased padding */
+            padding: 12px;     
             border-radius: 4px;
             background: white;
             margin-top: 10px;
@@ -175,11 +175,10 @@
         .selected-products {
             flex-grow: 1;
             background: white;
-            padding: 8px;      /* Increased padding */
+            padding: 8px;     
             border: 1px solid #e2e8f0;
             border-radius: 4px;
-            height: calc(100% - 60px);  /* Adjusted height */
-            overflow-y: auto;
+            height: calc(100% - 60px);  
             margin-top: 8px; 
         }
 
@@ -321,13 +320,11 @@
             const productList = document.querySelector('.product-list');
             const selectedProductsDiv = document.querySelector('.selected-products div');
         
-            // Set minimum date for expiry
             const expiryDateInput = document.getElementById('expiryDate');
             const tomorrow = new Date();
             tomorrow.setDate(tomorrow.getDate() + 1);
             expiryDateInput.min = tomorrow.toISOString().split('T')[0];    
-        
-            // Live validation for offer name
+    
             document.getElementById('offerName').addEventListener('input', function() {
                 const error = document.getElementById('offerNameError');
                 if (this.value.trim().length < 3) {
@@ -337,7 +334,6 @@
                 }
             });
         
-            // Live validation for discount percentage
             document.getElementById('discountPercentage').addEventListener('input', function() {
                 const error = document.getElementById('discountError');
                 const value = parseFloat(this.value);
@@ -348,7 +344,6 @@
                 }
             });
         
-            // Live validation for expiry date
             expiryDateInput.addEventListener('input', function() {
                 const error = document.getElementById('dateError');
                 if (!this.value) {
@@ -358,7 +353,6 @@
                 }
             });
         
-            // Live validation for products
             productList.addEventListener('change', function() {
                 const error = document.getElementById('productError');
                 const selectedProducts = document.querySelectorAll('input[name="selectedProducts"]:checked');
@@ -401,7 +395,6 @@
             form.addEventListener('submit', async function(e) {
                 e.preventDefault();
                 
-                // Reset error messages
                 document.querySelectorAll('.error-message').forEach(el => el.textContent = '');
                 
                 const offerName = document.getElementById('offerName').value;
