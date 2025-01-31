@@ -26,6 +26,10 @@ const couponSchema = mongoose.Schema({
     maxRedeemAmount: {
         type: Number,
     },
+    addedDate: {
+        type: Date,
+        default: Date.now
+    },
     expiryDate: {
         type: Date,
         required: true,
@@ -35,10 +39,6 @@ const couponSchema = mongoose.Schema({
         type: String,
         enum: ['Active', 'Inactive'],
         default: 'Active'
-    },
-    addedDate: {
-        type: Date,
-        default: Date.now
     }
 });
 

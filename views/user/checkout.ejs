@@ -269,6 +269,269 @@
     transform: translateY(0);
 }
 
+.coupons-container {
+    margin: 20px 0;
+    padding: 15px;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.coupons-title {
+    font-size: 1.1em;
+    margin-bottom: 15px;
+    color: #333;
+    padding-left: 10px;
+}
+
+.coupons-scroll {
+    max-height: 400px;
+    overflow-y: auto;
+    padding: 5px;
+}
+
+.coupon-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border: 1px dashed #007bff;
+    border-radius: 6px;
+    padding: 10px;
+    margin-bottom: 10px;
+    background-color: #f8f9fa;
+    position: relative;
+    height: 80px;
+}
+.coupon-left {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    flex: 1;
+}
+.coupon-info {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+
+.coupon-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.coupon-code {
+    font-weight: bold;
+    color: #007bff;
+    font-size: 0.9em;
+}
+
+.discount-percent {
+    background-color: #28a745;
+    color: white;
+    padding: 3px 6px;
+    border-radius: 4px;
+    font-size: 0.8em;
+    white-space: nowrap;
+}
+
+.coupon-name {
+    font-weight: 600;
+    font-size: 0.85em;
+    margin: 0;
+}
+
+.coupon-details {
+    display: flex;
+    gap: 10px;
+    font-size: 0.75em;
+    color: #666;
+}
+
+.coupon-details p {
+    margin:0;
+}
+
+.coupon-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.coupon-description {
+    font-size: 0.85em;
+    color: #555;
+    margin-bottom: 10px;
+}
+
+.apply-coupon-btn {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    font-size: 0.8em;
+    white-space: nowrap;
+}
+
+.apply-coupon-btn:hover {
+    background-color: #0056b3;
+}
+
+.remove-coupon-container {
+    text-align: right;
+    margin-top: 8px;
+}
+
+.remove-coupon-btn {
+    background-color: #dc3545;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.8em;
+    transition: background-color 0.3s;
+}
+
+.remove-coupon-btn:hover {
+    background-color: #c82333;
+}
+
+.no-coupons {
+    text-align: center;
+    color: #666;
+    padding: 20px;
+}
+
+/* Applied Coupon Display */
+.applied-coupon {
+    background-color: #e8f4ff;
+    padding: 10px;
+    border-radius: 6px;
+    margin: 10px 0;
+    border: 1px solid #b8daff;
+    font-size: 0.9em;
+}
+
+.applied-coupon-info {
+    color: #004085;
+    font-weight: 500;
+}
+
+.discount-amount {
+    font-weight: bold;
+    color: #28a745;
+}
+
+/* Enhanced Summary Table */
+.summary-table {
+    width: 100%;
+    margin-top: 15px;
+}
+
+.summary-table tr {
+    border-bottom: 1px solid #dee2e6;
+}
+
+.summary-table td {
+    padding: 10px 0;
+}
+
+.summary-table .total-row {
+    font-weight: bold;
+    font-size: 1.1em;
+    border-top: 2px solid #dee2e6;
+}
+
+/* Loading State */
+.loading {
+    position: relative;
+    opacity: 0.7;
+    pointer-events: none;
+}
+
+.loading::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 20px;
+    height: 20px;
+    border: 2px solid #f3f3f3;
+    border-top: 2px solid #007bff;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: translate(-50%, -50%) rotate(0deg); }
+    100% { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+.coupon-card.disabled {
+    opacity: 0.7;
+    pointer-events: none;
+}
+.coupon-card.disabled::after {
+    content: "Remove applied coupon to use this";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-size: 0.9em;
+    display: none;
+}
+
+.coupon-card.disabled:hover::after {
+    display: block;
+}
+.apply-coupon-btn.disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
+}
+
+.apply-coupon-btn.disabled:hover {
+    background-color: #cccccc;
+}
+
+.price-details {
+        margin-top: 5px;
+        font-size: 0.9em;
+    }
+    
+    .table-summary td {
+        padding: 12px 0;
+    }
+    
+    .table-summary .text-muted {
+        margin-top: 4px;
+    }
+    
+    .total-row td {
+        padding-top: 20px;
+        font-size: 1.1em;
+    }
+    
+    .summary-subtotal td {
+        border-top: 1px solid #dee2e6;
+        padding-top: 15px;
+    }
+    
+    .discount-info {
+        margin-top: 2px;
+    }
+    
+    .table-summary small {
+        line-height: 1.4;
+    }
 </style>
 
 <main class="main">
@@ -294,6 +557,59 @@
             <div class="container">
                <div class="checkout-container">
                   <div class="main-content">
+                    <div class="coupons-container">
+                        <h3 class="coupons-title">Available Coupons</h3>
+                        <div class="coupons-scroll">
+                            <% const eligibleCoupons = coupons.filter(coupon => subtotal >= coupon.minPrice); %>
+                            <% if (eligibleCoupons && eligibleCoupons.length > 0) { %>
+                                <% eligibleCoupons.forEach(coupon => { %>
+                                    <div class="coupon-card <%= appliedCoupon ? 'disabled' : '' %>"
+                                         data-coupon="<%= coupon.couponCode %>">
+                                        <div class="coupon-left">
+                                            <div class="coupon-info">
+                                                <span class="coupon-code"><%= coupon.couponCode %></span>
+                                                <span class="coupon-name"><%= coupon.title %></span>
+                                                <div class="coupon-details">
+                                                    <p>Min: ₹<%= coupon.minPrice.toFixed(2) %></p>
+                                                    <p>Max: ₹<%= coupon.maxRedeemAmount.toFixed(2) %></p>
+                                                    <p>Expires: <%= new Date(coupon.expiryDate).toLocaleDateString() %></p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="coupon-right">
+                                            <span class="discount-percent"><%= coupon.percentage %>% OFF</span>
+                                            <button class="apply-coupon-btn <%= appliedCoupon ? 'disabled' : '' %>"
+                                                    onclick="applyCoupon('<%= coupon.couponCode %>')"
+                                                    <%= appliedCoupon ? 'disabled' : '' %>>
+                                                <%= appliedCoupon ? 'Coupon Unavailable' : 'Apply Coupon' %>
+                                            </button>
+                                        </div>
+                                    </div>
+                                <% }); %>
+                            <% } else { %>
+                                <p class="no-coupons">No eligible coupons available for your cart value.</p>
+                            <% } %>
+                        </div>
+                        
+                        <% if (appliedCoupon) { %>
+                        <div class="applied-coupon">
+                            <span class="applied-coupon-info">
+                                Applied Coupon: <%= appliedCoupon.code %> 
+                                (<%= appliedCoupon.appliedDiscount === 'Maximum discount applied' ? 
+                                    `Max discount ₹${appliedCoupon.discountAmount}` : 
+                                    `${appliedCoupon.percentage}% OFF` %>)
+                            </span>
+                            <span class="discount-amount">
+                                -₹<%= appliedCoupon.discountAmount.toFixed(2) %>
+                            </span>
+                        </div>
+                        <div class="remove-coupon-container">
+                            <button class="remove-coupon-btn" onclick="removeCoupon()">Remove Coupon</button>
+                        </div>
+                        <% } %>
+                    </div>
+                    
+                    
                         <div class="cart-summary-box mb-4">
                             <h2 class="checkout-title">Order Summary</h2>
                             <div class="cart-items-list">
@@ -398,27 +714,64 @@
                                 <thead>
                                     <tr>
                                         <th>Product</th>
-                                        <th>Subtotal</th>
+                                        <th>Total</th>
                                     </tr>
                                 </thead>
                                 <tbody>
+                                    <% let calculatedSubtotal = 0 %>
                                     <% cart.items.forEach(item => { %>
-                                    <% const product = item.product %>
-                                    <% const price = product.highestDiscount > 0 ? product.offerPrice : product.regularPrice %>
-                                    <% const itemTotal = price * item.quantity %>
-                                    <tr>
-                                        <td><%= product.productName %></td>
-                                        <td>₹<%= itemTotal.toFixed(2) %></td>
-                                    </tr>
+                                        <% const product = item.product %>
+                                        <% const originalPrice = Math.round((product.highestDiscount > 0 ? product.offerPrice : product.regularPrice) * 100) / 100 %>
+                                        <% const itemTotal = Math.round(originalPrice * item.quantity * 100) / 100 %>
+                                        <% const finalItemPrice = item.couponDiscount ? Math.round(item.couponDiscount.finalPrice) : itemTotal %>
+                                        <% calculatedSubtotal += finalItemPrice %>
+                                        <tr>
+                                            <td>
+                                                <%= product.productName %>
+                                                <small class="d-block text-muted">
+                                                    <% if (item.couponDiscount) { %>
+                                                        <div class="price-details">
+                                                            <span class="original-price" style="text-decoration: line-through; color: #999;">
+                                                                ₹<%= itemTotal %>
+                                                            </span>
+                                                            <span class="arrow" style="color: #666; margin: 0 5px;">→</span>
+                                                            <span class="discounted-price" style="color: #28a745;">
+                                                                ₹<%= Math.round(item.couponDiscount.finalPrice) %>
+                                                            </span>
+                                                            <div class="discount-info" style="font-size: 0.85em; color: #28a745;">
+                                                                You Saved: ₹<%= Math.round(item.couponDiscount.amount) %>
+                                                            </div>
+                                                        </div>
+                                                    <% } %>
+                                                </small>
+                                            </td>
+                                            <td class="text-right">₹<%= finalItemPrice %></td>
+                                        </tr>
                                     <% }) %>
                                     
                                     <tr class="summary-subtotal">
                                         <td>Subtotal:</td>
-                                        <td>₹<%= subtotal.toFixed(2) %></td>
+                                        <td>₹<%= Math.round(calculatedSubtotal) %></td>
                                     </tr>
-                                    <tr class="summary-total">
-                                        <td>Total:</td>
-                                        <td>₹<%= subtotal.toFixed(2) %></td>
+                                    
+                                    <% if (appliedCoupon) { %>
+                                        <tr style="color: #28a745;">
+                                            <td>
+                                                Coupon Applied (<%= appliedCoupon.code %>):
+                                                <small class="d-block">
+                                                    <%= appliedCoupon.percentage %>% off
+                                                    <% if (appliedCoupon.appliedDiscount === 'Maximum discount applied') { %>
+                                                        (Max: ₹<%= Math.round(appliedCoupon.maxRedeemAmount) %>)
+                                                    <% } %>
+                                                </small>
+                                            </td>
+                                            <td class="text-right">-₹<%= Math.round(appliedCoupon.discountAmount) %></td>
+                                        </tr>
+                                    <% } %>
+                                    
+                                    <tr class="total-row">
+                                        <td><strong>Total:</strong></td>
+                                        <td><strong>₹<%= Math.round(finalAmount) %></strong></td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -719,6 +1072,123 @@ document.querySelector('.payment-option').addEventListener('click', function() {
         opt.classList.remove('selected');
     });
     this.classList.add('selected');
+});
+
+async function applyCoupon(couponCode) {
+    try {
+        const button = event.target;
+        button.classList.add('loading');
+        
+        const response = await fetch('/apply-coupon', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ couponCode })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            // Disable all other coupon cards
+            document.querySelectorAll('.coupon-card').forEach(card => {
+                card.classList.add('disabled');
+                const btn = card.querySelector('.apply-coupon-btn');
+                btn.disabled = true;
+                btn.classList.add('disabled');
+                btn.textContent = 'Coupon Unavailable';
+            });
+
+            Swal.fire({
+                icon: 'success',
+                title: 'Coupon Applied',
+                text: result.message,
+                showConfirmButton: false,
+                timer: 1500
+            }).then(() => {
+                window.location.reload();
+            });
+        } else {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: result.message
+            });
+        }
+    } catch (error) {
+        console.error('Error applying coupon:', error);
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'Failed to apply coupon'
+        });
+    } finally {
+        button.classList.remove('loading');
+    }
+}
+
+async function removeCoupon() {
+    try {
+        const response = await fetch('/remove-coupon', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            // Enable all coupon cards
+            document.querySelectorAll('.coupon-card').forEach(card => {
+                card.classList.remove('disabled');
+                const btn = card.querySelector('.apply-coupon-btn');
+                btn.disabled = false;
+                btn.classList.remove('disabled');
+                btn.textContent = 'Apply Coupon';
+            });
+
+            Swal.fire({
+                icon: 'success',
+                title: 'Coupon Removed',
+                text: result.message,
+                showConfirmButton: false,
+                timer: 1500
+            }).then(() => {
+                window.location.reload();
+            });
+        } else {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: result.message
+            });
+        }
+    } catch (error) {
+        console.error('Error removing coupon:', error);
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'Failed to remove coupon'
+        });
+    }
+}
+
+// Add this to your DOMContentLoaded event
+document.addEventListener('DOMContentLoaded', function() {
+    const appliedCoupon = document.querySelector('.applied-coupon');
+    if (appliedCoupon) {
+        // If there's an applied coupon, disable all coupon cards
+        document.querySelectorAll('.coupon-card').forEach(card => {
+            if (!card.classList.contains('disabled')) {
+                card.classList.add('disabled');
+                const btn = card.querySelector('.apply-coupon-btn');
+                btn.disabled = true;
+                btn.classList.add('disabled');
+                btn.textContent = 'Coupon Unavailable';
+            }
+        });
+    }
 });
 
 </script>

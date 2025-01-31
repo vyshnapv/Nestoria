@@ -343,7 +343,7 @@ document.querySelector('form').onsubmit = function(e) {
     formData.append('deletedImages', JSON.stringify(deletedImages));
     
     processedImages.forEach((imageData, index) => {
-        if (imageData.type === 'new' || imageData.file) {
+        if (imageData.type === 'new' && imageData.file) {
             formData.append('images', imageData.file);
         }
     });

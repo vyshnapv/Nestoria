@@ -5,8 +5,13 @@ const Product = require("../../models/productModel");
 const Cart = require("../../models/cartModel");
 const Address = require("../../models/addressModel");
 const Offer=require("../../models/offerModel")
+const Coupon=require("../../models/couponModel")
 const fs = require("fs");
 const path = require("path")
+
+const roundToTwo = (num) => {
+    return Math.round(num * 100) / 100;
+};
 
 //load cart page 
 const loadCart = async (req, res) => {
@@ -177,65 +182,101 @@ const removeCartItem = async (req, res) => {
 //checkout page 
 const loadCheckout = async (req, res) => {
     try {
-      const userData = await User.findById(req.session.user);
-      const cart = await Cart.findOne({ userId: req.session.user })
-        .populate({
-          path: 'items.product',
-          populate: {
-            path: 'category',
-            model: 'Category'
-          }
-        }) || { items: [] };
-  
-      const currentDate = new Date();
-      const offers = await Offer.find({
-        status: 'Active',
-        expireDate: { $gt: currentDate }
-      });
+        const userData = await User.findById(req.session.user);
+        const cart = await Cart.findOne({ userId: req.session.user })
+            .populate({
+                path: 'items.product',
+                populate: {
+                    path: 'category',
+                    model: 'Category'
+                }
+            });
 
-      const processedItems = cart.items.map(item => {
-        const productOffer = offers.find(offer => 
-            (offer.productIds?.includes(item.product._id)) ||
-            (offer.categoryIds?.includes(item.product.category._id))
-        );
+        if (!cart || cart.items.length === 0) {
+            delete req.session.appliedCoupon;
+        }
 
-        const highestDiscount = productOffer ? productOffer.discount : 0;
-        const offerPrice = productOffer 
-            ? item.product.regularPrice * (1 - productOffer.discount / 100)
-            : item.product.regularPrice;
+        const currentDate = new Date();
+        const offers = await Offer.find({
+            status: 'Active',
+            expireDate: { $gt: currentDate }
+        });
 
-        return {
-            ...item.toObject(),
-            product: {
-                ...item.product.toObject(),
-                highestDiscount,
-                offerPrice
-            }
-        };
-      });
+        // Process items with offer prices
+        const processedItems = cart ? cart.items.map(item => {
+            const productOffer = offers.find(offer => 
+                (offer.productIds?.includes(item.product._id)) ||
+                (offer.categoryIds?.includes(item.product.category._id))
+            );
 
-      let subtotal = 0;
-      if (processedItems) {
-        subtotal = processedItems.reduce((total, item) => {
-            return total + (item.product.offerPrice * item.quantity); 
-        }, 0);
-      }
-  
-      const addresses = await Address.findOne({ userId: req.session.user }) || { address: [] };
-  
-      res.render("checkout", {
-        userData,
-        cart: { items: processedItems },
-        subtotal,
-        addresses
-      });
-  
+            const highestDiscount = productOffer ? productOffer.discount : 0;
+            const offerPrice = productOffer 
+                ? item.product.regularPrice * (1 - productOffer.discount / 100)
+                : item.product.regularPrice;
+
+            return {
+                ...item.toObject(),
+                product: {
+                    ...item.product.toObject(),
+                    highestDiscount,
+                    offerPrice
+                }
+            };
+        }) : [];
+
+        let subtotal = roundToTwo(processedItems.reduce((total, item) => {
+            return total + (item.product.offerPrice * item.quantity);
+        }, 0));
+
+        // Calculate per-product coupon discounts
+        const appliedCoupon = req.session.appliedCoupon;
+        let finalAmount = subtotal;
+        let itemsWithDiscount = processedItems;
+
+        if (appliedCoupon) {
+            // Calculate proportional discount for each item
+            const totalDiscount = roundToTwo(appliedCoupon.discountAmount);
+            itemsWithDiscount = processedItems.map(item => {
+                const itemTotal = roundToTwo(item.product.offerPrice * item.quantity);
+                const itemProportion = itemTotal / subtotal;
+                const itemDiscount = roundToTwo(totalDiscount * itemProportion);
+                const finalItemPrice = roundToTwo(itemTotal - itemDiscount);
+                
+                return {
+                    ...item,
+                    couponDiscount: {
+                        amount: itemDiscount,
+                        priceBeforeDiscount: itemTotal,
+                        finalPrice: finalItemPrice,
+                        perUnitDiscount: roundToTwo(itemDiscount / item.quantity)
+                    }
+                };
+            });
+
+            finalAmount = roundToTwo(subtotal - appliedCoupon.discountAmount);
+        }
+
+        const addresses = await Address.findOne({ userId: req.session.user }) || { address: [] };
+        const coupons = await Coupon.find({ 
+            status: 'Active', 
+            expiryDate: { $gt: currentDate } 
+        });
+
+        res.render("checkout", {
+            userData,
+            cart: { items: itemsWithDiscount },
+            subtotal,
+            finalAmount,
+            appliedCoupon,
+            addresses,
+            coupons
+        });
+
     } catch (error) {
-      console.error("Error loading checkout page:", error);
-      res.redirect("/cart");
+        console.error("Error loading checkout page:", error);
+        res.redirect("/cart");
     }
-  };
-
+};
 
 //addcheck address
   const addCheckAddress = async (req, res) => {
@@ -282,6 +323,136 @@ const loadCheckout = async (req, res) => {
     }
 };
 
+// Apply Coupon
+const applyCoupon = async (req, res) => {
+    try {
+        const { couponCode } = req.body;
+        const userId = req.session.user;
+
+        // Check if a coupon is already applied
+        if (req.session.appliedCoupon) {
+            return res.status(400).json({
+                success: false,
+                message: 'Please remove the currently applied coupon first'
+            });
+        }
+
+        // Find the coupon
+        const coupon = await Coupon.findOne({ 
+            couponCode, 
+            status: 'Active',
+            expiryDate: { $gt: new Date() }
+        });
+
+        if (!coupon) {
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid or expired coupon'
+            });
+        }
+
+        // Get cart total
+        const cart = await Cart.findOne({ userId })
+            .populate({
+                path: 'items.product',
+                populate: {
+                    path: 'category',
+                    model: 'Category'
+                }
+            });
+
+        const currentDate = new Date();
+        const offers = await Offer.find({
+            status: 'Active',
+            expireDate: { $gt: currentDate }
+        });
+
+        // Calculate subtotal with offers
+        let subtotal = cart.items.reduce((total, item) => {
+            const productOffer = offers.find(offer => 
+                (offer.productIds?.includes(item.product._id)) ||
+                (offer.categoryIds?.includes(item.product.category._id))
+            );
+            
+            const price = productOffer 
+                ? item.product.regularPrice * (1 - productOffer.discount / 100)
+                : item.product.regularPrice;
+                
+            return total + (price * item.quantity);
+        }, 0);
+
+        // Validate minimum purchase requirement
+        if (subtotal < coupon.minPrice) {
+            return res.status(400).json({
+                success: false,
+                message: `Minimum purchase of ₹${coupon.minPrice} required`
+            });
+        }
+
+        // Calculate percentage-based discount
+        const percentageDiscount = (subtotal * coupon.percentage) / 100;
+
+        // Determine final discount amount
+        let finalDiscountAmount;
+        if (percentageDiscount > coupon.maxRedeemAmount) {
+            // If percentage discount exceeds maximum allowed, apply maximum amount
+            finalDiscountAmount = coupon.maxRedeemAmount;
+        } else {
+            // Otherwise, apply the percentage-based discount
+            finalDiscountAmount = percentageDiscount;
+        }
+
+        // Store coupon details in session
+        req.session.appliedCoupon = {
+            code: couponCode,
+            discountAmount: finalDiscountAmount,
+            percentage: coupon.percentage,
+            originalAmount: subtotal,
+            maxRedeemAmount: coupon.maxRedeemAmount,
+            appliedDiscount: finalDiscountAmount === coupon.maxRedeemAmount ? 
+                'Maximum discount applied' : 'Percentage discount applied'
+        };
+
+        const finalAmount = subtotal - finalDiscountAmount;
+
+        return res.json({
+            success: true,
+            message: `Coupon applied successfully! ${finalDiscountAmount === coupon.maxRedeemAmount ? 
+                'Maximum discount of ₹' + finalDiscountAmount + ' applied.' : 
+                coupon.percentage + '% discount of ₹' + finalDiscountAmount + ' applied.'}`,
+            discountAmount: finalDiscountAmount,
+            finalAmount: finalAmount,
+            discountType: finalDiscountAmount === coupon.maxRedeemAmount ? 
+                'Maximum discount' : 'Percentage discount'
+        });
+
+    } catch (error) {
+        console.error("Error applying coupon:", error);
+        return res.status(500).json({
+            success: false,
+            message: 'Failed to apply coupon'
+        });
+    }
+};
+// Remove Coupon
+const removeCoupon = async (req, res) => {
+    try {
+        // Remove coupon from session
+        delete req.session.appliedCoupon;
+        
+        return res.json({
+            success: true,
+            message: 'Coupon removed successfully'
+        });
+    } catch (error) {
+        console.error("Error removing coupon:", error);
+        return res.status(500).json({
+            success: false,
+            message: 'Failed to remove coupon'
+        });
+    }
+};
+
  module.exports={
         loadCart,
         addToCart,
@@ -289,4 +460,6 @@ const loadCheckout = async (req, res) => {
         removeCartItem,
         loadCheckout,
         addCheckAddress,
+        applyCoupon,
+        removeCoupon
     }

@@ -6,6 +6,7 @@ const Order = require("../../models/orderModel");
 const Product = require("../../models/productModel");
 const Offer=require("../../models/offerModel")
 const Category = require("../../models/categoryModel");
+const Coupon=require("../../models/couponModel")
 
 
 const createOrder = async (req, res) => {
@@ -80,6 +81,12 @@ const createOrder = async (req, res) => {
 
         await newOrder.save();
         await Cart.deleteOne({ userId });
+
+        delete req.session.appliedCoupon;
+        await Cart.findOneAndUpdate(
+            { userId: userId },
+            { $set: { items: [] } }
+        );
 
         res.status(200).json({ 
             success: true, 

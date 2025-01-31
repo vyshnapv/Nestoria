@@ -330,25 +330,38 @@ const updateCategoryOffer = async (req, res) => {
 };
 
 //status updation
-const toggleOfferStatus=async(req,res)=>{
+const toggleOfferStatus = async(req, res) => {
     try {
-         const offerId=req.params.id;
-         const offer= await Offer.findById(offerId);
+        const offerId = req.params.id;
+        const offer = await Offer.findById(offerId);
 
-         if(!offer){
-            return res.status(404).json({success:false,message:"Offer not found"});
-         }
+        if (!offer) {
+            return res.status(404).json({success: false, message: "Offer not found"});
+        }
 
-         offer.status=offer.status==="Active" ? "Inactive" : "Active";
-         await offer.save();
+        // Check if offer is expired when trying to activate
+        if (offer.status === "Inactive" && offer.expireDate < new Date()) {
+            return res.status(200).json({
+                success: false,
+                isExpired: true,
+                offerType: offer.offerType,
+                message: "Offer has expired"
+            });
+        }
 
-         res.status(200).json({success:true, message: "Offer status updated successfully",newStatus: offer.status});
+        offer.status = offer.status === "Active" ? "Inactive" : "Active";
+        await offer.save();
+
+        res.status(200).json({
+            success: true,
+            message: "Offer status updated successfully",
+            newStatus: offer.status
+        });
     } catch (error) {
-        console.error("Error togglong offer status",error)
+        console.error("Error toggling offer status", error);
         res.status(500).json({ success: false, message: "Failed to update offer status" });
     }
 }
-
 //delete offer
 const deleteOffer = async (req, res) => {
     try {

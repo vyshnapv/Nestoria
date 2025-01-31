@@ -11,7 +11,7 @@
                 </div>
                 <div class="mb-4">
                     <label for="description" class="form-label">Description</label>
-                    <textarea id="description" name="description" class="form-control border" required minlength="10" maxlength="200"><%= category.description %></textarea>
+                    <textarea id="description" name="description" class="form-control border" required minlength="10"><%= category.description %></textarea>
                 </div>
                 <div id="errorMessage" class="alert alert-danger d-none"></div>
                 <div id="successMessage" class="alert alert-success d-none"></div>
@@ -55,14 +55,9 @@ function validateForm(categoryName, description) {
         showError("Category name contains invalid characters or numbers.");
         return false;
     }
-    
 
     if (!description) {
         showError("Description is required.");
-        return false;
-    }
-    if (description.length < 10 || description.length > 200) {
-        showError("Description must be between 10 and 200 characters.");
         return false;
     }
     if (description.includes("<") || description.includes(">")) {

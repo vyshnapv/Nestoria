@@ -86,5 +86,8 @@ user_route.post('/addWishlist', wishlistController.addToWishlist);
 user_route.delete('/removeFromWishlist',wishlistController.removeFromWishlist);
 
 
+//coupon
+user_route.post('/apply-coupon', cartController.applyCoupon);
+user_route.post('/remove-coupon', cartController.removeCoupon);
 
 module.exports=user_route;

@@ -261,7 +261,7 @@
         showCancelButton: true,
         confirmButtonText: 'Proceed',
         cancelButtonText: 'Cancel',
-        width:400
+        width: 400
     }).then((result) => {
         if (result.isConfirmed) {
             fetch(`/admin/toggleOfferStatus/${offerId}`, {
@@ -272,10 +272,26 @@
             })
             .then(response => response.json())
             .then(data => {
-                if (data.success) {
+                if (data.isExpired) {
+                    // Show expired offer message
                     Swal.fire({
-                        title: 'Status Updated', 
-                        text: `Offer ${data.newStatus}.`, 
+                        title: 'Offer Expired',
+                        text: 'This offer has expired. Please update the expiry date to activate it.',
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonText: 'Update Now',
+                        cancelButtonText: 'Cancel',
+                        width: 400
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            // Redirect to edit page
+                            window.location.href = `/admin/edit${data.offerType}Offer/${offerId}`;
+                        }
+                    });
+                } else if (data.success) {
+                    Swal.fire({
+                        title: 'Status Updated',
+                        text: `Offer ${data.newStatus}.`,
                         icon: 'success',
                         timer: 1500,
                         showConfirmButton: false,

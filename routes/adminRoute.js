@@ -70,11 +70,11 @@ admin_route.post('/createCategoryOffer',adminAuth,offerController.createCategory
 admin_route.get('/editCategoryOffer/:id', adminAuth, offerController.loadEditCategoryOffer);
 admin_route.put('/updateCategoryOffer/:id', adminAuth, offerController.updateCategoryOffer);
 
-//coupom management
+//coupon management
 admin_route.get('/couponManagement',adminAuth,couponController.couponManagement);
 admin_route.post('/createCoupon',adminAuth,couponController.createCoupon)
 admin_route.put('/updateCoupon/:id',adminAuth,couponController.updateCoupon);
-admin_route.patch('/toggleCouponStatus/:id', adminAuth, couponController.toggleCouponStatus);
+admin_route.patch('/toggleCouponStatus/:id',adminAuth, couponController.toggleCouponStatus,);
 admin_route.delete('/deleteCoupon/:id', adminAuth, couponController.deleteCoupon);
 admin_route.get('/getCoupon/:id', adminAuth, couponController.getCoupon);
 

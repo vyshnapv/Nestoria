@@ -4,10 +4,36 @@ const Category = require("../../models/categoryModel");
 const Coupon = require("../../models/couponModel")
 
 
-const couponManagement = async(requestAnimationFrame,res)=>{
+const couponManagement = async(req,res)=>{
     try {
-        const coupons = await Coupon.find(); 
-        res.render("couponManagement",{coupons})
+        const page=parseInt(req.query.page)||1;
+        const limit=5;
+        const skip=(page-1)*limit;
+
+        const searchQuery = req.query.search || '';
+
+        const filter = searchQuery ? {
+            $or: [
+                { title: { $regex: searchQuery, $options: 'i' } },
+                { couponCode: { $regex: searchQuery, $options: 'i' } }
+            ]
+        } : {};
+
+        const totalCoupons = await Coupon.countDocuments(filter);
+        const totalPages = Math.ceil(totalCoupons / limit);
+
+        const coupons = await Coupon.find(filter)
+             .sort({createAt:-1})
+             .skip(skip)
+             .limit(limit);
+
+        res.render("couponManagement",{
+            coupons,
+            currentPage:page,
+            totalPages,
+            totalCoupons,
+            searchQuery
+        })
     } catch (error) {
         console.error("Error in offer management:", error);
         res.redirect("/pageerror"); 
@@ -51,7 +77,7 @@ const updateCoupon=async(req,res)=>{
             percentage: discountPercentage,
             minPrice: minPurchase,
             maxRedeemAmount: maxDiscount,
-            validFrom: new Date(validFrom),
+            addedDate: new Date(validFrom),
             expiryDate: new Date(expiryDate)
         }, { new: true });
 

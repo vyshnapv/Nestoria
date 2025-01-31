@@ -1,15 +1,1 @@
-try {
-    if (req.session.user) {
-      const userData = await User.findById(req.session.user);
-      if (userData.is_blocked == false) {
-        next();
-    } else {
-        delete req.session.user;
-        return res.redirect('/login?blockMessage=You are blocked!');
-    }
-    }else{
-    return res.redirect("/login");
-    }
-  } catch (error) {
-    console.log(error.message);
-  }
+//this is my checkout page here 

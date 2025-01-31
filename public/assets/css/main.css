@@ -3645,7 +3645,7 @@ body.offcanvas-active {
 }
 
 .main-wrap {
-  margin-left: 300px;
+  margin-left: 250px;
   background-color: #f8f9fa;
   position: relative;
 }
@@ -3662,7 +3662,7 @@ body.offcanvas-active {
 }
 
 .navbar-aside {
-  max-width: 300px;
+  max-width: 250px;
   display: block;
   position: fixed;
   top: 0;
