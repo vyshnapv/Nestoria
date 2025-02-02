@@ -132,6 +132,39 @@ body {
     animation: spinner-border .75s linear infinite;
 }
 
+.original-price {
+    text-decoration: line-through;
+    color: #999;
+    margin-right: 8px;
+    font-size: 0.9em;
+}
+
+.offer-price {
+    color: #000;
+    font-weight: bold;
+}
+
+.discount-badge {
+    background-color: #28a745;
+    color: white;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 0.8em;
+    margin-left: 8px;
+}
+
+.summary-item {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+.summary-item.total {
+    border-top: 1px solid #ddd;
+    margin-top: 12px;
+    padding-top: 12px;
+    font-weight: bold;
+}
 </style>
 
 <div class="order-detail-container mt-5">
@@ -186,18 +219,14 @@ body {
                     <td><%= item.quantity %></td>
                     <td>
                         <% if (item.highestDiscount > 0) { %>
-                            ₹<%= item.offerPrice %>
+                            <span class="original-price">₹<%= item.price.toFixed(2) %></span>
+                            <span class="offer-price">₹<%= item.offerPrice.toFixed(2) %></span>
+                            <span class="discount-badge"><%= item.highestDiscount %>% OFF</span>
                         <% } else { %>
-                            ₹<%= item.price %>
+                            ₹<%= item.price.toFixed(2) %>
                         <% } %>
                     </td>
-                    <td>
-                        <% if (item.highestDiscount > 0) { %>
-                            ₹<%= item.offerPrice %>
-                        <% } else { %>
-                            ₹<%= item.finalPrice %>
-                        <% } %>
-                    </td>
+                    <td>₹<%= Math.round(item.finalPrice.toFixed(2) )%></td>
                     <td><%= item.itemStatus %></td>
                     <td>
                         <% if (item.itemStatus === 'Ordered') { %>
@@ -231,19 +260,31 @@ body {
         <div class="col-md-6 offset-md-6">
             <div class="order-detail-summary">
                 <h6 class="order-detail-summary-title">Order Summary</h6>
-                <% 
-                let totalAmount = 0;
-                order.items.forEach(item => {
-                    if (item.itemStatus !== 'Cancelled') {
-                        totalAmount += item.highestDiscount > 0 
-                            ? item.offerPrice * item.quantity 
-                            : item.price * item.quantity;
-                    }
-                });
-                %>
-             <p class="order-detail-summary-text">
-                Total Amount: ₹<%= totalAmount.toFixed(2) %>
-            </p>
+                <div class="summary-item">
+                    <span>Subtotal:</span>
+                    <span>₹<%= order.items.reduce((total, item) => total + (item.itemStatus !== 'Cancelled' ? item.price * item.quantity : 0), 0).toFixed(2) %></span>
+                </div>
+                <% if (order.items.some(item => item.highestDiscount > 0)) { %>
+                    <div class="summary-item">
+                        <span>Offer Discount:</span>
+                        <span class="text-success">-₹<%= order.items.reduce((total, item) => {
+                            if (item.itemStatus !== 'Cancelled' && item.highestDiscount > 0) {
+                                return total + ((item.price - item.offerPrice) * item.quantity);
+                            }
+                            return total;
+                        }, 0).toFixed(2) %></span>
+                    </div>
+                <% } %>
+                <% if (order.appliedCoupon) { %>
+                    <div class="summary-item">
+                        <span>Coupon Discount (<%= order.appliedCoupon.code %>):</span>
+                        <span class="text-success">-₹<%= order.appliedCoupon.discountAmount.toFixed(2) %></span>
+                    </div>
+                <% } %>
+                <div class="summary-item total">
+                    <span>Total Amount(include Discount):</span>
+                    <span>₹<%= order.totalPrice.toFixed(2) %></span>
+                </div>
             </div>
         </div>
     </div>

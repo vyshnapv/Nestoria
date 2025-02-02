@@ -10,6 +10,7 @@ const cartController = require('../controllers/user/cartController');
 const orderController = require('../controllers/user/orderController');
 const profileController = require("../controllers/user/profileController");
 const wishlistController = require("../controllers/user/wishlistController");
+const walletController = require("../controllers/user/walletController")
 
 const passport = require("passport");
 const { userAuth, userNotAuth, userAuth1 } = require("../middleware/userAuth");
@@ -74,6 +75,7 @@ user_route.delete('/deleteAddress/:addressId/:index',userAuth,userController.del
 
 //Order
 user_route.post('/place-order',userAuth,orderController.createOrder);
+user_route.post('/verify-razorpay-payment',orderController.verifyRazorpayPayment);
 user_route.get('/ordersuccess/:orderId', userAuth,orderController.orderSuccess);
 user_route.get("/viewOrders", userAuth,orderController.getViewOrders)
 user_route.get("/orderDetails/:orderId", userAuth,orderController.getOrderDetails)
@@ -89,5 +91,8 @@ user_route.delete('/removeFromWishlist',wishlistController.removeFromWishlist);
 //coupon
 user_route.post('/apply-coupon', cartController.applyCoupon);
 user_route.post('/remove-coupon', cartController.removeCoupon);
+
+//wallet
+user_route.get('/wallet',userAuth,walletController.loadWallet);
 
 module.exports=user_route;

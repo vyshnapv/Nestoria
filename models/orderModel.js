@@ -85,12 +85,12 @@ const OrderSchema = new mongoose.Schema({
     },
     paymentMethod: {
         type: String,
-        enum:['COD'],
+        enum:['COD','Razorpay','Wallet'],
         required: true,
     },
     paymentStatus: {
         type: String,
-        enum:['Paid','Pending'],
+        enum:['Paid','Pending','Failed'],
         required: true
     },
     orderStatus: {
@@ -98,6 +98,12 @@ const OrderSchema = new mongoose.Schema({
         required: true,
         enum:['Processing','Shipped','Delivered','Cancelled','Return Request','Returned'],
         default: "Processing"
+    },
+    razorpayOrderId: {
+        type: String,
+        required: function() {
+            return this.paymentMethod === 'Razorpay';
+        }
     }
 },{timestamps:true});
 

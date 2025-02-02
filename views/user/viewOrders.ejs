@@ -106,7 +106,7 @@
                         <tr>
                             <td><%= order.orderId %></td>
                             <td><%= order.date %></td>
-                            <td>₹<%= order.totalPrice %></td>
+                            <td>₹<%= Math.round(order.totalPrice) %></td>
                             <td>
                                 <span class="status <%= helpers.getStatusClass(order.paymentStatus) %>">
                                     <%= order.paymentStatus %>

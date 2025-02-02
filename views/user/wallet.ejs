@@ -1,0 +1,193 @@
+<!-- wallet.ejs -->
+<%- include('../layoutsUser/userheader') %>
+<style>
+    .wallet-box {
+        background: #f8f9fa;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        padding: 20px;
+        text-align: center;
+        margin-bottom: 20px;
+    }
+    .wallet-box h3 {
+        font-size: 20px;
+        font-weight: 600;
+        margin-bottom: 10px;
+    }
+    .wallet-box h2 {
+        font-size: 28px;
+        font-weight: 700;
+        color: #28a745;
+    }
+    .wallet-transactions {
+        background: #ffffff;
+        border-radius: 10px;
+        padding: 20px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+    .wallet-transactions table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0 10px;
+    }
+    .wallet-transactions th, 
+    .wallet-transactions td {
+        padding: 12px 15px;
+        text-align: left;
+        border: none;
+    }
+    .wallet-transactions th {
+        background: #f8f9fa;
+        font-weight: 600;
+    }
+    .wallet-transactions tbody tr {
+        background: #ffffff;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        border-radius: 5px;
+    }
+    .wallet-transactions tbody tr:hover {
+        background: #f1f1f1;
+    }
+    .wallet-transactions tbody td {
+        vertical-align: middle;
+    }
+    .wallet-transactions .transaction-type {
+        display: inline-block;
+        padding: 5px 10px;
+        font-size: 14px;
+        border-radius: 5px;
+    }
+    .wallet-transactions .text-success {
+        color: #28a745;
+        font-weight: bold;
+    }
+    .wallet-transactions .text-danger {
+        color: #dc3545;
+        font-weight: bold;
+    }
+    .transaction-type {
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-weight: 500;
+    }
+    .transaction-type.credit {
+        background-color: #d4edda;
+        color: #155724;
+    }
+    .transaction-type.debit {
+        background-color: #f8d7da;
+        color: #721c24;
+    }
+    .empty-state {
+        text-align: center;
+        padding: 40px 20px;
+        color: #6c757d;
+    }
+</style>
+
+<main class="main">
+    <div class="page-header text-center" style="background-image: url('assets/images/page-header-bg.jpg')">
+        <div class="container">
+            <h1 class="page-title">My Wallet<span>Account</span></h1>
+        </div>
+    </div>
+
+    <nav aria-label="breadcrumb" class="breadcrumb-nav mb-3">
+        <div class="container">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/">Home</a></li>
+                <li class="breadcrumb-item active" aria-current="page">My Wallet</li>
+            </ol>
+        </div>
+    </nav>
+
+    <div class="page-content">
+        <div class="dashboard">
+            <div class="container">
+                <div class="row">
+                    <!-- Sidebar Navigation -->
+                    <aside class="col-md-4 col-lg-3">
+                        <ul class="nav nav-dashboard flex-column mb-3 mb-md-0" role="tablist">
+                            <li class="nav-item">
+                                <a class="nav-link" href="/account">My Profile</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="/address">Manage Address</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="/viewOrders">Orders</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link active" href="/wallet">My Wallet</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="/logout">Sign Out</a>
+                            </li>
+                        </ul>
+                    </aside>
+
+                    <div class="col-md-8 col-lg-9">
+                        <div class="wallet-box">
+                            <h3>Current Balance</h3>
+                            <h2>₹<%= wallet.balance.toFixed(2) %></h2>
+                        </div>
+
+                        <div class="wallet-transactions">
+                            <h4 class="mb-3">Transaction History</h4>
+                            <% if (wallet.transactions && wallet.transactions.length > 0) { %>
+                                <div class="table-responsive">
+                                    <table class="table">
+                                        <thead>
+                                            <tr>
+                                                <th>Date</th>
+                                                <th>Description</th>
+                                                <th>Order ID</th>
+                                                <th>Type</th>
+                                                <th>Amount</th>
+                                                <th>Balance</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <% wallet.transactions.reverse().forEach(transaction => { %>
+                                                <tr>
+                                                    <td><%= new Date(transaction.createdAt).toLocaleDateString('en-US', { 
+                                                        year: 'numeric', 
+                                                        month: 'short', 
+                                                        day: 'numeric' 
+                                                    }) %></td>
+                                                    <td><%= transaction.description %></td>
+                                                    <td>
+                                                        <% if (transaction.orderId) { %>
+                                                            <%= transaction.orderId.orderId %>
+                                                        <% } else { %>
+                                                            -
+                                                        <% } %>
+                                                    </td>
+                                                    <td>
+                                                        <span class="transaction-type <%= transaction.type %>">
+                                                            <%= transaction.type.charAt(0).toUpperCase() + transaction.type.slice(1) %>
+                                                        </span>
+                                                    </td>
+                                                    <td class="<%= transaction.type === 'credit' ? 'text-success' : 'text-danger' %>">
+                                                        <%= transaction.type === 'credit' ? '+' : '-' %>₹<%= transaction.amount.toFixed(2) %>
+                                                    </td>
+                                                    <td>₹<%= transaction.balance.toFixed(2) %></td>
+                                                </tr>
+                                            <% }); %>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            <% } else { %>
+                                <div class="empty-state">
+                                    <p>No transactions found in your wallet.</p>
+                                </div>
+                            <% } %>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<%- include('../layoutsUser/userfooter') %>

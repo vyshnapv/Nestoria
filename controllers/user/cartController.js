@@ -6,6 +6,7 @@ const Cart = require("../../models/cartModel");
 const Address = require("../../models/addressModel");
 const Offer=require("../../models/offerModel")
 const Coupon=require("../../models/couponModel")
+const Wallet=require("../../models/walletModel")
 const fs = require("fs");
 const path = require("path")
 
@@ -262,6 +263,9 @@ const loadCheckout = async (req, res) => {
             expiryDate: { $gt: currentDate } 
         });
 
+        const wallet = await Wallet.findOne({ userId: req.session.user });
+        const walletBalance = wallet ? wallet.balance : 0;
+
         res.render("checkout", {
             userData,
             cart: { items: itemsWithDiscount },
@@ -269,7 +273,8 @@ const loadCheckout = async (req, res) => {
             finalAmount,
             appliedCoupon,
             addresses,
-            coupons
+            coupons,
+            walletBalance
         });
 
     } catch (error) {
