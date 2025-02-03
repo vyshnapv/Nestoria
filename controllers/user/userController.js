@@ -653,7 +653,6 @@ const editAddress = async (req, res) => {
         const addressId = req.params.addressId;
         const addressIndex = parseInt(req.params.index);
 
-        // Validation
         if (!name || !phone || !district || !city || !house || !state || !pincode) {
             return res.status(400).json({ success: false, message: "All fields are required" });
         }

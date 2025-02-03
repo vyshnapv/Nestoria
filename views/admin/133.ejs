@@ -1,1063 +1,403 @@
-//this is my checkout page 
-<%- include('../layoutsUser/userheader') %>
-<style>
-
-.cart-summary-box {
-    padding: 15px;
-    background-color: #f9f9f9;
-    border-radius: 8px;
-}
-
-.checkout-title {
-    font-size: 1.3em;
-    margin-bottom: 15px;
-    text-align: center;
-}
-
-.cart-items-list {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-
-.cart-item-card {
-    display: flex;
-    align-items: center;
-    background-color: #fff;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    padding: 10px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-.product-media img {
-    max-width: 50px;
-    height: auto;
-    margin-right: 15px;
-    border-radius: 4px;
-}
-
-.product-details {
-    display: flex;
-    flex-direction: column;
-    gap: 3px;
-}
-
-.price, .quantity, .total {
-    font-size: 0.85em;
-    color: #555;
-    margin: 0;
-}
-
-.address-list {
-    margin-top: 20px;
-    display: none; 
-}
-
-.address-item {
-    padding: 8px;
-    border: 1px solid #ddd;
-    border-radius: 6px;
-    margin-bottom: 10px;
-    background-color: #f9f9f9;
-    width: 100%;
-    max-width: 250px;
-    font-size: 0.9em;
-    position: relative;
-    cursor: pointer;
-    transition: border-color 0.3s;
-    display: inline-block;
-    vertical-align: top;
-}
-
-.address-item.selected {
-    border-color: #007bff;
-    background-color: #e6f0ff;
-}
-
-.select-icon {
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    border: 2px solid #ddd;
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: background-color 0.3s, border-color 0.3s;
-}
-
-.select-icon.selected {
-    background-color: #007bff;
-    border-color: #007bff;
-}
-
-
-.address-buttons {
-    display: flex;
-    justify-content: space-between;
-    margin-top: 15px;
-}
-
-#addAddressForm {
-    display: none;
-    margin-top: 20px;
-    padding: 20px;
-    background-color: white;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-.form-group {
-    margin-bottom: 15px;
-}
-
-.form-group label {
-    font-weight: bold;
-    color: #555;
-    display: block;
-    margin-bottom: 5px;
-}
-
-.form-control {
-    width: 100%;
-    padding: 10px;
-    font-size: 14px;
-    border: 1px solid #ddd;
-    border-radius: 5px;
-}
-
-.error {
-    border-color: #dc3545;
-}
-
-.error-message {
-    color: #dc3545;
-    font-size: 12px;
-    margin-top: 5px;
-    display: none;
-}
-
-.btn-primary, .btn-secondary {
-    padding: 10px 20px;
-    border-radius: 5px;
-    border: none;
-    cursor: pointer;
-    font-size: 14px;
-    transition: background-color 0.3s;
-}
-
-.btn-primary {
-    background-color: #007bff;
-    color: white;
-}
-
-.btn-secondary {
-    background-color: #6c757d;
-    color: white;
-    margin-left: 10px;
-}
-
-.btn-primary:hover {
-    background-color: #0056b3;
-}
-
-.btn-secondary:hover {
-    background-color: #545b62;
-}
-
-.checkout-container {
-    position: relative;
-    display: flex;
-    gap: 30px;
-}
-
-.main-content {
-    flex: 1;
-}
-
-.sidebar {
-    width: 300px;
-    position: sticky;
-    top: 20px;
-    height: fit-content;
-}
-
-#addAddressForm {
-    display: none;
-    margin-top: 20px;
-    padding: 20px;
-    background-color: white;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    max-width: 100%;
-}
-
-.payment-method {
-    background-color: #fff;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    padding: 20px;
-    margin-bottom: 20px;
-}
-
-.payment-method-title {
-    font-size: 1.1em;
-    font-weight: 600;
-    color: #333;
-    margin-bottom: 15px;
-}
-
-.payment-option {
-    display: flex;
-    align-items: center;
-    padding: 12px;
-    border: 1px solid #e1e1e1;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-}
-
-.payment-option:hover {
-    background-color: #f8f9fa;
-    border-color: #007bff;
-}
-
-.payment-option input[type="radio"] {
-    margin-right: 12px;
-    width: 18px;
-    height: 18px;
-    cursor: pointer;
-}
-
-.payment-option label {
-    font-size: 1em;
-    color: #444;
-    margin: 0;
-    cursor: pointer;
-    flex: 1;
-}
-
-.payment-option.selected {
-    background-color: #e6f0ff;
-    border-color: #007bff;
-}
-
-/* Updated Button Styles */
-#placeOrderButton {
-    width: 100%;
-    padding: 15px;
-    font-size: 1.1em;
-    font-weight: 600;
-    background-color: #007bff;
-    color: white;
-    border: none;
-    border-radius: 6px;
-    transition: all 0.3s ease;
-}
-
-#placeOrderButton:hover {
-    background-color: #0056b3;
-    transform: translateY(-1px);
-}
-
-#placeOrderButton:active {
-    transform: translateY(0);
-}
-.coupons-container {
-    margin-bottom: 20px;
-    max-width: 850px;
-}
-
-.coupons-title {
-    font-size: 1.2em;
-    margin-bottom: 15px;
-    color: #333;
-}
-
-.coupons-scroll {
-    display: flex;
-    overflow-x: auto;
-    gap: 10px;
-    padding: 5px 0;
-    scrollbar-width: thin;
-    scrollbar-color: #686d72 #f0f0f0;
-}
-
-.coupons-scroll::-webkit-scrollbar {
-    height: 6px;
-}
-
-.coupons-scroll::-webkit-scrollbar-track {
-    background: #f0f0f0;
-    border-radius: 3px;
-}
-
-.coupons-scroll::-webkit-scrollbar-thumb {
-    background: #007bff;
-    border-radius: 3px;
-}
-
-.coupon-card {
-    flex: 0 0 250px; /* Reduced from 300px */
-    background: white;
-    border: 1px solid #e0e0e0;
-    border-radius: 8px;
-    padding: 12px;
-    position: relative;
-    transition: transform 0.2s, box-shadow 0.2s;
-    font-size: 0.9em;
-}
-
-.coupon-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-}
-
-.coupon-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 10px;
-}
-
-.coupon-code {
-    font-size: 1.1em;
-    font-weight: bold;
-    color: #007bff;
-    padding: 4px 8px;
-    background: #e6f2ff;
-    border-radius: 4px;
-}
-
-.discount-percent {
-    font-size: 1.2em;
-    font-weight: bold;
-    color: #28a745;
-}
-
-.coupon-name {
-    font-size: 1em;
-    font-weight: 600;
-    color: #333;
-    margin: 8px 0;
-}
-
-.coupon-details {
-    font-size: 0.85em;
-    color: #666;
-    margin-bottom: 12px;
-}
-
-.coupon-details p {
-    margin: 4px 0;
-}
-
-.coupon-description {
-    font-size: 0.85em;
-    color: #777;
-    margin: 8px 0;
-    line-height: 1.4;
-}
-
-.apply-coupon-btn {
-    width: 80%;
-    padding: 8px;
-    color:black;
-    border:#081624;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: background 0.2s;
-}
-
-.apply-coupon-btn:hover {
-    background: #0056b3;
-}
-.remove-coupon-container {
-    text-align: right;
-    margin-top: 10px;
-    margin-bottom: 20px;
-}
-.remove-coupon-btn {
-    padding: 6px 15px;
-    background: #dc3545;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 0.85em;
-    transition: background 0.2s;
-}
-
-.remove-coupon-btn:hover {
-    background: #c82333
-}
-.coupon-card.disabled {
-    opacity: 0.6;
-    pointer-events: none;
-    background-color: #f5f5f5;
-}
-
-.coupon-card.disabled .apply-coupon-btn {
-    background-color: #ccc;
-    cursor: not-allowed;
-}
-
-.minimum-spend-warning {
-    color: #dc3545;
-    font-size: 0.8em;
-    margin-top: 5px;
-}
-.no-coupons {
-    padding: 15px;
-    text-align: center;
-    color: #666;
-    width: 100%;
-}
-</style>
-
-<main class="main">
-    <div class="page-header text-center" style="background-image: url('assets/images/page-header-bg.jpg')">
-        <div class="container">
-            <h1 class="page-title">Checkout<span>Shop</span></h1>
-        </div>
-    </div>
-    
-    <nav aria-label="breadcrumb" class="breadcrumb-nav">
-        <div class="container">
-            <ol class="breadcrumb">
-                <li class="breadcrumb-item"><a href="/">Home</a></li>
-                <li class="breadcrumb-item"><a href="/shop">Shop</a></li>
-                <li class="breadcrumb-item"><a href="/cart">cart</a></li>
-                <li class="breadcrumb-item active" aria-current="page">Checkout</li>
-            </ol>
-        </div>
-    </nav>
-
-    <div class="page-content">
-        <div class="checkout">
-            <div class="container">
-               <div class="checkout-container">
-                  <div class="main-content">
-                    <div class="coupons-container">
-                        <h3 class="coupons-title">Available Coupons</h3>
-                        <div class="coupons-scroll">
-                            <% 
-                            const eligibleCoupons = coupons.filter(coupon => subtotal >= coupon.minPrice);
-                            if (eligibleCoupons && eligibleCoupons.length > 0) { 
-                            %>
-                                <% eligibleCoupons.forEach(coupon => { %>
-                                    <div class="coupon-card">
-                                        <div class="coupon-header">
-                                            <span class="coupon-code"><%= coupon.couponCode %></span>
-                                            <span class="discount-percent"><%= coupon.percentage %>% OFF</span>
-                                        </div>
-                                        <div class="coupon-name"><%= coupon.title %></div>
-                                        <div class="coupon-details">
-                                            <p>Min Purchase: ₹<%= coupon.minPrice %></p>
-                                            <p>Max Discount: ₹<%= coupon.maxRedeemAmount %></p>
-                                            <p>Expires: <%= new Date(coupon.expiryDate).toLocaleDateString("en-IN", { year: 'numeric', month: 'short', day: 'numeric' }) %></p>
-                                        </div>
-                                        <div class="coupon-description">
-                                            <%= coupon.description %>
-                                        </div>
-                                        <button class="apply-coupon-btn">Apply Coupon</button>
-                                    </div>
-                                <% }); %>
-                            <% } else { %>
-                                <p class="no-coupons">No eligible coupons available for your cart value.</p>
-                            <% } %>
-                        </div>
-                        <div class="remove-coupon-container">
-                            <button class="remove-coupon-btn" onclick="removeCoupon()">Remove Coupon</button>
-                        </div>
+//admin dashboard 
+<%- include('../layoutsAdmin/adminheader') %>
+<%- include('../layoutsAdmin/header') %>
+            <section class="content-main">
+                <div class="content-header">
+                    <div>
+                        <h2 class="content-title card-title">welcome Admin</h2>
+                        <p>Whole data about your business here</p>
                     </div>
-                    
-                        <div class="cart-summary-box mb-4">
-                            <h2 class="checkout-title">your orders list</h2>
-                            <div class="cart-items-list">
-                                <% cart.items.forEach(item => { %>
-                                    <% const product = item.product %>
-                                    <% const price = product.highestDiscount > 0 ? product.offerPrice : product.regularPrice %>
-                                    <% const itemTotal = price * item.quantity %>
-                                    <div class="cart-item-card">
-                                        <div class="product-media">
-                                            <img src="/uploads/cropped/<%= product.productImage[0] %>" alt="<%= product.productName %>">
-                                        </div>
-                                        <div class="product-details">
-                                            <p class="price">Product Name: <%= product.productName %></p>
-                                            <% if (product.highestDiscount > 0) { %>
-                                                <p class="price">Price: ₹<%= product.offerPrice.toFixed(2) %></p>
-                                            <% } else { %>
-                                                <p class="price">Price: ₹<%= product.regularPrice.toFixed(2) %></p>
-                                            <% } %>
-                                            <p class="quantity">Quantity: <%= item.quantity %></p>
-                                            <p class="total">Total: ₹<%= itemTotal.toFixed(2) %></p>
-                                        </div>
-                                    </div>
-                                <% }) %>
-                            </div>
-                        </div>
-
-                        <div class="address-buttons">
-                            
-                            <button id="show-addresses-btn" class="btn btn-primary">view Addresses</button>
-                            <button id="add-address-btn" class="btn btn-secondary" onclick="toggleForm()">Add Address</button>
-                        </div>
-
-                        <div class="col-lg-12 address-list" id="address-list">
-                            <h4>Your Addresses</h4>
-                            <% if (addresses && addresses.address && addresses.address.length > 0) { %>
-                                <% addresses.address.forEach((address, index) => { %>
-                                    <div class="address-item" onclick="selectAddress('<%= index %>')" data-index="<%= index %>">
-                                        <h5>Address <%= index + 1 %></h5>
-                                        <p>Name: <%= address.name %></p>
-                                        <p>Phone: <%= address.phone %></p>
-                                        <p>District: <%= address.district %></p>
-                                        <p>City: <%= address.city %></p>
-                                        <p>House: <%= address.house %></p>
-                                        <p>State: <%= address.state %></p>
-                                        <p>Pincode: <%= address.pincode %></p>
-                                        <div class="select-icon" id="select-icon-<%= index %>"></div>
-                                    </div>
-                                <% }) %>
-                            <% } else { %>
-                                <p>No addresses found. <a href="/address">Add an Address</a></p>
-                            <% } %>
-                        </div>
-                        
-
-                    <div id="addAddressForm" >
-                        <form id="actualAddAddressForm" method="POST" action="/addAddress">
-                            <div class="form-group">
-                                <label for="name">Name</label>
-                                <input type="text" class="form-control" id="name" name="name">
-                                <span class="error-message" id="nameError"></span>
-                            </div>
-                            <div class="form-group">
-                                <label for="phone">Phone</label>
-                                <input type="text" class="form-control" id="phone" name="phone">
-                                <span class="error-message" id="phoneError"></span>
-                            </div>
-                            <div class="form-group">
-                                <label for="district">District</label>
-                                <input type="text" class="form-control" id="district" name="district">
-                                <span class="error-message" id="districtError"></span>
-                            </div>
-                            <div class="form-group">
-                                <label for="city">City</label>
-                                <input type="text" class="form-control" id="city" name="city">
-                                <span class="error-message" id="cityError"></span>
-                            </div>
-                            <div class="form-group">
-                                <label for="house">House</label>
-                                <input type="text" class="form-control" id="house" name="house">
-                                <span class="error-message" id="houseError"></span>
-                            </div>
-                            <div class="form-group">
-                                <label for="state">State</label>
-                                <input type="text" class="form-control" id="state" name="state">
-                                <span class="error-message" id="stateError"></span>
-                            </div>
-                            <div class="form-group">
-                                <label for="pincode">Pincode</label>
-                                <input type="text" class="form-control" id="pincode" name="pincode">
-                                <span class="error-message" id="pincodeError"></span>
-                            </div>
-                            <button type="submit" class="btn btn-primary">Save Address</button>
-                            <button type="button" class="btn btn-secondary" onclick="cancelForm()">Cancel</button>
-                        </form>
+                    <div>
+                        <a href="#" class="btn btn-primary"><i class="text-muted material-icons md-post_add"></i>Create report</a>
                     </div>
                 </div>
-                   
-                    <aside  class="sidebar">
-                        <div class="summary">
-                            <h3 class="summary-title">Order Summary</h3>
-                            <table class="table table-summary">
-                                <thead>
-                                    <tr>
-                                        <th>Product</th>
-                                        <th>Subtotal</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <% cart.items.forEach(item => { %>
-                                    <% const product = item.product %>
-                                    <% const price = product.highestDiscount > 0 ? product.offerPrice : product.regularPrice %>
-                                    <% const itemTotal = price * item.quantity %>
-                                    <tr>
-                                        <td><%= product.productName %></td>
-                                        <td>₹<%= itemTotal.toFixed(2) %></td>
-                                    </tr>
-                                    <% }) %>
-                                    
-                                    <tr class="summary-subtotal">
-                                        <td>Subtotal:</td>
-                                        <td>₹<%= subtotal.toFixed(2) %></td>
-                                    </tr>
-                                    <tr class="summary-total">
-                                        <td>Total:</td>
-                                        <td>₹<%= subtotal.toFixed(2) %></td>
-                                    </tr>
-                                </tbody>
-                            </table>
-
-                            <div class="payment-method ">
-                                <h4 class="payment-method-title">Payment Method</h4>
-                                <div class="payment-option">
-                                  <input type="radio" name="paymentMethod" value="COD" id="paymentCOD">
-                                  <label for="paymentCOD">Cash on Delivery</label>
+                <div class="row">
+                    <div class="col-lg-3">
+                        <div class="card card-body mb-4">
+                            <article class="icontext">
+                                <span class="icon icon-sm rounded-circle bg-primary-light"><i class="text-primary material-icons md-monetization_on"></i></span>
+                                <div class="text">
+                                    <h6 class="mb-1 card-title">Revenue</h6>
+                                    <span>$13,456.5</span>
+                                    <span class="text-sm"> Shipping fees are not included </span>
+                                </div>
+                            </article>
+                        </div>
+                    </div>
+                    <div class="col-lg-3">
+                        <div class="card card-body mb-4">
+                            <article class="icontext">
+                                <span class="icon icon-sm rounded-circle bg-success-light"><i class="text-success material-icons md-local_shipping"></i></span>
+                                <div class="text">
+                                    <h6 class="mb-1 card-title">Orders</h6>
+                                    <span>53.668</span>
+                                    <span class="text-sm"> Excluding orders in transit </span>
+                                </div>
+                            </article>
+                        </div>
+                    </div>
+                    <div class="col-lg-3">
+                        <div class="card card-body mb-4">
+                            <article class="icontext">
+                                <span class="icon icon-sm rounded-circle bg-warning-light"><i class="text-warning material-icons md-qr_code"></i></span>
+                                <div class="text">
+                                    <h6 class="mb-1 card-title">Products</h6>
+                                    <span>9.856</span>
+                                    <span class="text-sm"> In 19 Categories </span>
+                                </div>
+                            </article>
+                        </div>
+                    </div>
+                    <div class="col-lg-3">
+                        <div class="card card-body mb-4">
+                            <article class="icontext">
+                                <span class="icon icon-sm rounded-circle bg-info-light"><i class="text-info material-icons md-shopping_basket"></i></span>
+                                <div class="text">
+                                    <h6 class="mb-1 card-title">Monthly Earning</h6>
+                                    <span>$6,982</span>
+                                    <span class="text-sm"> Based in your local time. </span>
+                                </div>
+                            </article>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-xl-8 col-lg-12">
+                        <div class="card mb-4">
+                            <article class="card-body">
+                                <h5 class="card-title">Sale statistics</h5>
+                                <canvas id="myChart" height="120px"></canvas>
+                            </article>
+                        </div>
+                        <!-- <div class="row">
+                            <div class="col-lg-5">
+                                <div class="card mb-4">
+                                    <article class="card-body">
+                                        <h5 class="card-title">New Members</h5>
+                                        <div class="new-member-list">
+                                            <div class="d-flex align-items-center justify-content-between mb-4">
+                                                <div class="d-flex align-items-center">
+                                                    <img src="/assets/imgs/people/avatar-4.png" alt="" class="avatar" />
+                                                    <div>
+                                                        <h6>Patric Adams</h6>
+                                                        <p class="text-muted font-xs">Sanfrancisco</p>
+                                                    </div>
+                                                </div>
+                                                <a href="#" class="btn btn-xs"><i class="material-icons md-add"></i> Add</a>
+                                            </div>
+                                            <div class="d-flex align-items-center justify-content-between mb-4">
+                                                <div class="d-flex align-items-center">
+                                                    <img src="/assets/imgs/people/avatar-2.png" alt="" class="avatar" />
+                                                    <div>
+                                                        <h6>Dilan Specter</h6>
+                                                        <p class="text-muted font-xs">Sanfrancisco</p>
+                                                    </div>
+                                                </div>
+                                                <a href="#" class="btn btn-xs"><i class="material-icons md-add"></i> Add</a>
+                                            </div>
+                                            <div class="d-flex align-items-center justify-content-between mb-4">
+                                                <div class="d-flex align-items-center">
+                                                    <img src="/assets/imgs/people/avatar-3.png" alt="" class="avatar" />
+                                                    <div>
+                                                        <h6>Tomas Baker</h6>
+                                                        <p class="text-muted font-xs">Sanfrancisco</p>
+                                                    </div>
+                                                </div>
+                                                <a href="#" class="btn btn-xs"><i class="material-icons md-add"></i> Add</a>
+                                            </div>
+                                        </div>
+                                    </article>
                                 </div>
                             </div>
-                            <button type="button" id="placeOrderButton" class="btn btn-outline-primary-2 btn-block">Place Order</button>
+                            <div class="col-lg-7">
+                                <div class="card mb-4">
+                                    <article class="card-body">
+                                        <h5 class="card-title">Recent activities</h5>
+                                        <ul class="verti-timeline list-unstyled font-sm">
+                                            <li class="event-list">
+                                                <div class="event-timeline-dot">
+                                                    <i class="material-icons md-play_circle_outline font-xxl"></i>
+                                                </div>
+                                                <div class="media">
+                                                    <div class="me-3">
+                                                        <h6><span>Today</span> <i class="material-icons md-trending_flat text-brand ml-15 d-inline-block"></i></h6>
+                                                    </div>
+                                                    <div class="media-body">
+                                                        <div>Lorem ipsum dolor sit amet consectetur</div>
+                                                    </div>
+                                                </div>
+                                            </li>
+                                            <li class="event-list active">
+                                                <div class="event-timeline-dot">
+                                                    <i class="material-icons md-play_circle_outline font-xxl animation-fade-right"></i>
+                                                </div>
+                                                <div class="media">
+                                                    <div class="me-3">
+                                                        <h6><span>17 May</span> <i class="material-icons md-trending_flat text-brand ml-15 d-inline-block"></i></h6>
+                                                    </div>
+                                                    <div class="media-body">
+                                                        <div>Debitis nesciunt voluptatum dicta reprehenderit</div>
+                                                    </div>
+                                                </div>
+                                            </li>
+                                            <li class="event-list">
+                                                <div class="event-timeline-dot">
+                                                    <i class="material-icons md-play_circle_outline font-xxl"></i>
+                                                </div>
+                                                <div class="media">
+                                                    <div class="me-3">
+                                                        <h6><span>13 May</span> <i class="material-icons md-trending_flat text-brand ml-15 d-inline-block"></i></h6>
+                                                    </div>
+                                                    <div class="media-body">
+                                                        <div>Accusamus voluptatibus voluptas.</div>
+                                                    </div>
+                                                </div>
+                                            </li>
+                                            <li class="event-list">
+                                                <div class="event-timeline-dot">
+                                                    <i class="material-icons md-play_circle_outline font-xxl"></i>
+                                                </div>
+                                                <div class="media">
+                                                    <div class="me-3">
+                                                        <h6><span>05 April</span> <i class="material-icons md-trending_flat text-brand ml-15 d-inline-block"></i></h6>
+                                                    </div>
+                                                    <div class="media-body">
+                                                        <div>At vero eos et accusamus et iusto odio dignissi</div>
+                                                    </div>
+                                                </div>
+                                            </li>
+                                            <li class="event-list">
+                                                <div class="event-timeline-dot">
+                                                    <i class="material-icons md-play_circle_outline font-xxl"></i>
+                                                </div>
+                                                <div class="media">
+                                                    <div class="me-3">
+                                                        <h6><span>26 Mar</span> <i class="material-icons md-trending_flat text-brand ml-15 d-inline-block"></i></h6>
+                                                    </div>
+                                                    <div class="media-body">
+                                                        <div>Responded to need “Volunteer Activities</div>
+                                                    </div>
+                                                </div>
+                                            </li>
+                                        </ul>
+                                    </article>
+                                </div>
+                            </div>
+                        </div> -->
+                    </div>
+                    <div class="col-xl-4 col-lg-12">
+                        <div class="card mb-4">
+                            <article class="card-body">
+                                <h5 class="card-title">Revenue Base on Area</h5>
+                                <canvas id="myChart2" height="217"></canvas>
+                            </article>
                         </div>
-                    </aside>
+                        <!-- <div class="card mb-4">
+                            <article class="card-body">
+                                <h5 class="card-title">Marketing Chanel</h5>
+                                <span class="text-muted font-xs">Facebook</span>
+                                <div class="progress mb-3">
+                                    <div class="progress-bar" role="progressbar" style="width: 15%">15%</div>
+                                </div>
+                                <span class="text-muted font-xs">Instagram</span>
+                                <div class="progress mb-3">
+                                    <div class="progress-bar" role="progressbar" style="width: 65%">65%</div>
+                                </div>
+                                <span class="text-muted font-xs">Google</span>
+                                <div class="progress mb-3">
+                                    <div class="progress-bar" role="progressbar" style="width: 51%">51%</div>
+                                </div>
+                                <span class="text-muted font-xs">Twitter</span>
+                                <div class="progress mb-3">
+                                    <div class="progress-bar" role="progressbar" style="width: 80%">80%</div>
+                                </div>
+                                <span class="text-muted font-xs">Other</span>
+                                <div class="progress mb-3">
+                                    <div class="progress-bar" role="progressbar" style="width: 80%">80%</div>
+                                </div>
+                            </article>
+                        </div> -->
+                    </div>
                 </div>
-            </div>
-        </div>
-    </div>
-</main>
-
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<script>
-    
-    document.getElementById('show-addresses-btn').addEventListener('click', function() {
-        const addressList = document.getElementById('address-list');
-        addressList.style.display = addressList.style.display === 'none' ? 'block' : 'none';
-    });
-
-    
-    function selectAddress(index) {
-        document.querySelectorAll('.address-item').forEach(item => {
-            item.classList.remove('selected');
-            const icon = item.querySelector('.select-icon');
-            if (icon) icon.classList.remove('selected');
-        });
-
-        const selectedItem = document.querySelector(`.address-item[data-index="${index}"]`);
-        selectedItem.classList.add('selected');
-
-        const selectIcon = document.getElementById(`select-icon-${index}`);
-        selectIcon.classList.add('selected');
-
-        sessionStorage.setItem('selectedAddress', index);
-    }
-
-    function toggleForm() {
-    var form = document.getElementById("addAddressForm");
-    form.style.display = form.style.display === "none" ? "block" : "none";
-}
-
-function cancelForm() {
-    Swal.fire({
-        title: 'Are you sure?',
-        text: "Your entered data will be discarded!",
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#3085d6',
-        cancelButtonColor: '#d33',
-        confirmButtonText: 'Yes, cancel it!'
-    }).then((result) => {
-        if (result.isConfirmed) {
-            document.getElementById("addAddressForm").style.display = "none";
-            document.getElementById("actualAddAddressForm").reset();
-            clearErrors();
-            Swal.fire(
-                'Cancelled!',
-                'Form has been reset.',
-                'success'
-            )
-        }
-    })
-}
-
-function showError(elementId, message) {
-    const element = document.getElementById(elementId);
-    const errorElement = document.getElementById(elementId + 'Error');
-    element.classList.add('error');
-    errorElement.style.display = 'block';
-    errorElement.textContent = message;
-}
-
-function clearErrors() {
-    const inputs = document.querySelectorAll('.form-control');
-    inputs.forEach(input => {
-        input.classList.remove('error');
-        const errorElement = document.getElementById(input.id + 'Error');
-        if (errorElement) {
-            errorElement.style.display = 'none';
-            errorElement.textContent = '';
-        }
-    });
-}
-
-function isEmptyOrWhitespace(str) {
-    return !str || str.trim().length === 0;
-}
-
-document.getElementById("actualAddAddressForm").addEventListener("submit", async function(e) {
-    e.preventDefault();
-    clearErrors();
-    let isValid = true;
-
-    
-    const name = document.getElementById("name").value;
-    if (isEmptyOrWhitespace(name)) {
-        showError("name", "Name cannot be empty");
-        isValid = false;
-    } else if (!/^[A-Za-z]+(?: [A-Za-z]+)*$/.test(name.trim())) {
-        showError("name", "Name should contain only letters with single spaces between words");
-        isValid = false;
-    } else if (name.trim().length < 3 || name.trim().length > 50) {
-        showError("name", "Name should be 3-50 characters long");
-        isValid = false;
-    }
-
-    
-    const phone = document.getElementById("phone").value;
-    if (isEmptyOrWhitespace(phone)) {
-        showError("phone", "Phone number cannot be empty");
-        isValid = false;
-    } else if (!/^[6-9]\d{9}$/.test(phone.trim())) {
-        showError("phone", "Please enter a valid 10-digit phone number starting with 6-9");
-        isValid = false;
-    }
-
-    
-    const district = document.getElementById("district").value;
-    if (isEmptyOrWhitespace(district)) {
-        showError("district", "District cannot be empty");
-        isValid = false;
-    } else if (!/^[A-Za-z]+(?: [A-Za-z]+)*$/.test(district.trim())) {
-        showError("district", "District should contain only letters with single spaces between words");
-        isValid = false;
-    } else if (district.trim().length < 3 || district.trim().length > 30) {
-        showError("district", "District should be 3-30 characters long");
-        isValid = false;
-    }
-
-   
-    const city = document.getElementById("city").value;
-    if (isEmptyOrWhitespace(city)) {
-        showError("city", "City cannot be empty");
-        isValid = false;
-    } else if (!/^[A-Za-z]+(?: [A-Za-z]+)*$/.test(city.trim())) {
-        showError("city", "City should contain only letters with single spaces between words");
-        isValid = false;
-    } else if (city.trim().length < 3 || city.trim().length > 30) {
-        showError("city", "City should be 3-30 characters long");
-        isValid = false;
-    }
-
-    
-    const house = document.getElementById("house").value;
-    if (isEmptyOrWhitespace(house)) {
-        showError("house", "House/Building details cannot be empty");
-        isValid = false;
-    } else if (!/^[A-Za-z0-9\s,.-/#]{3,100}$/.test(house.trim())) {
-        showError("house", "House/Building details should be 3-100 characters long and can contain letters, numbers, spaces, and common symbols (,.-/#)");
-        isValid = false;
-    }
-
-    
-    const state = document.getElementById("state").value;
-    if (isEmptyOrWhitespace(state)) {
-        showError("state", "State cannot be empty");
-        isValid = false;
-    } else if (!/^[A-Za-z]+(?: [A-Za-z]+)*$/.test(state.trim())) {
-        showError("state", "State should contain only letters with single spaces between words");
-        isValid = false;
-    } else if (state.trim().length < 3 || state.trim().length > 30) {
-        showError("state", "State should be 3-30 characters long");
-        isValid = false;
-    }
-
-    
-    const pincode = document.getElementById("pincode").value;
-    if (isEmptyOrWhitespace(pincode)) {
-        showError("pincode", "Pincode cannot be empty");
-        isValid = false;
-    } else if (!/^\d{6}$/.test(pincode.trim())) {
-        showError("pincode", "Please enter a valid 6-digit pincode");
-        isValid = false;
-    }
-
-    if (isValid) {
-        try {
-            const formData = new FormData(this);
-            const response = await fetch('/addCheckAddress', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(Object.fromEntries(formData))
-            });
-
-            const result = await response.json();
-
-            if (result.success) {
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Success',
-                    text: result.message,
-                    showConfirmButton: false,
-                    timer: 1500
-                }).then(() => {
-                    // Reload the current page
-                    window.location.reload();
-                });
-            } else {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error',
-                    text: result.message || 'Failed to add address'
-                });
-            }
-        } catch (error) {
-            console.error("Error adding address:", error);
-            Swal.fire({
-                icon: 'error',
-                title: 'Error',
-                text: 'Failed to add address. Please try again.'
-            });
-        }
-    }
-});
-
-
-document.addEventListener("DOMContentLoaded", function () {
-
-    const placeOrderButton = document.getElementById("placeOrderButton");
-    placeOrderButton.addEventListener("click", async () => {
-        const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked')?.value;
-        const selectedAddress = document.querySelector('.address-item.selected');
-
-        if (!paymentMethod) {
-            Swal.fire({
-                icon: 'error',
-                title: 'Oops...',
-                text: 'Please select a payment method.'
-            });
-            return;
-        }
-
-        if (!selectedAddress) {
-            Swal.fire({
-                icon: 'error',
-                title: 'Oops...',
-                text: 'Please select an address.'
-            });
-            return;
-        }
-
-        const addressId = selectedAddress.getAttribute('data-index'); 
-        try {
-            const response = await fetch("/place-order", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({ paymentMethod, addressId })
-            });
-
-            const result = await response.json();
-
-            if (result.success) {
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Order Placed',
-                    text: result.message,
-                    showConfirmButton: false,
-                    timer: 2000
-                }).then(() => {
-                    window.location.href = `/ordersuccess/${result.orderId}`;
-                });
-            } else {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Oops...',
-                    text: result.message
-                });
-            }
-        } catch (error) {
-            console.error("Error placing order:", error);
-            Swal.fire({
-                icon: 'error',
-                title: 'Oops...',
-                text: 'An error occurred while placing the order.'
-            });
-        }
-    });
-});
-
-
-document.querySelector('.payment-option').addEventListener('click', function() {
-    const radio = this.querySelector('input[type="radio"]');
-    radio.checked = true;
-    document.querySelectorAll('.payment-option').forEach(opt => {
-        opt.classList.remove('selected');
-    });
-    this.classList.add('selected');
-});
-
-// Add this script to your checkout page
-
-// Function to apply coupon
-async function applyCoupon(couponCode) {
-    try {
-        const response = await fetch('/apply-coupon', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ couponCode })
-        });
-
-        const result = await response.json();
-
-        if (result.success) {
-            // Update UI to show applied coupon
-            document.querySelectorAll('.coupon-card').forEach(card => {
-                if (card.querySelector('.coupon-code').textContent === couponCode) {
-                    card.classList.add('applied');
-                    card.querySelector('.apply-coupon-btn').textContent = 'Applied';
-                    card.querySelector('.apply-coupon-btn').disabled = true;
-                } else {
-                    card.classList.add('disabled');
-                }
-            });
-
-            // Update total amounts in summary
-            document.querySelector('.summary-subtotal td:last-child').textContent = `₹${result.finalAmount.toFixed(2)}`;
-            
-            // Add discount row if not exists
-            let discountRow = document.querySelector('.summary-discount');
-            if (!discountRow) {
-                discountRow = document.createElement('tr');
-                discountRow.className = 'summary-discount';
-                discountRow.innerHTML = `
-                    <td>Discount (${result.percentage}%):</td>
-                    <td class="discount-amount">-₹${result.discountAmount.toFixed(2)}</td>
-                `;
-                document.querySelector('.table-summary tbody').insertBefore(
-                    discountRow,
-                    document.querySelector('.summary-total')
-                );
-            }
-
-            // Update final total
-            document.querySelector('.summary-total td:last-child').textContent = 
-                `₹${result.finalAmount.toFixed(2)}`;
-
-            // Show success message
-            Swal.fire({
-                icon: 'success',
-                title: 'Success!',
-                text: result.message
-            });
-
-            // Show remove coupon button
-            document.querySelector('.remove-coupon-container').style.display = 'block';
-
-        } else {
-            Swal.fire({
-                icon: 'error',
-                title: 'Oops...',
-                text: result.message
-            });
-        }
-
-    } catch (error) {
-        console.error('Error applying coupon:', error);
-        Swal.fire({
-            icon: 'error',
-            title: 'Error',
-            text: 'Failed to apply coupon. Please try again.'
-        });
-    }
-}
-
-// Function to remove coupon
-async function removeCoupon() {
-    try {
-        const response = await fetch('/remove-coupon', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        });
-
-        const result = await response.json();
-
-        if (result.success) {
-            // Reset coupon cards
-            document.querySelectorAll('.coupon-card').forEach(card => {
-                card.classList.remove('applied', 'disabled');
-                const applyBtn = card.querySelector('.apply-coupon-btn');
-                applyBtn.textContent = 'Apply Coupon';
-                applyBtn.disabled = false;
-            });
-
-            // Remove discount row
-            const discountRow = document.querySelector('.summary-discount');
-            if (discountRow) {
-                discountRow.remove();
-            }
-
-            // Reset totals
-            const subtotal = parseFloat(document.querySelector('.summary-subtotal td:last-child')
-                .textContent.replace('₹', ''));
-            document.querySelector('.summary-total td:last-child').textContent = 
-                `₹${subtotal.toFixed(2)}`;
-
-            // Hide remove coupon button
-            document.querySelector('.remove-coupon-container').style.display = 'none';
-
-            Swal.fire({
-                icon: 'success',
-                title: 'Success!',
-                text: result.message
-            });
-
-        } else {
-            Swal.fire({
-                icon: 'error',
-                title: 'Oops...',
-                text: result.message
-            });
-        }
-
-    } catch (error) {
-        console.error('Error removing coupon:', error);
-        Swal.fire({
-            icon: 'error',
-            title: 'Error',
-            text: 'Failed to remove coupon. Please try again.'
-        });
-    }
-}
-
-// Add event listeners to apply coupon buttons
-document.querySelectorAll('.apply-coupon-btn').forEach(button => {
-    button.addEventListener('click', function() {
-        const couponCode = this.closest('.coupon-card')
-            .querySelector('.coupon-code').textContent;
-        applyCoupon(couponCode);
-    });
-});
-
-// Initialize remove coupon button visibility
-document.addEventListener('DOMContentLoaded', function() {
-    const appliedCoupon = document.querySelector('.coupon-card.applied');
-    document.querySelector('.remove-coupon-container').style.display = 
-        appliedCoupon ? 'block' : 'none';
-});
-
-</script>
-
-<%- include('../layoutsUser/userfooter') %>  
+                <div class="card mb-4">
+                    <header class="card-header">
+                        <h4 class="card-title">Latest orders</h4>
+                        <div class="row align-items-center">
+                            <div class="col-md-3 col-12 me-auto mb-md-0 mb-3">
+                                <div class="custom_select">
+                                    <select class="form-select select-nice">
+                                        <option selected>All Categories</option>
+                                        <option>Women's Clothing</option>
+                                        <option>Men's Clothing</option>
+                                        <option>Cellphones</option>
+                                        <option>Computer & Office</option>
+                                        <option>Consumer Electronics</option>
+                                        <option>Jewelry & Accessories</option>
+                                        <option>Home & Garden</option>
+                                        <option>Luggage & Bags</option>
+                                        <option>Shoes</option>
+                                        <option>Mother & Kids</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-2 col-6">
+                                <input type="date" value="02.05.2021" class="form-control" />
+                            </div>
+                            <div class="col-md-2 col-6">
+                                <div class="custom_select">
+                                    <select class="form-select select-nice">
+                                        <option selected>Status</option>
+                                        <option>All</option>
+                                        <option>Paid</option>
+                                        <option>Chargeback</option>
+                                        <option>Refund</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </header>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <div class="table-responsive">
+                                <table class="table align-middle table-nowrap mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th scope="col" class="text-center">
+                                                <div class="form-check align-middle">
+                                                    <input class="form-check-input" type="checkbox" id="transactionCheck01" />
+                                                    <label class="form-check-label" for="transactionCheck01"></label>
+                                                </div>
+                                            </th>
+                                            <th class="align-middle" scope="col">Order ID</th>
+                                            <th class="align-middle" scope="col">Billing Name</th>
+                                            <th class="align-middle" scope="col">Date</th>
+                                            <th class="align-middle" scope="col">Total</th>
+                                            <th class="align-middle" scope="col">Payment Status</th>
+                                            <th class="align-middle" scope="col">Payment Method</th>
+                                            <th class="align-middle" scope="col">View Details</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td class="text-center">
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" id="transactionCheck02" />
+                                                    <label class="form-check-label" for="transactionCheck02"></label>
+                                                </div>
+                                            </td>
+                                            <td><a href="#" class="fw-bold">#SK2540</a></td>
+                                            <td>Neal Matthews</td>
+                                            <td>07 Oct, 2021</td>
+                                            <td>$400</td>
+                                            <td>
+                                                <span class="badge badge-pill badge-soft-success">Paid</span>
+                                            </td>
+                                            <td><i class="material-icons md-payment font-xxl text-muted mr-5"></i> Mastercard</td>
+                                            <td>
+                                                <a href="#" class="btn btn-xs"> View details</a>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td class="text-center">
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" id="transactionCheck03" />
+                                                    <label class="form-check-label" for="transactionCheck03"></label>
+                                                </div>
+                                            </td>
+                                            <td><a href="#" class="fw-bold">#SK2541</a></td>
+                                            <td>Jamal Burnett</td>
+                                            <td>07 Oct, 2021</td>
+                                            <td>$380</td>
+                                            <td>
+                                                <span class="badge badge-pill badge-soft-danger">Chargeback</span>
+                                            </td>
+                                            <td><i class="material-icons md-payment font-xxl text-muted mr-5"></i> Visa</td>
+                                            <td>
+                                                <a href="#" class="btn btn-xs"> View details</a>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td class="text-center">
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" id="transactionCheck04" />
+                                                    <label class="form-check-label" for="transactionCheck04"></label>
+                                                </div>
+                                            </td>
+                                            <td><a href="#" class="fw-bold">#SK2542</a></td>
+                                            <td>Juan Mitchell</td>
+                                            <td>06 Oct, 2021</td>
+                                            <td>$384</td>
+                                            <td>
+                                                <span class="badge badge-pill badge-soft-success">Paid</span>
+                                            </td>
+                                            <td><i class="material-icons md-payment font-xxl text-muted mr-5"></i> Paypal</td>
+                                            <td>
+                                                <a href="#" class="btn btn-xs"> View details</a>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td class="text-center">
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" id="transactionCheck05" />
+                                                    <label class="form-check-label" for="transactionCheck05"></label>
+                                                </div>
+                                            </td>
+                                            <td><a href="#" class="fw-bold">#SK2543</a></td>
+                                            <td>Barry Dick</td>
+                                            <td>05 Oct, 2021</td>
+                                            <td>$412</td>
+                                            <td>
+                                                <span class="badge badge-pill badge-soft-success">Paid</span>
+                                            </td>
+                                            <td><i class="material-icons md-payment font-xxl text-muted mr-5"></i> Mastercard</td>
+                                            <td>
+                                                <a href="#" class="btn btn-xs"> View details</a>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td class="text-center">
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" id="transactionCheck06" />
+                                                    <label class="form-check-label" for="transactionCheck06"></label>
+                                                </div>
+                                            </td>
+                                            <td><a href="#" class="fw-bold">#SK2544</a></td>
+                                            <td>Ronald Taylor</td>
+                                            <td>04 Oct, 2021</td>
+                                            <td>$404</td>
+                                            <td>
+                                                <span class="badge badge-pill badge-soft-warning">Refund</span>
+                                            </td>
+                                            <td><i class="material-icons md-payment font-xxl text-muted mr-5"></i> Visa</td>
+                                            <td>
+                                                <a href="#" class="btn btn-xs"> View details</a>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td class="text-center">
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" id="transactionCheck07" />
+                                                    <label class="form-check-label" for="transactionCheck07"></label>
+                                                </div>
+                                            </td>
+                                            <td><a href="#" class="fw-bold">#SK2545</a></td>
+                                            <td>Jacob Hunter</td>
+                                            <td>04 Oct, 2021</td>
+                                            <td>$392</td>
+                                            <td>
+                                                <span class="badge badge-pill badge-soft-success">Paid</span>
+                                            </td>
+                                            <td><i class="material-icons md-payment font-xxl text-muted mr-5"></i> Paypal</td>
+                                            <td>
+                                                <a href="#" class="btn btn-xs"> View details</a>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <!-- table-responsive end// -->
+                    </div>
+                </div>
+                <%- include('../layoutsAdmin/adminfooter') %>
+              

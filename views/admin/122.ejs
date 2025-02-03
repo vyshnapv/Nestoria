@@ -1,1562 +1,968 @@
-//this is my orderModel.js page:- 
-    paymentStatus: {
-        type: String,
-        enum:['Paid','Pending','Failed'],
-        required: true
+//this is my product page in my user side 
 
-//this is my orderController.js page :- 
-const {addToWallet}=require("../../controllers/user/walletController")
-
-const Razorpay = require('razorpay');
-const crypto = require('crypto');
-
-
-const razorpay = new Razorpay({
-    key_id: process.env.RAZORPAY_KEY_ID,
-    key_secret: process.env.RAZORPAY_KEY_SECRET
-});
-
-
-const createOrder = async (req, res) => {
-    try {
-        const userId = req.session.user;
-        const { paymentMethod, addressId } = req.body;
-
-        if (!userId) {
-            return res.status(401).json({ success: false, message: "Please login to place an order." });
+<%- include('../layoutsUser/userheader') %>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<style>
+        .price {
+            color: #28a745;
+            font-size: 24px;
+            font-weight: bold;
         }
 
-        const cart = await Cart.findOne({ userId }).populate({
-            path: 'items.product',
-            populate: {
-                path: 'category',
-                model: 'Category'
-            }
-        });
-
-        if (!cart || cart.items.length === 0) {
-            return res.status(400).json({ success: false, message: "Your cart is empty." });
+        .rating {
+            color: #f0ad4e;
         }
 
-        // Check stock availability
-        for (const item of cart.items) {
-            const product = await Product.findById(item.product._id);
-            if (product.quantity < item.quantity) {
-                return res.status(400).json({ 
-                    success: false, 
-                    message: `Insufficient stock for ${product.productName}. Only ${product.quantity} available.` 
-                });
-            }
+        .category{
+            margin-top: 10px;
+            color: #28a745;
         }
 
-        const address = await Address.findOne({ userId });
-        if (!address || !address.address[addressId]) {
-            return res.status(404).json({ success: false, message: "Address not found." });
+        .stock {
+            margin-top: 10px;
+            color: #28a745;
         }
 
-        const selectedAddress = address.address[addressId];
-
-        // Calculate prices with offers
-        const orderItems = [];
-        let subtotal = 0;
-        
-        for (const item of cart.items) {
-            const product = await Product.findById(item.product._id);
-            const originalPrice = product.regularPrice;
-            
-            // Get active offers
-            const currentDate = new Date();
-            const offers = await Offer.find({
-                status: 'Active',
-                expireDate: { $gt: currentDate }
-            });
-            
-            const productOffer = offers.find(offer => 
-                (offer.productIds?.includes(product._id)) ||
-                (offer.categoryIds?.includes(product.category))
-            );
-
-            const priceAfterOffer = productOffer 
-                ? originalPrice * (1 - productOffer.discount / 100)
-                : originalPrice;
-            
-            const itemSubtotal = priceAfterOffer * item.quantity;
-            subtotal += itemSubtotal;
-
-            orderItems.push({
-                productId: product._id,
-                productName: product.productName,
-                quantity: item.quantity,
-                price: originalPrice,
-                finalPrice: itemSubtotal,
-                itemStatus: "Ordered",
-                highestDiscount: productOffer ? productOffer.discount : 0
-            });
+        .limited-stock {
+            color: #dc3545;
+            font-weight: bold;
+            margin-top: 20px;
         }
 
-        // Apply coupon if exists
-        let finalAmount = subtotal;
-        const appliedCoupon = req.session.appliedCoupon;
-        
-        if (appliedCoupon) {
-            const discountAmount = appliedCoupon.discountAmount;
-            finalAmount = subtotal - discountAmount;
-
-            orderItems.forEach(item => {
-                const proportion = item.finalPrice / subtotal;
-                const itemDiscount = discountAmount * proportion;
-                item.finalPrice -= itemDiscount;
-            });
+        .btn-custom {
+           background-color: #007bff; 
+           color: #fff;
+           border-radius: 5px; 
+           padding: 10px 30px; 
+           width: 200px; 
+           border: none; 
         }
 
-        // Process based on payment method
-        switch (paymentMethod) {
-            case 'COD': {
-                const newOrder = new Order({
-                    orderId: `ORD-${Date.now()}`,
-                    userId,
-                    items: orderItems,
-                    totalPrice: finalAmount,
-                    address: {
-                        name: selectedAddress.name,
-                        phone: selectedAddress.phone,
-                        district: selectedAddress.district,
-                        city: selectedAddress.city,
-                        house: selectedAddress.house,
-                        state: selectedAddress.state,
-                        pincode: selectedAddress.pincode,
-                    },
-                    paymentMethod,
-                    paymentStatus: 'Pending',
-                    orderStatus: "Processing"
-                });
-
-                await newOrder.save();
-
-                // Update product quantities
-                for (const item of orderItems) {
-                    await Product.findByIdAndUpdate(
-                        item.productId,
-                        { $inc: { quantity: -item.quantity } }
-                    );
-                }
-
-                // Clear cart and coupon
-                await Cart.deleteOne({ userId });
-                delete req.session.appliedCoupon;
-
-                return res.status(200).json({ 
-                    success: true, 
-                    orderId: newOrder.orderId 
-                });
-            }
-
-            case 'Wallet': {
-                const wallet = await Wallet.findOne({ userId });
-                
-                if (!wallet || wallet.balance < finalAmount) {
-                    return res.status(400).json({ 
-                        success: false, 
-                        message: 'Insufficient wallet balance' 
-                    });
-                }
-
-                const newOrder = new Order({
-                    orderId: `ORD-${Date.now()}`,
-                    userId,
-                    items: orderItems,
-                    totalPrice: finalAmount,
-                    address: {
-                        name: selectedAddress.name,
-                        phone: selectedAddress.phone,
-                        district: selectedAddress.district,
-                        city: selectedAddress.city,
-                        house: selectedAddress.house,
-                        state: selectedAddress.state,
-                        pincode: selectedAddress.pincode,
-                    },
-                    paymentMethod,
-                    paymentStatus: 'Paid',
-                    orderStatus: "Processing"
-                });
-
-                await newOrder.save();
-
-                // Update product quantities
-                for (const item of orderItems) {
-                    await Product.findByIdAndUpdate(
-                        item.productId,
-                        { $inc: { quantity: -item.quantity } }
-                    );
-                }
-
-                // Update wallet
-                wallet.balance -= finalAmount;
-                wallet.transactions.push({
-                    amount: finalAmount,
-                    type: 'debit',
-                    description: `Payment for order ${newOrder.orderId}`,
-                    balance: wallet.balance
-                });
-                await wallet.save();
-
-                // Clear cart and coupon
-                await Cart.deleteOne({ userId });
-                delete req.session.appliedCoupon;
-
-                return res.status(200).json({ 
-                    success: true, 
-                    orderId: newOrder.orderId 
-                });
-            }
-
-            case 'Razorpay': {
-                const razorpayOrderOptions = {
-                    amount: Math.round(finalAmount * 100),
-                    currency: 'INR',
-                    receipt: `ORD-${Date.now()}`,
-                    payment_capture: 1
-                };
-
-                const razorpayOrder = await razorpay.orders.create(razorpayOrderOptions);
-
-                const newOrder = new Order({
-                    orderId: `ORD-${Date.now()}`,
-                    userId,
-                    items: orderItems,
-                    totalPrice: finalAmount,
-                    address: {
-                        name: selectedAddress.name,
-                        phone: selectedAddress.phone,
-                        district: selectedAddress.district,
-                        city: selectedAddress.city,
-                        house: selectedAddress.house,
-                        state: selectedAddress.state,
-                        pincode: selectedAddress.pincode,
-                    },
-                    paymentMethod,
-                    paymentStatus: 'Pending',
-                    orderStatus: "Processing",
-                    razorpayOrderId: razorpayOrder.id
-                });
-
-                await newOrder.save();
-
-                // Update product quantities
-                for (const item of orderItems) {
-                    await Product.findByIdAndUpdate(
-                        item.productId,
-                        { $inc: { quantity: -item.quantity } }
-                    );
-                }
-
-                // Clear cart and coupon
-                await Cart.deleteOne({ userId });
-                delete req.session.appliedCoupon;
-
-                return res.status(200).json({ 
-                    success: true, 
-                    orderId: newOrder.orderId,
-                    razorpayOrder: {
-                        id: razorpayOrder.id,
-                        key: process.env.RAZORPAY_KEY_ID,
-                        amount: razorpayOrder.amount
-                    }
-                });
-            }
-
-            default:
-                return res.status(400).json({ 
-                    success: false, 
-                    message: 'Invalid payment method' 
-                });
+        .btn-custom:hover {
+           background-color: #0f64be; 
         }
 
-    } catch (error) {
-        console.error("Error placing order:", error);
-        return res.status(500).json({ 
-            success: false, 
-            message: error.message || 'An error occurred while placing the order' 
-        });
-    }
-};
-
-//razorpay
-const verifyRazorpayPayment = async (req, res) => {
-    try {
-        const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
-
-        // First verify the payment signature
-        const hmac = crypto.createHmac('sha256', process.env.RAZORPAY_KEY_SECRET);
-        hmac.update(`${razorpay_order_id}|${razorpay_payment_id}`);
-        const generatedSignature = hmac.digest('hex');
-
-        if (generatedSignature !== razorpay_signature) {
-            return res.status(400).json({ success: false, message: 'Invalid payment signature' });
+        .icon_btn {
+            padding: 13px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #e65564; 
+            font-size: 24px; 
         }
 
-        // Find the order
-        const order = await Order.findOne({ razorpayOrderId: razorpay_order_id });
-        
-        if (!order) {
-            console.error('Order not found for Razorpay order ID:', razorpay_order_id);
-            return res.status(404).json({ success: false, message: 'Order not found' });
+        .table {
+            margin-top: 30px;
         }
 
-        // Update the order with payment details
-        order.paymentStatus = 'Paid';
-        order.paymentMethod = 'Razorpay';
-        order.razorpayPaymentId = razorpay_payment_id;
-        
-        await order.save();
-
-        return res.status(200).json({ 
-            success: true, 
-            message: 'Payment verified successfully',
-            orderId: order.orderId
-        });
-
-    } catch (error) {
-        console.error('Razorpay verification error:', error);
-        res.status(500).json({ success: false, message: 'Payment verification failed' });
-    }
-};
-
-//ordersuccess
-const orderSuccess = async (req,res)=>{
-  try {
-
-    const userData = req.session.user ? await User.findById(req.session.user) : null;
-    
-    const { orderId } = req.params;
-    
-    const order = await Order.findOne({ orderId });
-
-    if (!order) {
-      return res.status(404).json({ success: false, message: 'Order not found' });
-    }
-
-    await order.save();
-
-    const user = await User.findById(order.userId);
-
-    if (!user.orderHistory) {
-      user.orderHistory = [];
-    }
-
-    user.orderHistory.push(order._id);
-    await user.save();
-
-
-    res.render('orderPlaced', {
-      userData,
-      order,
-      user,
-    });
-
-  } catch (error) {
-    console.error('Error in orderSuccess:', error);
-    res.status(500).json({ success: false, message: 'An error occurred while processing the order' });
-    
-  }
-}
-
-
-//get view order page 
-const getViewOrders = async (req, res) => {
-    try {
-        const userData = await User.findById(req.session.user);
-        if (!userData) {
-            return res.redirect('/login');
-        }
-    
-        // Pagination setup
-        const page = parseInt(req.query.page) || 1;
-        const limit = 5;
-        const skip = (page - 1) * limit;
-
-        // Get total count first
-        const totalOrdersCount = await Order.countDocuments({ userId: userData._id });
-        const totalPages = Math.ceil(totalOrdersCount / limit);
-
-        // Get paginated orders
-        const orders = await Order.find({ userId: userData._id })
-            .populate({
-                path: 'items.productId',
-                populate: {
-                    path: 'category',
-                    model: 'Category'
-                }
-            })
-            .sort({ createdAt: -1 })
-            .skip(skip)
-            .limit(limit)
-            .lean();
-
-        // If no orders found, render the page with empty array
-        if (!orders || orders.length === 0) {
-            return res.render("viewOrders", {
-                userData,
-                orders: [],
-                paginatedOrders: [],
-                currentPage: 1,
-                totalPages: 1,
-                helpers: {
-                    getStatusClass: (status) => {
-                        switch (status.toLowerCase()) {
-                            case 'paid': return 'paid';
-                            case 'pending': return 'pending';
-                            case 'processing': return 'processing';
-                            case 'shipped': return 'shipped';
-                            case 'delivered': return 'delivered';
-                            default: return '';
-                        }
-                    }
-                }
-            });
+        .table th, .table td {
+            text-align: center;
         }
 
-        // Format orders
-        const formattedOrders = orders.map(order => {
-            let subtotal = 0;
-            let activeItemsCount = 0;
-            
-            const itemsWithOffers = order.items.map(item => {
-                if (item.itemStatus !== 'Cancelled') {
-                    activeItemsCount++;
-                    subtotal += item.finalPrice;
-                }
-                
-                return {
-                    ...item,
-                    originalPrice: item.price,
-                    finalPrice: item.finalPrice
-                };
-            });
-
-            // Recalculate coupon discount if applicable
-            let finalTotal = subtotal;
-            if (order.appliedCoupon && activeItemsCount > 0) {
-                const couponDiscount = (subtotal / order.totalPrice) * order.appliedCoupon.discountAmount;
-                finalTotal = subtotal - couponDiscount;
-            }
-
-            return {
-                orderId: order.orderId,
-                date: new Date(order.createdAt).toLocaleDateString('en-US', {
-                    year: 'numeric',
-                    month: '2-digit',
-                    day: '2-digit'
-                }),
-                totalPrice: finalTotal.toFixed(2),
-                originalTotal: order.totalPrice,
-                paymentStatus: order.paymentStatus,
-                orderStatus: order.orderStatus,
-                items: itemsWithOffers,
-                appliedCoupon: order.appliedCoupon
-            };
-        });
-
-        res.render("viewOrders", {
-            userData,
-            orders: formattedOrders,
-            paginatedOrders: formattedOrders,
-            currentPage: page,
-            totalPages,
-            helpers: {
-                getStatusClass: (status) => {
-                    switch (status.toLowerCase()) {
-                        case 'paid': return 'paid';
-                        case 'pending': return 'pending';
-                        case 'processing': return 'processing';
-                        case 'shipped': return 'shipped';
-                        case 'delivered': return 'delivered';
-                        default: return '';
-                    }
-                }
-            }
-        });
-
-    } catch (error) {
-        console.error('Error in getViewOrders:', error);
-        // Render a generic error page instead of looking for specific error view
-        res.render("viewOrders", {
-            userData: req.session.user ? await User.findById(req.session.user) : null,
-            orders: [],
-            paginatedOrders: [],
-            currentPage: 1,
-            totalPages: 1,
-            error: "An error occurred while fetching your orders. Please try again later.",
-            helpers: {
-                getStatusClass: (status) => {
-                    switch (status.toLowerCase()) {
-                        case 'paid': return 'paid';
-                        case 'pending': return 'pending';
-                        case 'processing': return 'processing';
-                        case 'shipped': return 'shipped';
-                        case 'delivered': return 'delivered';
-                        default: return '';
-                    }
-                }
-            }
-        });
-    }
-};
-
-//get order details
-const getOrderDetails = async (req, res) => {
-    try {
-        const userData = await User.findById(req.session.user);
-        const { orderId } = req.params;
-
-        const order = await Order.findOne({ orderId }).populate({
-            path: 'items.productId',
-            model: 'Product',
-            populate: {
-                path: 'category',
-                model: 'Category',
-                select: 'name'
-            }
-        });
-
-        if (!order) {
-            return res.status(404).render('error', {
-                message: 'Order not found',
-                error: { status: 404 }
-            });
+        .product-box {
+            border: 1px solid #ddd;
+            padding: 20px;
+            margin-top: 20px;
+            border-radius: 10px;
+            background-color: #f9f9f9;
         }
 
-        // Calculate active items and their totals
-        let activeSubtotal = 0;
-        let activeItemsCount = 0;
-
-        const processedItems = order.items.map(item => {
-            const itemData = {
-                productName: item.productName,
-                productId: item.productId,
-                quantity: item.quantity,
-                price: item.price,
-                highestDiscount: item.highestDiscount || 0,
-                offerPrice: item.highestDiscount > 0 ? 
-                    item.price * (1 - item.highestDiscount / 100) : 
-                    item.price,
-                finalPrice: item.finalPrice,
-                itemStatus: item.itemStatus,
-                returnStatus: item.returnStatus || 'Not Requested',
-                returnReason: item.returnReason || '',
-                category: item.productId.category
-            };
-
-            if (item.itemStatus !== 'Cancelled') {
-                activeSubtotal += item.finalPrice;
-                activeItemsCount++;
-            }
-
-            return itemData;
-        });
-
-        // Calculate coupon distribution for active items
-        let finalTotal = activeSubtotal;
-        if (order.appliedCoupon && activeItemsCount > 0) {
-            const proportionalDiscount = (activeSubtotal / order.totalPrice) * order.appliedCoupon.discountAmount;
-            finalTotal = activeSubtotal - proportionalDiscount;
+        .page-border {
+            border: 1px solid #ddd; 
+            border-radius: 10px;
+            padding: 20px; 
+            margin-top: 20px; 
+            background-color: #fff; 
+        }
+        .container{
+            width: 70%;
+        }
+        .btn-custom {
+            background: linear-gradient(45deg, #ff6b6b, #f7b733);
+        }
+       .btn-custom:hover {
+            background: linear-gradient(45deg, #f7b733, #ff6b6b); 
+        }
+        .availability {
+            color: black; 
+            font-weight: bold;
+        }
+       .in-stock {
+            color: green; 
         }
 
-        const formattedOrder = {
-            orderId: order.orderId,
-            orderDate: new Date(order.createdAt).toLocaleDateString('en-US', {
-                weekday: 'long',
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric'
-            }),
-            address: order.address,
-            paymentMethod: order.paymentMethod,
-            paymentStatus: order.paymentStatus,
-            orderStatus: order.orderStatus,
-            items: processedItems.map(item => ({
-                productName: item.productName,
-                category: item.category,
-                image: item.productId.productImage[0],
-                quantity: item.quantity,
-                price: item.price,
-                offerPrice: item.offerPrice,
-                highestDiscount: item.highestDiscount,
-                finalPrice: item.finalPrice,
-                itemStatus: item.itemStatus,
-                returnStatus: item.returnStatus
-            })),
-            totalPrice: order.totalPrice,
-            appliedCoupon: order.appliedCoupon ? {
-                code: order.appliedCoupon.code,
-                discountAmount: order.appliedCoupon.discountAmount
-            } : null
-        };
-
-        res.render("orderDetails", {
-            userData,
-            order: formattedOrder
-        });
-
-    } catch (error) {
-        console.error('Error in getOrderDetails:', error);
-        res.status(500).render('error', {
-            message: 'An error occurred while fetching order details',
-            error: process.env.NODE_ENV === 'development' ? error : {}
-        });
-    }
-};
-
-
-//cancelled order
-const cancelOrderItem = async (req, res) => {
-    try {
-        const { orderId } = req.params;
-        const { productName, reason } = req.body;
-        
-        const order = await Order.findOne({ orderId });
-        if (!order) {
-            return res.status(404).json({ success: false, message: 'Order not found' });
+       .only-left {
+           color:orange
         }
-
-        const itemIndex = order.items.findIndex(item => item.productName === productName);
-        if (itemIndex === -1) {
-            return res.status(404).json({ success: false, message: 'Product not found in order' });
+       .out-of-stock {
+           color: red; 
         }
-
-        const item = order.items[itemIndex];
-        if (item.itemStatus !== 'Ordered' && item.itemStatus !== 'Processing') {
-            return res.status(400).json({ 
-                success: false, 
-                message: 'This item cannot be cancelled in its current status' 
-            });
+       .container {
+           width: 70%;
         }
-
-        // Calculate refund amount including proportional coupon discount
-        let refundAmount = item.finalPrice;
-        if (order.appliedCoupon) {
-            const proportionalDiscount = (item.finalPrice / order.totalPrice) * order.appliedCoupon.discountAmount;
-            refundAmount = item.finalPrice - proportionalDiscount;
+       .product-gallery {
+           flex: 1;
         }
-
-        // Process refund to wallet for paid orders
-        if ((order.paymentMethod === 'Razorpay' || order.paymentMethod === 'Wallet') && 
-            order.paymentStatus === 'Paid') {
-            let wallet = await Wallet.findOne({ userId: order.userId });
-            
-            if (!wallet) {
-                wallet = new Wallet({
-                    userId: order.userId,
-                    balance: 0,
-                    transactions: []
-                });
-            }
-
-            // Add refund transaction
-            const newBalance = wallet.balance + refundAmount;
-            wallet.transactions.push({
-                amount: refundAmount,
-                type: 'credit',
-                description: `Refund for cancelled item: ${item.productName}`,
-                orderId: order._id,
-                balance: newBalance
-            });
-
-            wallet.balance = newBalance;
-            await wallet.save();
+       .product-details {
+           flex: 1; 
         }
-
-        // Update item status and product inventory
-        item.itemStatus = 'Cancelled';
-        item.reason = reason;
-
-        const product = await Product.findById(item.productId);
-        if (product) {
-            product.quantity += item.quantity;
-            await product.save();
+       .product-details-top {
+           display: flex; 
         }
-
-        // Recalculate order total
-        const activeItems = order.items.filter(item => item.itemStatus !== 'Cancelled');
-        order.totalPrice = activeItems.reduce((total, item) => total + item.finalPrice, 0);
-
-        if (activeItems.length === 0) {
-            order.orderStatus = 'Cancelled';
+       .product-details-tab {
+           margin-top: 20px;
         }
-
-        await order.save();
-
-        res.status(200).json({
-            success: true,
-            message: 'Order item cancelled successfully. Refund has been processed to your wallet.',
-            updatedTotalPrice: order.totalPrice,
-            refundAmount: refundAmount
-        });
-
-    } catch (error) {
-        console.error('Error in cancelOrderItem:', error);
-        res.status(500).json({
-            success: false,
-            message: 'An error occurred while cancelling the order item'
-        });
-    }
-};
-
-
-//return order
-const returnOrderItem = async (req, res) => {
-    try {
-        const { orderId } = req.params;
-        const { productName, reason } = req.body;
-
-        const order = await Order.findOne({ orderId });
-        if (!order) {
-            return res.status(404).json({ success: false, message: 'Order not found' });
+        .offer-badge {
+           margin-bottom: 10px;
         }
-
-        const itemToReturn = order.items.find(item => 
-            item.productName === productName && item.itemStatus === 'Delivered'
-        );
-
-        if (!itemToReturn) {
-            return res.status(400).json({
-                success: false,
-                message: 'Item cannot be returned'
-            });
+        .badge {
+            font-size: 14px;
+            padding: 5px 10px;
         }
-
-        // Calculate refund amount including proportional coupon discount
-        let refundAmount = itemToReturn.finalPrice;
-        if (order.appliedCoupon) {
-            const proportionalDiscount = (itemToReturn.finalPrice / order.totalPrice) * order.appliedCoupon.discountAmount;
-            refundAmount = itemToReturn.finalPrice - proportionalDiscount;
+        .regular-price {
+            text-decoration: line-through;
+            color: #6c757d;
+            margin-right: 10px;
         }
-
-        // Process refund to wallet
-        if ((order.paymentMethod === 'Razorpay' || order.paymentMethod === 'Wallet') && 
-            order.paymentStatus === 'Paid') {
-            let wallet = await Wallet.findOne({ userId: order.userId });
-            
-            if (!wallet) {
-                wallet = new Wallet({
-                    userId: order.userId,
-                    balance: 0,
-                    transactions: []
-                });
-            }
-
-            // Add refund transaction
-            const newBalance = wallet.balance + refundAmount;
-            wallet.transactions.push({
-                amount: refundAmount,
-                type: 'credit',
-                description: `Refund for returned item: ${itemToReturn.productName}`,
-                orderId: order._id,
-                balance: newBalance
-            });
-
-            wallet.balance = newBalance;
-            await wallet.save();
+        .offer-price {
+            color: #28a745;
+            font-size: 24px;
+            font-weight: bold;
         }
+</style>
 
-        itemToReturn.returnReason = reason;
-        itemToReturn.returnStatus = 'Return Requested';
-        itemToReturn.returnRequestDate = new Date();
-        itemToReturn.itemStatus = 'Return Processed';
-        itemToReturn.refundAmount = refundAmount;
-
-        await order.save();
-
-        // Update product inventory
-        const product = await Product.findById(itemToReturn.productId);
-        if (product) {
-            product.quantity += itemToReturn.quantity;
-            await product.save();
-        }
-
-        res.json({
-            success: true,
-            message: 'Return request processed successfully. Refund has been added to your wallet.',
-            returnStatus: 'Return Processed',
-            refundAmount: refundAmount.toFixed(2)
-        });
-
-    } catch (error) {
-        console.error('Error in returnOrderItem:', error);
-        res.status(500).json({
-            success: false,
-            message: 'An error occurred while processing the return request'
-        });
-    }
-};
-
-//this is my checkout.ejs page:- 
-
-                    <aside  class="sidebar">
-                        <div class="summary">
-                            <h3 class="summary-title">Order Summary</h3>
-                            <table class="table table-summary">
-                                <thead>
-                                    <tr>
-                                        <th>Product</th>
-                                        <th>Total</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <% let calculatedSubtotal = 0 %>
-                                    <% cart.items.forEach(item => { %>
-                                        <% const product = item.product %>
-                                        <% const originalPrice = Math.round((product.highestDiscount > 0 ? product.offerPrice : product.regularPrice) * 100) / 100 %>
-                                        <% const itemTotal = Math.round(originalPrice * item.quantity * 100) / 100 %>
-                                        <% const finalItemPrice = item.couponDiscount ? Math.round(item.couponDiscount.finalPrice) : itemTotal %>
-                                        <% calculatedSubtotal += finalItemPrice %>
-                                        <tr>
-                                            <td>
-                                                <%= product.productName %>
-                                                <small class="d-block text-muted">
-                                                    <% if (item.couponDiscount) { %>
-                                                        <div class="price-details">
-                                                            <span class="original-price" style="text-decoration: line-through; color: #999;">
-                                                                ₹<%= itemTotal %>
-                                                            </span>
-                                                            <span class="arrow" style="color: #666; margin: 0 5px;">→</span>
-                                                            <span class="discounted-price" style="color: #28a745;">
-                                                                ₹<%= Math.round(item.couponDiscount.finalPrice) %>
-                                                            </span>
-                                                            <div class="discount-info" style="font-size: 0.85em; color: #28a745;">
-                                                                You Saved: ₹<%= Math.round(item.couponDiscount.amount) %>
-                                                            </div>
-                                                        </div>
-                                                    <% } %>
-                                                </small>
-                                            </td>
-                                            <td class="text-right">₹<%= finalItemPrice %></td>
-                                        </tr>
-                                    <% }) %>
-                                    
-                                    <tr class="summary-subtotal">
-                                        <td>Subtotal:</td>
-                                        <td>₹<%= Math.round(calculatedSubtotal) %></td>
-                                    </tr>
-                                    
-                                    <% if (appliedCoupon) { %>
-                                        <tr style="color: #28a745;">
-                                            <td>
-                                                Coupon Applied (<%= appliedCoupon.code %>):
-                                                <small class="d-block">
-                                                    <%= appliedCoupon.percentage %>% off
-                                                    <% if (appliedCoupon.appliedDiscount === 'Maximum discount applied') { %>
-                                                        (Max: ₹<%= Math.round(appliedCoupon.maxRedeemAmount) %>)
-                                                    <% } %>
-                                                </small>
-                                            </td>
-                                            <td class="text-right">-₹<%= Math.round(appliedCoupon.discountAmount) %></td>
-                                        </tr>
-                                    <% } %>
-                                    
-                                    <tr class="total-row">
-                                        <td><strong>Total:</strong></td>
-                                        <td><strong>₹<%= Math.round(finalAmount) %></strong></td>
-                                    </tr>
-                                </tbody>
-                            </table>
-
-                            <div class="payment-method">
-                                <h4 class="payment-method-title">Payment Method</h4>
-                                
-                                <div class="wallet-info mb-3">
-                                    <p class="font-medium">Wallet Balance: ₹<span id="walletBalance"><%= walletBalance.toFixed(2) %></span></p>
-                                </div>
-                                
-                                <div class="payment-option">
-                                    <input type="radio" name="paymentMethod" value="COD" id="paymentCOD">
-                                    <label for="paymentCOD">Cash on Delivery</label>
-                                </div><br>
-                                
-                                <div class="payment-option">
-                                    <input type="radio" name="paymentMethod" value="Razorpay" id="paymentRazorpay">
-                                    <label for="paymentRazorpay">Razorpay</label>
-                                </div><br>
-                                
-                                <div class="payment-option">
-                                    <input type="radio" name="paymentMethod" value="Wallet" id="paymentWallet" 
-                                        <%= (walletBalance < finalAmount) ? 'disabled' : '' %>>
-                                    <label for="paymentWallet" class="<%= (walletBalance < finalAmount) ? 'text-muted' : '' %>">
-                                        Wallet Payment 
-                                        <% if (walletBalance < finalAmount) { %>
-                                            <small class="text-danger">(Insufficient Balance)</small>
-                                        <% } %>
-                                    </label>
-                                </div>
-                            </div>
-                            
-                            <button type="button" id="placeOrderButton" class="btn btn-outline-primary-2 btn-block">Place Order</button>
-                        </div>
-                    </aside>
-                </div>
-            </div>
+<main class="main">
+    <nav aria-label="breadcrumb" class="breadcrumb-nav border-0 mb-0">
+        <div class="container d-flex align-items-center">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/">Home</a></li>
+                <li class="breadcrumb-item"><a href="/shop">Shop</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Products</li>
+            </ol>
         </div>
-    </div>
-</main>
+    </nav>
 
+    <div class="page-content">
+        <div class="container">
+            <div class="product-details-top mb-2">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="product-gallery product-gallery-vertical">
+                                <div class="row">
+                                    <figure class="product-main-image">
+                                       
+                                        <img id="product-zoom" src="/uploads/cropped/<%= product.productImage[0] %>" data-zoom-image="/uploads/cropped/<%= product.productImage[0] %>" alt="product image">
+
+                                    </figure>
+
+                                    <div id="product-zoom-gallery" class="product-image-gallery">
+                                        <% for(let i=0;i<product.productImage.length;i++){ %>
+                                            <a class="product-gallery-item <%= i === 0 ? 'active' : '' %>" href="#" data-image="/uploads/cropped/<%= product.productImage[i] %>" data-zoom-image="/uploads/cropped/<%= product.productImage[i] %>">
+                                                <img src="/uploads/cropped/<%= product.productImage[i] %>" alt="product side">
+                                            </a>
+                                        <% } %>
+                                     
+    
+                                    </div><!-- End .product-image-gallery -->
+                                </div><!-- End .row -->
+                            </div><!-- End .product-gallery -->
+                        </div><!-- End .col-md-6 -->
+
+                <div class="product-details">
+                    <h1 class="product-title" style="font-size: xx-large;"><%= product.productName %></h1>
+
+                    <div class="ratings-container">
+                        <div class="ratings">
+                            <div class="ratings-val" style="width: 80%;"></div><!-- End .ratings-val -->
+                        </div><!-- End .ratings -->
+                        <a class="ratings-text" href="#product-review-link" id="review-link">( 2 Reviews )</a>
+                    </div><!-- End .rating-container -->
+
+                    
+                    <div class="price">
+                        <% if (product.offer) { %>
+                            <div class="offer-badge">
+                                <span class="badge bg-danger">-<%= product.offer.discount %>%</span>
+                            </div>
+                            <p class="regular-price text-muted" style="text-decoration: line-through;">₹<%= product.regularPrice %></p>
+                            <p class="offer-price">₹<%= (product.regularPrice * (1 - product.offer.discount / 100)).toFixed(2) %></p>
+                        <% } else { %>
+                            <p class="price">₹<%= product.regularPrice %></p>
+                        <% } %>
+                    </div>
+
+                    <div class="category">
+                        <span class="availability">Category:</span> <%= product.category ? product.category.name : 'Uncategorized' %>  
+                    </div>
+
+                    <% if (product.quantity >= 10) { %>
+                        <div class="stock in-stock"><span class="availability">Availability:</span> In Stock (Total: <%= product.quantity %>)</div>
+                    <% } else if (product.quantity >0) { %>
+                        <div class="stock only-left"><span class="availability">Availability:</span> Only <%= product.quantity %> left in stock (Total: <%= product.quantity %>)</div>
+                    <% } else { %>
+                        <div class="stock out-of-stock"><span class="availability">Availability:</span> Out of stock</div>
+                    <% } %>
+
+                    <br><br>
+                    <div class="product-details-action">
+                        <% if (product.quantity > 0) { %>
+                        <a href="#" class="btn-product btn-cart addToCart" data-product-id="<%= product._id %>">
+                            <span>Add to Cart</span>
+                        </a>
+                        <% } else { %>
+                            <a  class="btn-product btn-cart addToCart" >
+                                <span>Out of Stock</span>
+                            </a>
+                        <% } %>
+                        <div class="details-action-wrapper">
+                            <a href="#" class="btn-product btn-wishlist" title="Wishlist"><span></span></a>
+                        </div>
+                    </div>
+                </div><!-- End .product-details -->
+            </div><!-- End .product-details-top -->
+        </div>
+            <div class="product-details-tab">
+                <ul class="nav nav-pills justify-content-center" role="tablist">
+                    <li class="nav-item">
+                        <a class="nav-link active" id="product-desc-link" data-toggle="tab" href="#product-desc-tab" role="tab" aria-controls="product-desc-tab" aria-selected="true">Description</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" id="product-info-link" data-toggle="tab" href="#product-info-tab" role="tab" aria-controls="product-info-tab" aria-selected="false">Additional Information</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" id="product-review-link" data-toggle="tab" href="#product-review-tab" role="tab" aria-controls="product-review-tab" aria-selected="false">Reviews (2)</a>
+                    </li>
+                </ul>
+                <div class="tab-content">
+                    <div class="tab-pane fade show active" id="product-desc-tab" role="tabpanel" aria-labelledby="product-desc-link">
+                        <div class="product-desc-content">
+                            <p><%= product.description %></p>
+                        </div><!-- End .product-desc-content -->
+                    </div><!-- .End .tab-pane -->
+                    <div class="tab-pane fade" id="product-info-tab" role="tabpanel" aria-labelledby="product-info-link">
+                        <div class="product-desc-content">
+                            <h3>Information</h3>
+                            <p>Lorem ipsum dolor sit amet, consectetuer adipiscing elit...</p>
+
+                            <h3>Fabric & Care</h3>
+                            <p>Lorem ipsum dolor sit amet...</p>
+
+                            <h3>Size</h3>
+                            <p>One Size</p>
+                        </div><!-- End .product-desc-content -->
+                    </div><!-- .End .tab-pane -->
+                    <div class="tab-pane fade" id="product-review-tab" role="tabpanel" aria-labelledby="product-review-link">
+                        <div class="reviews">
+                            <h3>Reviews (2)</h3>
+                            <div class="review">
+                                <div class="row no-gutters">
+                                    <div class="col-auto">
+                                        <h4><a href="#">Samanta J.</a></h4>
+                                        <div class="ratings-container">
+                                            <div class="ratings">
+                                                <div class="ratings-val" style="width: 80%;"></div><!-- End .ratings-val -->
+                                            </div><!-- End .ratings -->
+                                        </div><!-- End .rating-container -->
+                                        <span class="review-date">6 days ago</span>
+                                    </div><!-- End .col -->
+                                    <div class="col">
+                                        <h4>Good, perfect size</h4>
+                                        <div class="review-content">
+                                            <p>Lorem ipsum dolor sit amet...</p>
+                                        </div><!-- End .review-content -->
+                                        <div class="review-action">
+                                            <a href="#"><i class="icon-thumbs-up"></i>Helpful (2)</a>
+                                            <a href="#"><i class="icon-thumbs-down"></i>Unhelpful (0)</a>
+                                        </div><!-- End .review-action -->
+                                    </div><!-- End .col-auto -->
+                                </div><!-- End .row -->
+                            </div><!-- End .review -->
+                        </div><!-- End .reviews -->
+                    </div><!-- .End .tab-pane -->
+                </div><!-- End .tab-content -->
+            </div><!-- End .product-details-tab -->
+
+        </div><!-- End .container -->
+    </div><!-- End .page-content -->
+</main><!-- End .main -->
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
-    
-    document.getElementById('show-addresses-btn').addEventListener('click', function() {
-        const addressList = document.getElementById('address-list');
-        addressList.style.display = addressList.style.display === 'none' ? 'block' : 'none';
-    });
-
-    
-    function selectAddress(index) {
-        document.querySelectorAll('.address-item').forEach(item => {
-            item.classList.remove('selected');
-            const icon = item.querySelector('.select-icon');
-            if (icon) icon.classList.remove('selected');
-        });
-
-        const selectedItem = document.querySelector(`.address-item[data-index="${index}"]`);
-        selectedItem.classList.add('selected');
-
-        const selectIcon = document.getElementById(`select-icon-${index}`);
-        selectIcon.classList.add('selected');
-
-        sessionStorage.setItem('selectedAddress', index);
-    }
-
-    function toggleForm() {
-    var form = document.getElementById("addAddressForm");
-    form.style.display = form.style.display === "none" ? "block" : "none";
-}
-
-function cancelForm() {
-    Swal.fire({
-        title: 'Are you sure?',
-        text: "Your entered data will be discarded!",
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#3085d6',
-        cancelButtonColor: '#d33',
-        confirmButtonText: 'Yes, cancel it!'
-    }).then((result) => {
-        if (result.isConfirmed) {
-            document.getElementById("addAddressForm").style.display = "none";
-            document.getElementById("actualAddAddressForm").reset();
-            clearErrors();
-            Swal.fire(
-                'Cancelled!',
-                'Form has been reset.',
-                'success'
-            )
-        }
-    })
-}
-
-function showError(elementId, message) {
-    const element = document.getElementById(elementId);
-    const errorElement = document.getElementById(elementId + 'Error');
-    element.classList.add('error');
-    errorElement.style.display = 'block';
-    errorElement.textContent = message;
-}
-
-function clearErrors() {
-    const inputs = document.querySelectorAll('.form-control');
-    inputs.forEach(input => {
-        input.classList.remove('error');
-        const errorElement = document.getElementById(input.id + 'Error');
-        if (errorElement) {
-            errorElement.style.display = 'none';
-            errorElement.textContent = '';
-        }
-    });
-}
-
-function isEmptyOrWhitespace(str) {
-    return !str || str.trim().length === 0;
-}
-
-document.getElementById("actualAddAddressForm").addEventListener("submit", async function(e) {
-    e.preventDefault();
-    clearErrors();
-    let isValid = true;
-
-    
-    const name = document.getElementById("name").value;
-    if (isEmptyOrWhitespace(name)) {
-        showError("name", "Name cannot be empty");
-        isValid = false;
-    } else if (!/^[A-Za-z]+(?: [A-Za-z]+)*$/.test(name.trim())) {
-        showError("name", "Name should contain only letters with single spaces between words");
-        isValid = false;
-    } else if (name.trim().length < 3 || name.trim().length > 50) {
-        showError("name", "Name should be 3-50 characters long");
-        isValid = false;
-    }
-
-    
-    const phone = document.getElementById("phone").value;
-    if (isEmptyOrWhitespace(phone)) {
-        showError("phone", "Phone number cannot be empty");
-        isValid = false;
-    } else if (!/^[6-9]\d{9}$/.test(phone.trim())) {
-        showError("phone", "Please enter a valid 10-digit phone number starting with 6-9");
-        isValid = false;
-    }
-
-    
-    const district = document.getElementById("district").value;
-    if (isEmptyOrWhitespace(district)) {
-        showError("district", "District cannot be empty");
-        isValid = false;
-    } else if (!/^[A-Za-z]+(?: [A-Za-z]+)*$/.test(district.trim())) {
-        showError("district", "District should contain only letters with single spaces between words");
-        isValid = false;
-    } else if (district.trim().length < 3 || district.trim().length > 30) {
-        showError("district", "District should be 3-30 characters long");
-        isValid = false;
-    }
-
-   
-    const city = document.getElementById("city").value;
-    if (isEmptyOrWhitespace(city)) {
-        showError("city", "City cannot be empty");
-        isValid = false;
-    } else if (!/^[A-Za-z]+(?: [A-Za-z]+)*$/.test(city.trim())) {
-        showError("city", "City should contain only letters with single spaces between words");
-        isValid = false;
-    } else if (city.trim().length < 3 || city.trim().length > 30) {
-        showError("city", "City should be 3-30 characters long");
-        isValid = false;
-    }
-
-    
-    const house = document.getElementById("house").value;
-    if (isEmptyOrWhitespace(house)) {
-        showError("house", "House/Building details cannot be empty");
-        isValid = false;
-    } else if (!/^[A-Za-z0-9\s,.-/#]{3,100}$/.test(house.trim())) {
-        showError("house", "House/Building details should be 3-100 characters long and can contain letters, numbers, spaces, and common symbols (,.-/#)");
-        isValid = false;
-    }
-
-    
-    const state = document.getElementById("state").value;
-    if (isEmptyOrWhitespace(state)) {
-        showError("state", "State cannot be empty");
-        isValid = false;
-    } else if (!/^[A-Za-z]+(?: [A-Za-z]+)*$/.test(state.trim())) {
-        showError("state", "State should contain only letters with single spaces between words");
-        isValid = false;
-    } else if (state.trim().length < 3 || state.trim().length > 30) {
-        showError("state", "State should be 3-30 characters long");
-        isValid = false;
-    }
-
-    
-    const pincode = document.getElementById("pincode").value;
-    if (isEmptyOrWhitespace(pincode)) {
-        showError("pincode", "Pincode cannot be empty");
-        isValid = false;
-    } else if (!/^\d{6}$/.test(pincode.trim())) {
-        showError("pincode", "Please enter a valid 6-digit pincode");
-        isValid = false;
-    }
-
-    if (isValid) {
-        try {
-            const formData = new FormData(this);
-            const response = await fetch('/addCheckAddress', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(Object.fromEntries(formData))
-            });
-
-            const result = await response.json();
-
-            if (result.success) {
+   $(document).ready(function() {
+    $('.addToCart').on('click', function(e) {
+        e.preventDefault();  
+        var productId = $(this).data('product-id');  
+        $.ajax({
+            url: '/addToCart', 
+            method: 'POST',
+            data: { productId: productId },
+            success: function(response) {
                 Swal.fire({
                     icon: 'success',
-                    title: 'Success',
-                    text: result.message,
-                    showConfirmButton: false,
-                    timer: 1500
-                }).then(() => {
-                    // Reload the current page
-                    window.location.reload();
+                    title: 'Added to Cart!',
+                    text: 'Your product has been added to the cart successfully.',
+                    confirmButtonText: 'Okay'
                 });
-            } else {
+            },
+            error: function(error) {
                 Swal.fire({
                     icon: 'error',
-                    title: 'Error',
-                    text: result.message || 'Failed to add address'
+                    title: 'Error!',
+                    text: 'please login.',
+                    confirmButtonText: 'Okay'
                 });
-            }
-        } catch (error) {
-            console.error("Error adding address:", error);
-            Swal.fire({
-                icon: 'error',
-                title: 'Error',
-                text: 'Failed to add address. Please try again.'
-            });
-        }
-    }
-});
-
-
-document.addEventListener('DOMContentLoaded', () => {
-    // Load Razorpay checkout script
-    const script = document.createElement('script');
-    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-    script.async = true;
-    document.head.appendChild(script);
-
-    const placeOrderButton = document.getElementById("placeOrderButton");
-    
-    const validateOrder = () => {
-        const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked')?.value;
-        const selectedAddress = document.querySelector('.address-item.selected');
-        const walletBalance = parseFloat(document.getElementById('walletBalance').textContent);
-        const finalAmount = parseFloat('<%= finalAmount %>');
-
-        if (!paymentMethod) {
-            throw new Error('Please select a payment method.');
-        }
-
-        if (!selectedAddress) {
-            throw new Error('Please select an address.');
-        }
-
-        if (paymentMethod === 'Wallet' && walletBalance < finalAmount) {
-            throw new Error('Insufficient wallet balance.');
-        }
-
-        return {
-            paymentMethod,
-            addressId: selectedAddress.getAttribute('data-index')
-        };
-    };
-
-    const handleRazorpayPayment = (orderData) => {
-        const options = {
-            key: orderData.razorpayOrder.key,
-            amount: orderData.razorpayOrder.amount,
-            currency: 'INR',
-            name: 'Your Store Name',
-            description: 'Order Payment',
-            order_id: orderData.razorpayOrder.id,
-            handler: async function(response) {
-                try {
-                    const verifyResponse = await fetch('/verify-razorpay-payment', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            razorpay_order_id: response.razorpay_order_id,
-                            razorpay_payment_id: response.razorpay_payment_id,
-                            razorpay_signature: response.razorpay_signature
-                        })
-                    });
-
-                    if (!verifyResponse.ok) {
-                        throw new Error('Payment verification failed');
-                    }
-
-                    const verifyResult = await verifyResponse.json();
-
-                    if (verifyResult.success && verifyResult.orderId) {
-                        await Swal.fire({
-                            icon: 'success',
-                            title: 'Payment Successful',
-                            text: 'Order placed successfully!',
-                            showConfirmButton: false,
-                            timer: 2000
-                        });
-                        window.location.href = `/ordersuccess/${verifyResult.orderId}`;
-                    } else {
-                        throw new Error(verifyResult.message || 'Payment verification failed');
-                    }
-                } catch (error) {
-                    console.error('Payment verification error:', error);
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Payment Verification Failed',
-                        text: error.message || 'An error occurred during payment verification'
-                    });
-                }
-            },
-            modal: {
-                ondismiss: function() {
-                    Swal.fire({
-                        icon: 'warning',
-                        title: 'Payment Cancelled',
-                        text: 'You cancelled the payment process'
-                    });
-                }
-            },
-            prefill: {
-                // Optional: Pre-fill customer details if available
-                // name: customerName,
-                // email: customerEmail,
-                // contact: customerPhone
-            },
-            theme: {
-                color: '#007bff'
-            },
-            retry: {
-                enabled: true,
-                max_count: 3
-            }
-        };
-
-        const razorpay = new Razorpay(options);
-        razorpay.on('payment.failed', function(response) {
-            Swal.fire({
-                icon: 'error',
-                title: 'Payment Failed',
-                text: response.error.description || 'Payment could not be processed'
-            });
-        });
-        razorpay.open();
-    };
-
-    placeOrderButton.addEventListener("click", async () => {
-        try {
-            const { paymentMethod, addressId } = validateOrder();
-
-            const response = await fetch("/place-order", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({ paymentMethod, addressId })
-            });
-
-            if (!response.ok) {
-                throw new Error('Failed to create order');
-            }
-
-            const result = await response.json();
-
-            if (!result.success) {
-                throw new Error(result.message || 'Failed to create order');
-            }
-
-            if (paymentMethod === 'Razorpay') {
-                handleRazorpayPayment(result);
-            } else if (paymentMethod === 'Wallet') {
-                await Swal.fire({
-                icon: 'success',
-                title: 'Payment Successful!',
-                text: 'Your order has been placed using wallet balance.',
-                showConfirmButton: true,
-                confirmButtonText: 'View Order',
-                confirmButtonColor: '#28a745',
-                timer: 3000,
-                timerProgressBar: true
-            });
-                // Handle wallet payment success
-                window.location.href = `/ordersuccess/${result.orderId}`;
-            } else {
-                // Handle COD
-                window.location.href = `/ordersuccess/${result.orderId}`;
-            }
-        } catch (error) {
-            console.error("Order placement error:", error);
-            Swal.fire({
-                icon: 'error',
-                title: 'Order Placement Failed',
-                text: error.message || 'An error occurred while placing the order'
-            });
-        }
-    });
-
-    // Payment method selection handling
-    document.querySelectorAll('.payment-option').forEach(option => {
-        option.addEventListener('click', function() {
-            const radio = this.querySelector('input[type="radio"]');
-            if (radio) {
-                radio.checked = true;
-                document.querySelectorAll('.payment-option').forEach(opt => {
-                    opt.classList.remove('selected');
-                });
-                this.classList.add('selected');
             }
         });
     });
-});
-async function applyCoupon(couponCode) {
-    try {
-        const button = event.target;
-        button.classList.add('loading');
-        
-        const response = await fetch('/apply-coupon', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ couponCode })
-        });
-        
-        const result = await response.json();
-        
-        if (result.success) {
-            // Disable all other coupon cards
-            document.querySelectorAll('.coupon-card').forEach(card => {
-                card.classList.add('disabled');
-                const btn = card.querySelector('.apply-coupon-btn');
-                btn.disabled = true;
-                btn.classList.add('disabled');
-                btn.textContent = 'Coupon Unavailable';
-            });
-
-            Swal.fire({
-                icon: 'success',
-                title: 'Coupon Applied',
-                text: result.message,
-                showConfirmButton: false,
-                timer: 1500
-            }).then(() => {
-                window.location.reload();
-            });
-        } else {
-            Swal.fire({
-                icon: 'error',
-                title: 'Error',
-                text: result.message
-            });
-        }
-    } catch (error) {
-        console.error('Error applying coupon:', error);
-        Swal.fire({
-            icon: 'error',
-            title: 'Error',
-            text: 'Failed to apply coupon'
-        });
-    } finally {
-        button.classList.remove('loading');
-    }
-}
-
-async function removeCoupon() {
-    try {
-        const response = await fetch('/remove-coupon', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        });
-        
-        const result = await response.json();
-        
-        if (result.success) {
-            // Enable all coupon cards
-            document.querySelectorAll('.coupon-card').forEach(card => {
-                card.classList.remove('disabled');
-                const btn = card.querySelector('.apply-coupon-btn');
-                btn.disabled = false;
-                btn.classList.remove('disabled');
-                btn.textContent = 'Apply Coupon';
-            });
-
-            Swal.fire({
-                icon: 'success',
-                title: 'Coupon Removed',
-                text: result.message,
-                showConfirmButton: false,
-                timer: 1500
-            }).then(() => {
-                window.location.reload();
-            });
-        } else {
-            Swal.fire({
-                icon: 'error',
-                title: 'Error',
-                text: result.message
-            });
-        }
-    } catch (error) {
-        console.error('Error removing coupon:', error);
-        Swal.fire({
-            icon: 'error',
-            title: 'Error',
-            text: 'Failed to remove coupon'
-        });
-    }
-}
-
-// Add this to your DOMContentLoaded event
-document.addEventListener('DOMContentLoaded', function() {
-    const appliedCoupon = document.querySelector('.applied-coupon');
-    if (appliedCoupon) {
-        // If there's an applied coupon, disable all coupon cards
-        document.querySelectorAll('.coupon-card').forEach(card => {
-            if (!card.classList.contains('disabled')) {
-                card.classList.add('disabled');
-                const btn = card.querySelector('.apply-coupon-btn');
-                btn.disabled = true;
-                btn.classList.add('disabled');
-                btn.textContent = 'Coupon Unavailable';
-            }
-        });
-    }
 });
 
 </script>
+<%- include('../layoutsUser/userfooter') %>
 
-<%- include('../layoutsUser/userfooter') %>  
 
-//viewOrder.ejs page :- 
+//this is my shop page in admin side 
 <%- include('../layoutsUser/userheader') %>
+<link href="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.32/dist/sweetalert2.min.css" rel="stylesheet">
 <style>
-    .order-history {
-        font-family: Arial, sans-serif;
-        margin: 0;
-        padding: 20px;
-        background-color: #f4f4f4;
-    }
-    .order-history .container {
-        max-width: 800px;
-        margin: auto;
-        background: #fff;
-        padding: 20px;
-        border-radius: 8px;
-        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-    }
-    .order-history h1 {
-        text-align: center;
-        color: #333;
-    }
-    .order-history table {
-        width: 100%;
-        border-collapse: collapse;
-        margin-top: 20px;
-    }
-    .order-history th, .order-history td {
-        padding: 12px;
-        text-align: left;
-        border-bottom: 1px solid #ddd;
-    }
-    .order-history th {
-        background-color: #f8f8f8;
-        font-weight: bold;
-        color: #555;
-    }
-    .order-history .status {
-        padding: 5px 10px;
-        border-radius: 5px;
-        color: #fff;
-    }
-    .order-history .paid {
-        background-color: #28a745;
-    }
-    .order-history .pending {
-        background-color: #ffc107;
-    }
-    .order-history .view-btn {
-        background-color: #007bff;
-        color: white;
-        padding: 8px 12px;
-        text-decoration: none;
-        border-radius: 4px;
-        font-size: 0.9em;
-    }
-    .order-history .view-btn:hover {
-        background-color: #0056b3;
-    }
-    .pagination {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        gap: 5px;
-        margin-top: 20px;
-        font-size: 12px;
-    }
+    
+.stock.in-stock {
+    background-color: #28a745; 
+    color: white;
+    padding: 5px;
+    border-radius: 3px;
+    font-weight: bold;
+}
 
-   .pagination a, .pagination span {
-        display: inline-block;
-        padding: 5px 8px;
-        text-decoration: none;
-        color: #333;
-        border: 1px solid #ddd;
-        border-radius: 3px;
-        transition: background-color 0.3s, color 0.3s;
-    }
+.stock.only-left {
+    background-color: #ffc107; 
+    color: black;
+    padding: 5px;
+    border-radius: 3px;
+    font-weight: bold;
+}
 
-    .pagination a:hover {
-        background-color: #007bff;
-        color: white;
-    }
+.stock.out-of-stock {
+    background-color: #dc3545;
+    color: white;
+    padding: 5px;
+    border-radius: 3px;
+    font-weight: bold;
+}
+.btn-product-icon.wishlist-btn.active {
+    color: red;
+}
 
-   .pagination .active {
-        background-color: #007bff;
-        color: white;
-        border: 1px solid #007bff;
-    }
+.product-price {
+    display: flex;
+    align-items: center;
+    gap: 10px; 
+    justify-content: center;
+    
+}
+
+.price-offer {
+    color: #ff0019; 
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    gap: 4px;  
+    margin: 0;
+}
+
+.arrow-down {
+    color: #ff0019;  
+    font-size: 14px; 
+}
+
+.product-price .product-price:nth-child(2) {
+    text-decoration: line-through;
+    color: #999; 
+    font-size: 0.9em;
+}
+
+.product-price .product-price:nth-child(3) {
+   
+    color: #c96;
+}
+
+.product-price .product-price {
+    display: inline-block; 
+    margin: 0;
+    padding: 0;
+}
+.product-price > .product-price {
+    flex: none;
+}
+
 </style>
 
-<div class="order-history">
-    <div class="container">
-        <h1>Your Order History</h1>
-        <% if (orders && orders.length > 0) { %>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Order Number</th>
-                        <th>Date</th>
-                        <th>Total</th>
-                        <th>Payment Status</th>
-                        <th>Order Status</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <% paginatedOrders.forEach(order => { %>
-                        <tr>
-                            <td><%= order.orderId %></td>
-                            <td><%= order.date %></td>
-                            <td>₹<%= Math.round(order.totalPrice) %></td>
-                            <td>
-                                <span class="status <%= helpers.getStatusClass(order.paymentStatus) %>">
-                                    <%= order.paymentStatus %>
-                                </span>
-                            </td>
-                            <td><%= order.orderStatus %></td>
-                            <td>
-                                <a href="/orderDetails/<%= order.orderId %>" class="view-btn">View Details</a>
-                            </td>
-                        </tr>
-                    <% }); %>
-                </tbody>
-            </table>
-            
-            <!-- Pagination -->
-            <div class="pagination">
-                <% if (currentPage > 1) { %>
-                    <a href="?page=<%= currentPage - 1 %>">&laquo; Previous</a>
-                <% } else { %>
-                    <a class="disabled">&laquo; Previous</a>
-                <% } %>
+<main class="main">
+    <div class="page-header text-center" style="background-image: url('/productAssets/assets/images/page-header-bg.jpg')">
+        <div class="container">
+            <h1 class="page-title">Furniture<span>Shop</span></h1>
+        </div><!-- End .container -->
+    </div><!-- End .page-header -->
+
+    <nav aria-label="breadcrumb" class="breadcrumb-nav mb-2">
+        <div class="container d-flex justify-content-between align-items-center">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="/">Home</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Shop</li>
+            </ol>
+    
+            <!-- Search Form -->
+            <form action="/shop" method="get" class="search-form d-flex align-items-center">
+                <div class="header-search-wrapper d-flex align-items-center" style="gap: 0; padding-top: 30px;">
+                    <label for="q" class="sr-only" >Search</label>
+                    <input type="search" class="form-control" name="q" id="q" placeholder="Search in..." value="<%= searchQuery || '' %>" required>
+                    <input type="hidden" name="page" value="1">
+                    <% if (selectedCategory) { %>
+                        <input type="hidden" name="Category" value="<%= selectedCategory %>">
+                    <% } %>
+                    <% if (priceSort) { %>
+                        <input type="hidden" name="price-sort" value="<%= priceSort %>">
+                    <% } %>
+                    <% if (nameSort) { %>
+                        <input type="hidden" name="name-sort" value="<%= nameSort %>">
+                    <% } %>
+                    <button type="submit" class="btn" style="margin-left: -60px; margin-top:-18px; font-size:x-large; font-weight:bold;"><i class="icon-search"></i></button>
+                </div>
+            </form>
+        </div>
+    </nav>
+
+    <div class="page-content">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-9">
+                    <div class="products mb-3">
+                        <div class="row justify-content-center">
+                            <% if (products && products.length > 0) { %>
+                                <% products.forEach(product => { %>
+                                    <div class="col-6 col-md-4 col-lg-4">
+                                        <div class="product product-7 text-center">
+                                            <figure class="product-media">
+                                                <span class="product-label label-out">
+                                                    <% if (product.quantity >= 10) { %>
+                                                        <div class="stock in-stock">In Stock</div>
+                                                    <% } else if (product.quantity > 0) { %>
+                                                        <div class="stock only-left">Only <%= product.quantity %> left in stock</div>
+                                                    <% } else { %>
+                                                        <div class="stock out-of-stock">Out of stock</div>
+                                                    <% } %>
+                                                </span>
+                                                <a href="/product/<%= product._id %>">
+                                                    <img src="/uploads/cropped/<%= product.productImage[0] %>" alt="Product image" class="product-image">
+                                                </a>
+                                                <div class="product-action-vertical">
+                                                    <% if (product.quantity > 0) { %>
+                                                        <a href="#" 
+                                                           class="btn-product-icon btn-wishlist wishlist-btn <%= product.isWishlisted ? 'active' : '' %> icon-heart" 
+                                                           data-product-id="<%= product._id %>">
+                                                        </a>
+                                                    <% } else { %>
+                                                        <a class="btn-product-icon wishlist-btn disabled icon-heart" style="pointer-events: none; opacity: 0.5;">
+                                                        </a>
+                                                    <% } %>
+                                                </div>
+                    
+                                                <div class="product-action">
+                                                    <% if (product.quantity > 0) { %>
+                                                        <a href="#" id="addToCart" class="btn-product btn-cart" data-product-id="<%= product._id %>">
+                                                            <span>add to cart</span>
+                                                        </a>
+                                                    <% } else { %>
+                                                         
+                                                        <a  class="btn-product" >
+                                                            <span>Out of Stock</span>
+                                                        </a>
+                                                    <% } %>
+                                                    
+                                                </div><!-- End .product-action -->
+                                            </figure><!-- End .product-media -->
+                    
+                                            <div class="product-body">
+                                                
+                    
+                                                <h3 class="product-title">
+                                                    <a href="/product/<%= product._id %>"><%= product.productName %></a>
+                                                </h3><!-- End .product-title -->
+
+                                                <div class="product-price">
+                                                    <% if (product.highestDiscount > 0) { %>
+                                                        <span class="price-offer">
+                                                            <i class="fas fa-arrow-down arrow-down"></i>
+                                                            <%= product.highestDiscount %>%
+                                                        </span>
+                                                        <div class="product-price text-muted" style="text-decoration: line-through;">
+                                                            ₹<%= product.regularPrice %>
+                                                        </div>
+                                                        <div class="product-price">
+                                                            ₹<%= Math.round(product.offerPrice) %>
+                                                        </div>
+                                                    <% } else { %>
+                                                        <div class="product-price">
+                                                            ₹<%= product.regularPrice %>
+                                                        </div>
+                                                    <% } %>
+                                                </div>
+                                                <div class="ratings-container">
+                                                    <div class="ratings">
+                                                        <div class="ratings-val" style="width: 20%;"></div><!-- End .ratings-val -->
+                                                    </div><!-- End .ratings -->
+                                                    <span class="ratings-text">( 2 Reviews )</span>
+                                                </div><!-- End .rating-container -->
+                                            </div><!-- End .product-body -->
+                                        </div><!-- End .product -->
+                                    </div><!-- End .col -->
+                                <% }) %>
+                            <% } else { %>
+                                <p>No products available at the moment.</p>
+                            <% } %>
+                        </div><!-- End .row -->
+                    </div>
+                    <!-- End .products -->
+
+                    <nav aria-label="Page navigation">
+                        <ul class="pagination justify-content-center">
+                            <% if (currentPage > 1) { %>
+                                <li class="page-item">
+                                    <a class="page-link page-link-prev"
+                                       href="?page=<%= currentPage - 1 %>&price-sort=<%= priceSort || '' %>&name-sort=<%= nameSort || '' %>&Category=<%= selectedCategory || '' %>&q=<%= searchQuery || '' %>"
+                                       aria-label="Previous">
+                                        <span aria-hidden="true"><i class="icon-long-arrow-left"></i></span>Prev
+                                    </a>
+                                </li>
+                            <% } else { %>
+                                <li class="page-item disabled">
+                                    <a class="page-link page-link-prev" href="#" aria-label="Previous" tabindex="-1" aria-disabled="true">
+                                        <span aria-hidden="true"><i class="icon-long-arrow-left"></i></span>Prev
+                                    </a>
+                                </li>
+                            <% } %>
+                            
+                            <% for (let i = 1; i <= totalPages; i++) { %>
+                                <li class="page-item <%= currentPage === i ? 'active' : '' %>">
+                                    <a class="page-link"
+                                       href="?page=<%= i %>&price-sort=<%= priceSort || '' %>&name-sort=<%= nameSort || '' %>&Category=<%= selectedCategory || '' %>&q=<%= searchQuery || '' %>">
+                                        <%= i %>
+                                    </a>
+                                </li>
+                            <% } %>
+                            
+                            <% if (currentPage < totalPages) { %>
+                                <li class="page-item">
+                                    <a class="page-link page-link-next"
+                                       href="?page=<%= currentPage + 1 %>&price-sort=<%= priceSort || '' %>&name-sort=<%= nameSort || '' %>&Category=<%= selectedCategory || '' %>&q=<%= searchQuery || '' %>"
+                                       aria-label="Next">
+                                        Next <span aria-hidden="true"><i class="icon-long-arrow-right"></i></span>
+                                    </a>
+                                </li>
+                            <% } else { %>
+                                <li class="page-item disabled">
+                                    <a class="page-link page-link-next" href="#" aria-label="Next" tabindex="-1" aria-disabled="true">
+                                        Next <span aria-hidden="true"><i class="icon-long-arrow-right"></i></span>
+                                    </a>
+                                </li>
+                            <% } %>
+                        </ul>
+                    </nav>
+                    
+                </div><!-- End .col-lg-9 -->
+
+                <aside class="col-lg-3 order-lg-first">
+                    <div class="sidebar sidebar-shop">
+                        <div class="widget widget-clean">
+                            <label>Filters:</label>
+                            <a href="/shop" class="sf-with-ul">Clean All</a>
+                        </div>
+                        <div class="widget widget-collapsible">
+                            <h3 class="widget-title">Category</h3>
+                            <div class="collapse show" id="widget-1">
+                                <div class="widget-body">
+                                    <div class="filter-items filter-items-count">
+                                        <% if (category && category.length > 0) { %>
+                                            <% category.forEach((cat, i) => { %>
+                                                <div class="filter-item">
+                                                    <div class="custom-control custom-checkbox">
+                                                        <input type="checkbox" class="custom-control-input" id="cat-<%= i %>" 
+                                                            <%= selectedCategory === cat.name ? 'checked' : '' %>
+                                                            onchange="window.location.href='/shop?Category=<%= cat.name %>'">
+                                                        <label class="custom-control-label" for="cat-<%= i %>">
+                                                            <a href="/shop?Category=<%= cat.name %>" 
+                                                               class="category-link <%= selectedCategory === cat.name ? 'active' : '' %>">
+                                                                <%= cat.name %>
+                                                            </a>
+                                                        </label>
+                                                    </div>
+                                                    <span class="item-count"><%= cat.count %></span>
+                                                </div>
+                                            <% }) %>
+                                        <% } else { %>
+                                            <p>No categories available.</p>
+                                        <% } %>
+                                    </div><!-- End .filter-items -->
+                                </div><!-- End .widget-body -->
+                            </div><!-- End .collapse -->
+                        </div><!-- End .widget -->
+                        <div class="sort-container">
+                            <h3 class="widget-title">price</h3>
+                            <div class="sort-options">
+                                <label>
+                                    <input type="radio" name="price-sort" value="lowToHigh" 
+                                           onclick="window.location.href='?page=1&price-sort=lowToHigh&Category=<%= selectedCategory %>'"
+                                           <%= priceSort === 'lowToHigh' ? 'checked' : '' %>> Low to High
+                                </label>
+                                <br>
+                                <label>
+                                    <input type="radio" name="price-sort" value="highToLow"
+                                           onclick="window.location.href='?page=1&price-sort=highToLow&Category=<%= selectedCategory %>'"
+                                           <%= priceSort === 'highToLow' ? 'checked' : '' %>> High to Low
+                                </label>
+                                <hr>
+                            </div>
+                            <div class="sort-container">
+                                <h3 class="widget-title">Sort by Name</h3>
+                                <div class="sort-options">
+                                    <label>
+                                        <input type="radio" name="name-sort" value="aToZ" 
+                                               onclick="window.location.href='?page=1&name-sort=aToZ&Category=<%= selectedCategory %>&price-sort=<%= priceSort %>'"
+                                               <%= nameSort === 'aToZ' ? 'checked' : '' %>> aA-zZ
+                                    </label>
+                                    <br>
+                                    <label>
+                                        <input type="radio" name="name-sort" value="zToA" 
+                                               onclick="window.location.href='?page=1&name-sort=zToA&Category=<%= selectedCategory %>&price-sort=<%= priceSort %>'"
+                                               <%= nameSort === 'zToA' ? 'checked' : '' %>> zZ-aA
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div><!-- End .sidebar sidebar-shop -->
+                </aside><!-- End .col-lg-3 -->
+            </div><!-- End .row -->
+        </div><!-- End .container -->
+    </div><!-- End .page-content -->
+</main><!-- End .main -->
+
+
+<script>
+    function sortNames(order) {
+        const nameList = document.getElementById('nameList');
+        let names = Array.from(nameList.querySelectorAll('.name-item'));
+
+        names.sort((a, b) => {
+            let nameA = a.textContent.toLowerCase();
+            let nameB = b.textContent.toLowerCase();
+            if (order === 'asc') {
+                return nameA.localeCompare(nameB);
+            } else {
+                return nameB.localeCompare(nameA);
+            }
+        });
+
+        nameList.innerHTML = '';
+        names.forEach(name => nameList.appendChild(name));
+    }
+
+    // Add to cart
+    document.addEventListener('DOMContentLoaded', () => {
+    // Add to Cart Handler
+    function handleAddToCart(button) {
+        const productId = button.getAttribute('data-product-id');
+        const productName = button.closest('.product, .product-details') 
+            ?.querySelector('.product-title a, .product-title')?.textContent;
+
+        fetch('/addToCart', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ productId })
+        })
+        .then(response => response.json())
+        .then(result => {
+            if (result.success) {
+                // Update cart count
+                const cartCountElement = document.querySelector('.cart-count');
+                if (cartCountElement && result.cartCount) {
+                    cartCountElement.textContent = result.cartCount;
+                }
+
+                Swal.fire({
+                    title: 'Added to Cart!',
+                    text: `${productName} was added to your cart successfully!`,
+                    icon: 'success',
+                    showConfirmButton: true,
+                    confirmButtonText: 'View Cart',
+                    showCancelButton: true,
+                    cancelButtonText: 'Continue Shopping'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        window.location.href = '/cart';
+                    }
+                });
+            } else {
+                throw new Error(result.message || 'Failed to add product');
+            }
+        })
+        .catch(error => {
+            if (error.message.includes('login')) {
+                Swal.fire({
+                    title: 'Login Required!',
+                    text: 'Please login to add items to your cart',
+                    icon: 'info',
+                    showCancelButton: true,
+                    confirmButtonText: 'Login Now',
+                    cancelButtonText: 'Continue Shopping'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        window.location.href = '/login';  
+                    }
+                });
+            } else {
+                Swal.fire({
+                    title: 'Error!',
+                    text: error.message,
+                    icon: 'error'
+                });
+            }
+        });
+    }
+
+    // Wishlist Handler
+    function handleWishlist(button) {
+        const productId = button.getAttribute('data-product-id');
+        const productName = button.closest('.product, .product-details')
+            ?.querySelector('.product-title a, .product-title')?.textContent;
+
+        fetch('/addWishlist', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ productId })
+        })
+        .then(response => response.json())
+        .then(result => {
+            if (result.success) {
+                button.classList.toggle('active');
                 
-                <% for(let i = 1; i <= totalPages; i++) { %>
-                    <a href="?page=<%= i %>" class="<%= currentPage === i ? 'active' : '' %>"><%= i %></a>
-                <% } %>
-                
-                <% if (currentPage < totalPages) { %>
-                    <a href="?page=<%= currentPage + 1 %>">Next &raquo;</a>
-                <% } else { %>
-                    <a class="disabled">Next &raquo;</a>
-                <% } %>
-            </div>
-        <% } else { %>
-            <div class="no-orders">
-                <p>You haven't placed any orders yet.</p>
-                <a href="/shop" class="view-btn">Continue Shopping</a>
-            </div>
-        <% } %>
-    </div>
-</div>
+                Swal.fire({
+                    title: result.isWishlisted ? 'Added to Wishlist!' : 'Removed from Wishlist',
+                    text: result.message,
+                    icon: 'success',
+                    timer: 1500,
+                    showConfirmButton: false
+                });
+
+                const wishlistCountElement = document.querySelector('.wishlist-count');
+                if (wishlistCountElement && result.wishlistCount !== undefined) {
+                    wishlistCountElement.textContent = result.wishlistCount;
+                }
+            } else {
+                throw new Error(result.message || 'Failed to update wishlist');
+            }
+        })
+        .catch(error => {
+            if (error.message.includes('login')) {
+                Swal.fire({
+                    title: 'Login Required!',
+                    text: 'Please login to manage your wishlist',
+                    icon: 'info',
+                    showCancelButton: true,
+                    confirmButtonText: 'Login Now',
+                    cancelButtonText: 'Continue Shopping'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        window.location.href = '/login';  
+                    }
+                });
+            } else {
+                Swal.fire({
+                    title: 'Error!',
+                    text: error.message,
+                    icon: 'error'
+                });
+            }
+        });
+    }
+
+    // Event Listeners
+    document.querySelectorAll('#addToCart, .addToCart').forEach(button => {
+        button.addEventListener('click', (e) => {
+            e.preventDefault();
+            handleAddToCart(button);
+        });
+    });
+
+    document.querySelectorAll('.wishlist-btn, .btn-wishlist').forEach(button => {
+        button.addEventListener('click', (e) => {
+            e.preventDefault();
+            handleWishlist(button);
+        });
+    });
+});
+
+</script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.32/dist/sweetalert2.all.min.js"></script>
 <%- include('../layoutsUser/userfooter') %>
+//this is product controller page 
+const shop = async (req, res) => {
+    try {
+        const userData = await User.findById(req.session.user);
+        
+        const wishlistedProducts = userData 
+        ? (await Wishlist.findOne({ userId: userData._id }))?.items.map(item => item.productId.toString()) 
+        : [];
+
+        const { 
+            Category: selectedCategory, 
+            q: searchQuery = '', 
+            page = 1, 
+            'price-sort': priceSort, 
+            'name-sort': nameSort 
+        } = req.query;
+        const limit = 9;
+        const skip = (parseInt(page) - 1) * limit;
+
+        const listedCategories = await Category.aggregate([
+            { $match: { isListed: true } },
+            {
+                $lookup: {
+                    from: "products", 
+                    let: { categoryId: "$_id" },
+                    pipeline: [
+                        { $match: { $expr: { $eq: ["$category", "$$categoryId"] }, isBlocked: false } } 
+                    ],
+                    as: "products"
+                }
+            },
+            { $addFields: { count: { $size: "$products" } } },
+            { $project: { _id: 1, name: 1, count: 1 } }
+        ]);
+
+        const categoryIds = listedCategories.map(category => category._id);
+
+        const filter = {
+            isBlocked: false,
+            category: selectedCategory 
+                ? await Category.findOne({ name: selectedCategory, isListed: true }).then(cat => cat?._id)
+                : { $in: categoryIds }
+        };
+
+
+        if (searchQuery) {
+            filter.$or = [{ 
+                productName: { 
+                    $regex: new RegExp(searchQuery.split(/\s+/).map(term => `\\b${term}`).join('|'), 'i') 
+                }
+            }];
+        }
+
+        const sortOption = {};
+        if (priceSort === 'lowToHigh') sortOption.regularPrice = 1;
+        if (priceSort === 'highToLow') sortOption.regularPrice = -1;
+        if (nameSort === 'aToZ') sortOption.productName = 1;
+        if (nameSort === 'zToA') sortOption.productName = -1;
+
+        const totalProducts = await Product.countDocuments(filter);
+        const totalPages = Math.ceil(totalProducts / limit);
+
+        const currentDate = new Date();
+        const offers = await Offer.find({
+            status: 'Active',
+            expireDate: { $gt: currentDate }
+        });
+
+
+        const products = await Product.find(filter)
+            .sort(sortOption)
+            .skip(skip)
+            .limit(limit)
+            .populate('category');
+
+
+        const productsWithOffers = products.map(product => {
+            const productOffer = offers.find(offer => 
+                (offer.productIds?.includes(product._id)) ||
+                (offer.categoryIds?.includes(product.category._id))
+            );
+
+
+            const offerPrice = productOffer 
+            ? product.regularPrice * (1 - productOffer.discount / 100)
+            : product.regularPrice;
+
+
+            return {
+                ...product.toObject(),
+                regularPrice: product.regularPrice,
+                offerPrice,
+                highestDiscount: productOffer?.discount || 0,
+                isWishlisted: wishlistedProducts.includes(product._id.toString())
+            };
+        });
+
+        res.render("shop", {
+            products: productsWithOffers,
+            userData,
+            category: listedCategories,
+            selectedCategory,
+            currentPage: parseInt(page),
+            totalPages,
+            priceSort,
+            nameSort,
+            searchQuery
+        });
+    } catch (error) {
+        console.error("Error in shop", error);
+        res.status(500).json({ success: false, message: "An error occurred" });
+    }
+};
+  
+//product detailed page
+const productDetails=async(req,res)=>{
+  try {
+    const userData=await User.findById(req.session.user);
+    const productId=req.params.id;
+
+    const product=await Product.findOne({_id:productId}).populate("category")
+
+    if (!product || !product.category || !product.category.isListed) {
+        return res.redirect("/shop");
+    }
+
+    const currentDate = new Date();
+        const productOffer = await Offer.findOne({
+            $or: [
+                { productIds: productId, status: 'Active', expireDate: { $gt: currentDate } },
+                { categoryIds: product.category._id, status: 'Active', expireDate: { $gt: currentDate } }
+            ]
+        });
+        if (productOffer) {
+            product.offer = {
+                discount: productOffer.discount,
+                offerType: productOffer.offerType
+            };
+        }
+
+        if (!product || !product.category || !product.category.isListed) {
+            return res.redirect("/shop");
+        }
+
+        const isWishlisted = userData 
+            ? await Wishlist.exists({ 
+                userId: userData._id, 
+                'items.productId': productId 
+            })
+            : false;
+
+          const categories = await Category.find({ isListed: true });
+          res.render("product", { 
+            product, 
+            userData, 
+            categories, 
+            isWishlisted 
+        });
+    } catch (error) {
+        console.error("Error in productDetails", error);
+        res.render("404");
+    }
+};
+

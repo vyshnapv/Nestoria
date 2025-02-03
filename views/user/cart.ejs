@@ -156,7 +156,6 @@
     items.forEach(item => {
         const row = document.createElement('tr');
         
-        // Check for offer price first
         const priceElement = item.querySelector('.price-col');
         const price = parseFloat(priceElement.textContent.replace('₹', ''));
         
@@ -228,7 +227,7 @@
       });
   });
 
-  // Remove Item
+
   document.querySelectorAll('.btn-remove').forEach(button => {
       button.addEventListener('click', async () => {
           const row = button.closest('tr');

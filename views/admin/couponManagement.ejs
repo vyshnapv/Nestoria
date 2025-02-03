@@ -378,7 +378,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // Error handling functions
     const displayError = (input, message) => {
         const existingError = input.parentElement.querySelector('.error-message');
         if (existingError) existingError.remove();
@@ -397,7 +396,6 @@ document.addEventListener('DOMContentLoaded', () => {
         input.classList.remove('is-invalid');
     };
 
-    // Setup date inputs
     const setupDateInputs = (validFromInput, expiryDateInput) => {
         const today = new Date().toISOString().split('T')[0];
         validFromInput.setAttribute('min', today);
@@ -408,7 +406,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
-    // Form inputs
     const addInputs = {
         title: document.getElementById('title'),
         code: document.getElementById('code'),
@@ -434,12 +431,10 @@ document.addEventListener('DOMContentLoaded', () => {
     setupDateInputs(addInputs.validFrom, addInputs.expiryDate);
     setupDateInputs(editInputs.validFrom, editInputs.expiryDate);
 
-    // Clear errors on input
     Object.values({...addInputs, ...editInputs}).forEach(input => {
         input.addEventListener('input', () => clearError(input));
     });
 
-    // Handle form submission
     const handleCouponSubmission = async (form, inputs, isEdit = false) => {
         let isValid = true;
         const titleError = validateInput.title(inputs.title.value);
@@ -524,7 +519,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // Form submit event listeners
     addCouponForm.addEventListener('submit', (e) => {
         e.preventDefault();
         handleCouponSubmission(addCouponForm, addInputs);
@@ -535,11 +529,9 @@ document.addEventListener('DOMContentLoaded', () => {
         handleCouponSubmission(editCouponForm, editInputs, true);
     });
 
-    // Table event listener for all actions (Edit, Status Toggle, Delete)
     couponTable.addEventListener('click', async (e) => {
         const target = e.target;
 
-        // Edit Coupon
         if (target.classList.contains('edit-coupon')) {
             e.preventDefault();
             const couponId = target.getAttribute('data-id');
@@ -570,7 +562,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
-        // Status Toggle
         if (target.classList.contains('status-toggle')) {
             e.preventDefault();
             const couponId = target.getAttribute('data-id');
@@ -598,13 +589,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     const result = await response.json();
 
                     if (response.ok) {
-                        // Update status badge
                         const statusBadge = currentRow.querySelector('.badge');
                         statusBadge.textContent = newStatus;
                         statusBadge.classList.remove('bg-success', 'bg-danger');
                         statusBadge.classList.add(newStatus === 'Active' ? 'bg-success' : 'bg-danger');
 
-                        // Update toggle button text
                         target.textContent = newStatus === 'Active' ? 'Inactive' : 'Active';
 
                         Swal.fire({

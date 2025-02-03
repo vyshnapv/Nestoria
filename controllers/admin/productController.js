@@ -30,11 +30,9 @@ const addProducts = async (req, res) => {
         if (!productExists) {
             const images = [];
             if (req.files && req.files.length > 0) {
-                // Ensure directories exist
                 const uploadsDir = path.join(__dirname, '..', '..', 'public', 'uploads');
                 const croppedDir = path.join(__dirname, '..', '..', 'public', 'uploads', 'cropped');
                 
-                // Create directories if they don't exist
                 if (!fs.existsSync(uploadsDir)) {
                     fs.mkdirSync(uploadsDir, { recursive: true });
                 }
@@ -42,20 +40,17 @@ const addProducts = async (req, res) => {
                     fs.mkdirSync(croppedDir, { recursive: true });
                 }
 
-                // Process each image
                 for (const file of req.files) {
                     try {
-                        // Get absolute paths
+                        
                         const originalImagePath = path.join(uploadsDir, file.filename);
                         const resizedImagePath = path.join(croppedDir, file.filename);
                         
-                        // Check if original file exists
                         if (!fs.existsSync(originalImagePath)) {
                             console.error('Original image not found:', originalImagePath);
                             continue;
                         }
 
-                        // Process image
                         await sharp(file.path)
                             .resize(440, 440, {
                                 fit: 'cover',
@@ -63,10 +58,8 @@ const addProducts = async (req, res) => {
                             })
                             .toFile(resizedImagePath);
 
-                        // Add to images array after successful processing
                         images.push(file.filename);
                         
-                        // Clean up original file
                         fs.unlink(file.path, (err) => {
                             if (err) console.error('Error deleting original file:', err);
                         });
@@ -213,7 +206,6 @@ const editProduct = async (req, res) => {
             return res.status(404).json({ error: "Product not found" });
         }
 
-        // Check for duplicate product name excluding current product
         const existingProduct = await Product.findOne({
             productName: data.productName,
             _id: { $ne: id }
@@ -223,11 +215,9 @@ const editProduct = async (req, res) => {
             return res.status(400).json({ error: "Product name already exists" });
         }
 
-        // Handle deleted images
         const deletedImages = JSON.parse(data.deletedImages || '[]');
         let currentImages = product.productImage.filter(img => !deletedImages.includes(img));
 
-        // Delete the physical files of removed images
         for (const filename of deletedImages) {
             const imagePath = path.join(__dirname, '..', '..', 'public', 'uploads', 'cropped', filename);
             try {
@@ -239,21 +229,17 @@ const editProduct = async (req, res) => {
             }
         }
 
-        // Process new images
         if (req.files && req.files.length > 0) {
             const uploadsDir = path.join(__dirname, '..', '..', 'public', 'uploads');
             const croppedDir = path.join(__dirname, '..', '..', 'public', 'uploads', 'cropped');
             
-            // Ensure directories exist
             fs.mkdirSync(uploadsDir, { recursive: true });
             fs.mkdirSync(croppedDir, { recursive: true });
 
-            // Process each new image
             for (const file of req.files) {
                 try {
                     const resizedImagePath = path.join(croppedDir, file.filename);
                     
-                    // Resize and crop image
                     await sharp(file.path)
                         .resize(440, 440, {
                             fit: 'cover',
@@ -261,10 +247,8 @@ const editProduct = async (req, res) => {
                         })
                         .toFile(resizedImagePath);
 
-                    // Add new image to current images array
                     currentImages.push(file.filename);
                     
-                    // Clean up original upload
                     fs.unlinkSync(file.path);
                 } catch (err) {
                     console.error('Error processing new image:', err);
@@ -272,7 +256,6 @@ const editProduct = async (req, res) => {
             }
         }
 
-        // Update product in database
         const updatedProduct = await Product.findByIdAndUpdate(
             id,
             {

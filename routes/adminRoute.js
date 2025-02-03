@@ -78,4 +78,8 @@ admin_route.patch('/toggleCouponStatus/:id',adminAuth, couponController.toggleCo
 admin_route.delete('/deleteCoupon/:id', adminAuth, couponController.deleteCoupon);
 admin_route.get('/getCoupon/:id', adminAuth, couponController.getCoupon);
 
+//sales Report
+admin_route.get('/sales-report', adminAuth, adminController.generateSalesReport);
+
+
 module.exports=admin_route;

@@ -2,12 +2,12 @@ const User = require("../../models/userModel");
 const Wallet=require("../../models/walletModel")
 const Order=require("../../models/orderModel")
 
+//load wallet page
 const loadWallet = async (req, res) => {
     try {
         const userId = req.session.user;
         const userData = await User.findOne({ _id: userId });
         
-        // Get wallet details including transaction history
         const wallet = await Wallet.findOne({ userId })
             .populate({
                 path: 'transactions.orderId',
@@ -16,7 +16,6 @@ const loadWallet = async (req, res) => {
             });
 
         if (!wallet) {
-            // Create wallet if it doesn't exist
             const newWallet = new Wallet({
                 userId: userId,
                 balance: 0,
@@ -36,6 +35,7 @@ const loadWallet = async (req, res) => {
     }
 };
 
+
 // Function to add money to wallet
 const addToWallet = async (userId, amount, description, orderId = null) => {
     try {
@@ -49,7 +49,6 @@ const addToWallet = async (userId, amount, description, orderId = null) => {
             });
         }
 
-        // Add new transaction
         const newBalance = wallet.balance + amount;
         wallet.transactions.push({
             amount,

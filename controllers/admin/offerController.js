@@ -139,7 +139,6 @@ const updateProductOffer = async (req, res) => {
         const offerId = req.params.id;
         const { offerName, discountPercentage, selectedProducts, expiryDate } = req.body;
 
-        // Validation
         if (!offerName || !discountPercentage || !selectedProducts || !expiryDate) {
             return res.status(400).json({
                 success: false,
@@ -279,7 +278,6 @@ const updateCategoryOffer = async (req, res) => {
         const offerId = req.params.id;
         const { offerName, discountPercentage, selectedCategories, expiryDate } = req.body;
 
-        // Validation
         if (!offerName || !discountPercentage || !selectedCategories || !expiryDate) {
             return res.status(400).json({
                 success: false,
@@ -339,7 +337,6 @@ const toggleOfferStatus = async(req, res) => {
             return res.status(404).json({success: false, message: "Offer not found"});
         }
 
-        // Check if offer is expired when trying to activate
         if (offer.status === "Inactive" && offer.expireDate < new Date()) {
             return res.status(200).json({
                 success: false,

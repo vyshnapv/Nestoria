@@ -186,8 +186,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-
-    // Remove from wishlist functionality
     document.querySelectorAll('.remove-from-wishlist').forEach(button => {
         button.addEventListener('click', async (e) => {
             const productId = button.getAttribute('data-product-id');

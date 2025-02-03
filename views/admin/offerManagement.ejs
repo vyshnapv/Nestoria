@@ -226,8 +226,8 @@
   <% } %>
   </div>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
   <script>
-  //edit product and category offer
   function editOffer(offerId, offerType) {
     try {
         if (!offerId || !offerType) {
@@ -252,7 +252,6 @@
         alert('Error accessing edit page. Please try again.');
     }
 }
-  //active or inactive functionality
   function toggleOfferStatus(offerId, currentStatus) {
     Swal.fire({
         title: 'Change Offer Status?',
@@ -273,7 +272,6 @@
             .then(response => response.json())
             .then(data => {
                 if (data.isExpired) {
-                    // Show expired offer message
                     Swal.fire({
                         title: 'Offer Expired',
                         text: 'This offer has expired. Please update the expiry date to activate it.',
@@ -284,7 +282,6 @@
                         width: 400
                     }).then((result) => {
                         if (result.isConfirmed) {
-                            // Redirect to edit page
                             window.location.href = `/admin/edit${data.offerType}Offer/${offerId}`;
                         }
                     });
@@ -321,7 +318,7 @@
     });
 }
 
-//delete functinality
+
 function deleteOffer(offerId) {
     Swal.fire({
         title: 'Delete Offer?',

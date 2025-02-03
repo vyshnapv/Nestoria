@@ -1018,7 +1018,6 @@ document.getElementById("actualAddAddressForm").addEventListener("submit", async
                     showConfirmButton: false,
                     timer: 1500
                 }).then(() => {
-                    // Reload the current page
                     window.location.reload();
                 });
             } else {
@@ -1041,7 +1040,6 @@ document.getElementById("actualAddAddressForm").addEventListener("submit", async
 
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Load Razorpay checkout script
     const script = document.createElement('script');
     script.src = 'https://checkout.razorpay.com/v1/checkout.js';
     script.async = true;
@@ -1192,10 +1190,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 timer: 3000,
                 timerProgressBar: true
             });
-                // Handle wallet payment success
                 window.location.href = `/ordersuccess/${result.orderId}`;
             } else {
-                // Handle COD
                 window.location.href = `/ordersuccess/${result.orderId}`;
             }
         } catch (error) {
@@ -1208,7 +1204,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Payment method selection handling
     document.querySelectorAll('.payment-option').forEach(option => {
         option.addEventListener('click', function() {
             const radio = this.querySelector('input[type="radio"]');
@@ -1238,7 +1233,6 @@ async function applyCoupon(couponCode) {
         const result = await response.json();
         
         if (result.success) {
-            // Disable all other coupon cards
             document.querySelectorAll('.coupon-card').forEach(card => {
                 card.classList.add('disabled');
                 const btn = card.querySelector('.apply-coupon-btn');
@@ -1287,7 +1281,6 @@ async function removeCoupon() {
         const result = await response.json();
         
         if (result.success) {
-            // Enable all coupon cards
             document.querySelectorAll('.coupon-card').forEach(card => {
                 card.classList.remove('disabled');
                 const btn = card.querySelector('.apply-coupon-btn');
@@ -1322,11 +1315,10 @@ async function removeCoupon() {
     }
 }
 
-// Add this to your DOMContentLoaded event
+
 document.addEventListener('DOMContentLoaded', function() {
     const appliedCoupon = document.querySelector('.applied-coupon');
     if (appliedCoupon) {
-        // If there's an applied coupon, disable all coupon cards
         document.querySelectorAll('.coupon-card').forEach(card => {
             if (!card.classList.contains('disabled')) {
                 card.classList.add('disabled');

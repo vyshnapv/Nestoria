@@ -203,7 +203,6 @@ const loadCheckout = async (req, res) => {
             expireDate: { $gt: currentDate }
         });
 
-        // Process items with offer prices
         const processedItems = cart ? cart.items.map(item => {
             const productOffer = offers.find(offer => 
                 (offer.productIds?.includes(item.product._id)) ||
@@ -229,13 +228,11 @@ const loadCheckout = async (req, res) => {
             return total + (item.product.offerPrice * item.quantity);
         }, 0));
 
-        // Calculate per-product coupon discounts
         const appliedCoupon = req.session.appliedCoupon;
         let finalAmount = subtotal;
         let itemsWithDiscount = processedItems;
 
         if (appliedCoupon) {
-            // Calculate proportional discount for each item
             const totalDiscount = roundToTwo(appliedCoupon.discountAmount);
             itemsWithDiscount = processedItems.map(item => {
                 const itemTotal = roundToTwo(item.product.offerPrice * item.quantity);
@@ -334,7 +331,6 @@ const applyCoupon = async (req, res) => {
         const { couponCode } = req.body;
         const userId = req.session.user;
 
-        // Check if a coupon is already applied
         if (req.session.appliedCoupon) {
             return res.status(400).json({
                 success: false,
@@ -342,7 +338,6 @@ const applyCoupon = async (req, res) => {
             });
         }
 
-        // Find the coupon
         const coupon = await Coupon.findOne({ 
             couponCode, 
             status: 'Active',
@@ -356,7 +351,6 @@ const applyCoupon = async (req, res) => {
             });
         }
 
-        // Get cart total
         const cart = await Cart.findOne({ userId })
             .populate({
                 path: 'items.product',
@@ -372,7 +366,6 @@ const applyCoupon = async (req, res) => {
             expireDate: { $gt: currentDate }
         });
 
-        // Calculate subtotal with offers
         let subtotal = cart.items.reduce((total, item) => {
             const productOffer = offers.find(offer => 
                 (offer.productIds?.includes(item.product._id)) ||
@@ -386,7 +379,7 @@ const applyCoupon = async (req, res) => {
             return total + (price * item.quantity);
         }, 0);
 
-        // Validate minimum purchase requirement
+    
         if (subtotal < coupon.minPrice) {
             return res.status(400).json({
                 success: false,
@@ -394,20 +387,15 @@ const applyCoupon = async (req, res) => {
             });
         }
 
-        // Calculate percentage-based discount
         const percentageDiscount = (subtotal * coupon.percentage) / 100;
 
-        // Determine final discount amount
         let finalDiscountAmount;
         if (percentageDiscount > coupon.maxRedeemAmount) {
-            // If percentage discount exceeds maximum allowed, apply maximum amount
             finalDiscountAmount = coupon.maxRedeemAmount;
         } else {
-            // Otherwise, apply the percentage-based discount
             finalDiscountAmount = percentageDiscount;
         }
 
-        // Store coupon details in session
         req.session.appliedCoupon = {
             code: couponCode,
             discountAmount: finalDiscountAmount,
@@ -439,10 +427,10 @@ const applyCoupon = async (req, res) => {
         });
     }
 };
+
 // Remove Coupon
 const removeCoupon = async (req, res) => {
     try {
-        // Remove coupon from session
         delete req.session.appliedCoupon;
         
         return res.json({

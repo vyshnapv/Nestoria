@@ -128,6 +128,22 @@
             font-size: 24px;
             font-weight: bold;
         }
+        .btn-wishlist {
+            color: #cccccc;
+            background: none;
+            border: none;
+            padding: 0;
+            cursor: pointer;
+            transition: color 0.3s ease;
+        }
+
+        .btn-wishlist.active {
+            color: #ff0000;
+        }
+
+        .btn-wishlist:hover {
+            color: #ff0000;
+        }
 </style>
 
 <main class="main">
@@ -208,14 +224,18 @@
                         <a href="#" class="btn-product btn-cart addToCart" data-product-id="<%= product._id %>">
                             <span>Add to Cart</span>
                         </a>
+                        <div class="details-action-wrapper">
+                            <button class="btn-wishlist <%= isWishlisted ? 'active' : '' %>" 
+                                    data-product-id="<%= product._id %>"
+                                    title="<%= isWishlisted ? 'Remove from Wishlist' : 'Add to Wishlist' %>">
+                                <i class="icon-heart"></i>
+                            </button>
+                        </div>
                         <% } else { %>
                             <a  class="btn-product btn-cart addToCart" >
                                 <span>Out of Stock</span>
                             </a>
                         <% } %>
-                        <div class="details-action-wrapper">
-                            <a href="#" class="btn-product btn-wishlist" title="Wishlist"><span></span></a>
-                        </div>
                     </div>
                 </div><!-- End .product-details -->
             </div><!-- End .product-details-top -->
@@ -284,6 +304,7 @@
         </div><!-- End .container -->
     </div><!-- End .page-content -->
 </main><!-- End .main -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
    $(document).ready(function() {
@@ -312,6 +333,69 @@
             }
         });
     });
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+    const wishlistBtn = document.querySelector('.btn-wishlist');
+    if (wishlistBtn) {
+        wishlistBtn.addEventListener('click', async (e) => {
+            e.preventDefault();
+            
+            const productId = wishlistBtn.getAttribute('data-product-id');
+            
+            try {
+                const response = await fetch('/addWishlist', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ productId })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    wishlistBtn.classList.toggle('active');
+            
+                    const wishlistCountElement = document.querySelector('.wishlist-count');
+                    if (wishlistCountElement && result.wishlistCount !== undefined) {
+                        wishlistCountElement.textContent = result.wishlistCount;
+                    }
+                    
+                    Swal.fire({
+                        title: result.isWishlisted ? 'Added to Wishlist!' : 'Removed from Wishlist',
+                        text: result.message,
+                        icon: 'success',
+                        timer: 1500,
+                        showConfirmButton: false
+                    });
+                } else {
+                    throw new Error(result.message || 'Failed to update wishlist');
+                }
+            } catch (error) {
+                if (error.message.includes('login')) {
+                    Swal.fire({
+                        title: 'Login Required!',
+                        text: 'Please login to manage your wishlist',
+                        icon: 'info',
+                        showCancelButton: true,
+                        confirmButtonText: 'Login Now',
+                        cancelButtonText: 'Continue Shopping'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            window.location.href = '/login';
+                        }
+                    });
+                } else {
+                    Swal.fire({
+                        title: 'Error!',
+                        text: error.message,
+                        icon: 'error'
+                    });
+                }
+            }
+        });
+    }
 });
 
 </script>
