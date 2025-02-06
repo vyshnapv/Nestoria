@@ -52,6 +52,9 @@
        height: 300px;
        margin-bottom: 10px;
    }
+   .content-title{
+    padding-left: 300px;
+   }
 </style>
 
 <section class="content-main">
@@ -61,7 +64,6 @@
                <h2 class="content-title">Add New Product</h2>
            </div>
        </div>
-       <div class="col-lg-6">
            <div class="card mb-4">
                <div class="card-body">
                    <form method="post" action="/admin/addproducts" enctype="multipart/form-data" onsubmit="return validateForm()">
@@ -88,15 +90,6 @@
                                    <label class="form-label">Quantity</label>
                                    <input placeholder="" name="quantity" type="text" class="form-control border">
                                    <div id="quantity-error" class="error-message"></div>
-                               </div>
-                           </div>
-                       </div>
-                       <div class="row">
-                           <div class="col-lg-4">
-                               <div class="mb-4">
-                                   <label class="form-label">Color</label>
-                                   <input name="color" type="text" class="form-control border">
-                                   <div id="color-error" class="error-message"></div>
                                </div>
                            </div>
                        </div>
@@ -143,7 +136,6 @@
                     </div>
                 </form>
             </div>
-        </div>
     </div>
 </div>
 </section>
@@ -332,13 +324,6 @@ function validateForm() {
         displayErrorMessage('quantity-error', 'Please enter a valid quantity .');
         isValid = false;
     }
-
-    const color = document.getElementsByName('color')[0].value;
-    if (color.trim() === "") {
-        displayErrorMessage('color-error', 'Please enter a color.');
-        isValid = false;
-    }
-
     const category = document.getElementsByName('category')[0].value;
     if (!category) {
         displayErrorMessage('category-error', 'Please select a category.');

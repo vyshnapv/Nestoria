@@ -771,26 +771,14 @@
                                     <tr class="summary-subtotal">
                                         <td>Subtotal:</td>
                                         <td>₹<%= Math.round(calculatedSubtotal) %></td>
+                                    </tr> 
+                                    <tr>
+                                        <td>Shipping Charge:</td>
+                                        <td>₹50</td>
                                     </tr>
-                                    
-                                    <% if (appliedCoupon) { %>
-                                        <tr style="color: #28a745;">
-                                            <td>
-                                                Coupon Applied (<%= appliedCoupon.code %>):
-                                                <small class="d-block">
-                                                    <%= appliedCoupon.percentage %>% off
-                                                    <% if (appliedCoupon.appliedDiscount === 'Maximum discount applied') { %>
-                                                        (Max: ₹<%= Math.round(appliedCoupon.maxRedeemAmount) %>)
-                                                    <% } %>
-                                                </small>
-                                            </td>
-                                            <td class="text-right">-₹<%= Math.round(appliedCoupon.discountAmount) %></td>
-                                        </tr>
-                                    <% } %>
-                                    
                                     <tr class="total-row">
                                         <td><strong>Total:</strong></td>
-                                        <td><strong>₹<%= Math.round(finalAmount) %></strong></td>
+                                        <td><strong>₹<%= Math.round(finalAmount+50) %></strong></td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -803,8 +791,14 @@
                                 </div>
                                 
                                 <div class="payment-option">
-                                    <input type="radio" name="paymentMethod" value="COD" id="paymentCOD">
-                                    <label for="paymentCOD">Cash on Delivery</label>
+                                    <input type="radio" name="paymentMethod" value="COD" id="paymentCOD"
+                                           <%= (finalAmount + 50) > 1000 ? 'disabled' : '' %>>
+                                    <label for="paymentCOD" class="<%= (finalAmount + 50) > 1000 ? 'text-muted' : '' %>">
+                                        Cash on Delivery
+                                        <% if ((finalAmount + 50) > 1000) { %>
+                                            <small class="text-danger d-block">Cash on Delivery is not available for orders above ₹1,000. Please choose another payment method.</small>
+                                        <% } %>
+                                    </label>
                                 </div><br>
                                 
                                 <div class="payment-option">
@@ -1089,7 +1083,9 @@ document.addEventListener('DOMContentLoaded', () => {
                         body: JSON.stringify({
                             razorpay_order_id: response.razorpay_order_id,
                             razorpay_payment_id: response.razorpay_payment_id,
-                            razorpay_signature: response.razorpay_signature
+                            razorpay_signature: response.razorpay_signature,
+                            status: 'success',
+                            orderId: orderData.orderId
                         })
                     });
 
@@ -1113,27 +1109,57 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 } catch (error) {
                     console.error('Payment verification error:', error);
-                    Swal.fire({
+                    await fetch('/verify-razorpay-payment', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            razorpay_order_id: response.razorpay_order_id,
+                            status: 'failed',
+                            orderId: orderData.orderId
+                        })
+                    });
+
+                    await Swal.fire({
                         icon: 'error',
-                        title: 'Payment Verification Failed',
-                        text: error.message || 'An error occurred during payment verification'
+                        title: 'Payment Failed',
+                        text: 'Your payment has failed. Please try again.',
+                        confirmButtonText: 'OK',
+                        allowOutsideClick: false,
+                        allowEscapeKey: false
+                    }).then(() => {
+                        window.location.href = '/viewOrders';
                     });
                 }
             },
             modal: {
-                ondismiss: function() {
-                    Swal.fire({
+                ondismiss: async function() {
+                    await fetch('/verify-razorpay-payment', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            razorpay_order_id: orderData.razorpayOrder.id,
+                            status: 'failed',
+                            orderId: orderData.orderId
+                        })
+                    });
+                    await Swal.fire({
                         icon: 'warning',
                         title: 'Payment Cancelled',
-                        text: 'You cancelled the payment process'
+                        text: 'Your payment was cancelled. Please try again.',
+                        confirmButtonText: 'OK',
+                        allowOutsideClick: false,
+                        allowEscapeKey: false
+                    }).then(() => {
+                        window.location.href = '/viewOrders';
                     });
                 }
             },
             prefill: {
                 // Optional: Pre-fill customer details if available
-                // name: customerName,
-                // email: customerEmail,
-                // contact: customerPhone
             },
             theme: {
                 color: '#007bff'
@@ -1145,16 +1171,34 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         const razorpay = new Razorpay(options);
-        razorpay.on('payment.failed', function(response) {
-            Swal.fire({
+        razorpay.on('payment.failed', async function(response) {
+            console.error('Payment failed:', response.error);
+            await fetch('/verify-razorpay-payment', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    razorpay_order_id: response.error.metadata.order_id,
+                    status: 'failed',
+                    orderId: orderData.orderId
+                })
+            });
+
+            await Swal.fire({
                 icon: 'error',
                 title: 'Payment Failed',
-                text: response.error.description || 'Payment could not be processed'
+                text: response.error.description || 'Your payment has failed. Please try again.',
+                confirmButtonText: 'OK',
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                willClose: () => {
+                    window.location.href = '/viewOrders';
+                }
             });
         });
         razorpay.open();
     };
-
     placeOrderButton.addEventListener("click", async () => {
         try {
             const { paymentMethod, addressId } = validateOrder();
@@ -1181,15 +1225,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 handleRazorpayPayment(result);
             } else if (paymentMethod === 'Wallet') {
                 await Swal.fire({
-                icon: 'success',
-                title: 'Payment Successful!',
-                text: 'Your order has been placed using wallet balance.',
-                showConfirmButton: true,
-                confirmButtonText: 'View Order',
-                confirmButtonColor: '#28a745',
-                timer: 3000,
-                timerProgressBar: true
-            });
+                    icon: 'success',
+                    title: 'Payment Successful!',
+                    text: 'Your order has been placed using wallet balance.',
+                    showConfirmButton: true,
+                    confirmButtonText: 'View Order',
+                    confirmButtonColor: '#28a745',
+                    timer: 3000,
+                    timerProgressBar: true
+                });
                 window.location.href = `/ordersuccess/${result.orderId}`;
             } else {
                 window.location.href = `/ordersuccess/${result.orderId}`;

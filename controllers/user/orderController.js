@@ -108,6 +108,14 @@ const createOrder = async (req, res) => {
             });
         }
 
+        finalAmount+=50;
+        if (paymentMethod === 'COD' && finalAmount > 1000) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Cash on Delivery is not available for orders above ₹1,000' 
+            });
+        }
+
         switch (paymentMethod) {
             case 'COD': {
                 const newOrder = new Order({
@@ -115,6 +123,7 @@ const createOrder = async (req, res) => {
                     userId,
                     items: orderItems,
                     totalPrice: finalAmount,
+                    deliveryCharge: 50,
                     address: {
                         name: selectedAddress.name,
                         phone: selectedAddress.phone,
@@ -275,20 +284,40 @@ const createOrder = async (req, res) => {
 //razorpay
 const verifyRazorpayPayment = async (req, res) => {
     try {
-        const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
+        const { 
+            razorpay_order_id, 
+            razorpay_payment_id, 
+            razorpay_signature,
+            status 
+        } = req.body;
+
+        const order = await Order.findOne({ razorpayOrderId: razorpay_order_id });
+        
+        if (!order) {
+            console.error('Order not found for Razorpay order ID:', razorpay_order_id);
+            return res.status(404).json({ success: false, message: 'Order not found' });
+        }
+
+         if (status === 'failed') {
+            order.paymentStatus = 'Failed';
+            order.orderStatus = 'pending';
+            await order.save();
+            return res.status(200).json({ 
+                success: false, 
+                message: 'Payment failed',
+                orderId: order.orderId 
+            });
+        }
 
         const hmac = crypto.createHmac('sha256', process.env.RAZORPAY_KEY_SECRET);
         hmac.update(`${razorpay_order_id}|${razorpay_payment_id}`);
         const generatedSignature = hmac.digest('hex');
 
         if (generatedSignature !== razorpay_signature) {
+            order.paymentStatus = 'Failed';
+            order.orderStatus = 'pending';
+            await order.save();
             return res.status(400).json({ success: false, message: 'Invalid payment signature' });
-        }
-        const order = await Order.findOne({ razorpayOrderId: razorpay_order_id });
-        
-        if (!order) {
-            console.error('Order not found for Razorpay order ID:', razorpay_order_id);
-            return res.status(404).json({ success: false, message: 'Order not found' });
         }
 
         order.paymentStatus = 'Paid';
@@ -305,7 +334,56 @@ const verifyRazorpayPayment = async (req, res) => {
 
     } catch (error) {
         console.error('Razorpay verification error:', error);
+        try {
+            const order = await Order.findOne({ razorpayOrderId: razorpay_order_id });
+            if (order) {
+                order.paymentStatus = 'Failed';
+                order.orderStatus = 'pending';
+                await order.save();
+            }
+        } catch (err) {
+            console.error('Error updating order status:', err);
+        }
         res.status(500).json({ success: false, message: 'Payment verification failed' });
+    }
+};
+
+const createRazorpayOrder = async (req, res) => {
+    try {
+        const { orderId, amount } = req.body;
+        
+        const order = await Order.findOne({ orderId });
+        if (!order) {
+            return res.status(404).json({ 
+                success: false, 
+                message: 'Order not found' 
+            });
+        }
+
+        const razorpayOrder = await razorpay.orders.create({
+            amount: Math.round(amount * 100), // Convert to paise
+            currency: 'INR',
+            receipt: orderId,
+        });
+
+        // Update the order with new Razorpay order ID
+        order.razorpayOrderId = razorpayOrder.id;
+        await order.save();
+
+        res.json({
+            success: true,
+            key: process.env.RAZORPAY_KEY_ID,
+            amount: razorpayOrder.amount,
+            currency: razorpayOrder.currency,
+            orderId: razorpayOrder.id
+        });
+
+    } catch (error) {
+        console.error('Error creating Razorpay order:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to create payment order'
+        });
     }
 };
 
@@ -389,6 +467,7 @@ const getViewOrders = async (req, res) => {
                         switch (status.toLowerCase()) {
                             case 'paid': return 'paid';
                             case 'pending': return 'pending';
+                            case 'failed': return 'failed';
                             case 'processing': return 'processing';
                             case 'shipped': return 'shipped';
                             case 'delivered': return 'delivered';
@@ -421,6 +500,7 @@ const getViewOrders = async (req, res) => {
                 const couponDiscount = (subtotal / order.totalPrice) * order.appliedCoupon.discountAmount;
                 finalTotal = subtotal - couponDiscount;
             }
+            finalTotal+=50;
 
             return {
                 orderId: order.orderId,
@@ -431,6 +511,7 @@ const getViewOrders = async (req, res) => {
                 }),
                 totalPrice: finalTotal.toFixed(2),
                 originalTotal: order.totalPrice,
+                deliveryCharge: 50,
                 paymentStatus: order.paymentStatus,
                 orderStatus: order.orderStatus,
                 items: itemsWithOffers,
@@ -449,6 +530,7 @@ const getViewOrders = async (req, res) => {
                     switch (status.toLowerCase()) {
                         case 'paid': return 'paid';
                         case 'pending': return 'pending';
+                        case 'failed': return 'failed';
                         case 'processing': return 'processing';
                         case 'shipped': return 'shipped';
                         case 'delivered': return 'delivered';
@@ -473,6 +555,7 @@ const getViewOrders = async (req, res) => {
                     switch (status.toLowerCase()) {
                         case 'paid': return 'paid';
                         case 'pending': return 'pending';
+                        case 'failed': return 'failed';
                         case 'processing': return 'processing';
                         case 'shipped': return 'shipped';
                         case 'delivered': return 'delivered';
@@ -506,20 +589,34 @@ const getOrderDetails = async (req, res) => {
                 error: { status: 404 }
             });
         }
+        const currentDate = new Date();
+        const offers = await Offer.find({
+            status: 'Active',
+            expireDate: { $gt: currentDate }
+        });
 
         let activeSubtotal = 0;
         let activeItemsCount = 0;
 
         const processedItems = order.items.map(item => {
+
+            const productOffer = offers.find(offer => 
+                (offer.productIds?.includes(item.productId._id)) ||
+                (offer.categoryIds?.includes(item.productId.category._id))
+            );
+
+            const highestDiscount = productOffer ? productOffer.discount : 0;
+            const offerPrice = item.offerPrice || (productOffer 
+                ? item.price * (1 - productOffer.discount / 100)
+                : item.price);
+
             const itemData = {
                 productName: item.productName,
                 productId: item.productId,
                 quantity: item.quantity,
                 price: item.price,
-                highestDiscount: item.highestDiscount || 0,
-                offerPrice: item.highestDiscount > 0 ? 
-                    item.price * (1 - item.highestDiscount / 100) : 
-                    item.price,
+                highestDiscount: highestDiscount,
+                offerPrice: offerPrice,
                 finalPrice: item.finalPrice,
                 itemStatus: item.itemStatus,
                 returnStatus: item.returnStatus || 'Not Requested',
@@ -540,7 +637,7 @@ const getOrderDetails = async (req, res) => {
             const proportionalDiscount = (activeSubtotal / order.totalPrice) * order.appliedCoupon.discountAmount;
             finalTotal = activeSubtotal - proportionalDiscount;
         }
-
+        finalTotal += 50;
         const formattedOrder = {
             orderId: order.orderId,
             orderDate: new Date(order.createdAt).toLocaleDateString('en-US', {
@@ -566,6 +663,8 @@ const getOrderDetails = async (req, res) => {
                 returnStatus: item.returnStatus
             })),
             totalPrice: order.totalPrice,
+            subtotal: activeSubtotal,
+            deliveryCharge: 50,
             appliedCoupon: order.appliedCoupon ? {
                 code: order.appliedCoupon.code,
                 discountAmount: order.appliedCoupon.discountAmount
@@ -617,6 +716,11 @@ const cancelOrderItem = async (req, res) => {
             refundAmount = item.finalPrice - proportionalDiscount;
         }
 
+        const activeItems = order.items.filter((i, idx) => idx !== itemIndex && i.itemStatus !== 'Cancelled');
+        if (activeItems.length === 0) {
+            refundAmount += 50; 
+        }
+
         if ((order.paymentMethod === 'Razorpay' || order.paymentMethod === 'Wallet') && 
             order.paymentStatus === 'Paid') {
             let wallet = await Wallet.findOne({ userId: order.userId });
@@ -651,10 +755,14 @@ const cancelOrderItem = async (req, res) => {
             await product.save();
         }
 
-        const activeItems = order.items.filter(item => item.itemStatus !== 'Cancelled');
-        order.totalPrice = activeItems.reduce((total, item) => total + item.finalPrice, 0);
+        const remainingActiveItems = order.items.filter(item => item.itemStatus !== 'Cancelled');
+        order.totalPrice = remainingActiveItems.reduce((total, item) => total + item.finalPrice, 0);
 
-        if (activeItems.length === 0) {
+        if (remainingActiveItems.length > 0) {
+            order.totalPrice += 50;
+        }
+
+        if (remainingActiveItems.length === 0) {
             order.orderStatus = 'Cancelled';
         }
 
@@ -705,6 +813,16 @@ const returnOrderItem = async (req, res) => {
             refundAmount = itemToReturn.finalPrice - proportionalDiscount;
         }
 
+        const remainingItems = order.items.filter(item => 
+            item.itemStatus !== 'Cancelled' && 
+            item.productName !== productName
+        );
+
+        if (remainingItems.length === 0) {
+            refundAmount += 50;
+        }
+
+
         if ((order.paymentMethod === 'Razorpay' || order.paymentMethod === 'Wallet') && 
             order.paymentStatus === 'Paid') {
             let wallet = await Wallet.findOne({ userId: order.userId });
@@ -736,6 +854,13 @@ const returnOrderItem = async (req, res) => {
         itemToReturn.itemStatus = 'Return Processed';
         itemToReturn.refundAmount = refundAmount;
 
+        const activeItems = order.items.filter(item => item.itemStatus !== 'Cancelled');
+        order.totalPrice = activeItems.reduce((total, item) => total + item.finalPrice, 0);
+        
+        if (activeItems.length > 0) {
+            order.totalPrice += 50;
+        }
+
         await order.save();
 
         const product = await Product.findById(itemToReturn.productId);
@@ -763,6 +888,7 @@ const returnOrderItem = async (req, res) => {
 module.exports={
     createOrder,
     verifyRazorpayPayment,
+    createRazorpayOrder,
     orderSuccess,
     getViewOrders,
     getOrderDetails,

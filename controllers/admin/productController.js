@@ -83,7 +83,6 @@ const addProducts = async (req, res) => {
                 regularPrice: products.regularPrice,
                 createdOn: new Date(),
                 quantity: products.quantity,
-                color: products.color,
                 productImage: images,
                 status: 'Available',
             });
@@ -263,7 +262,6 @@ const editProduct = async (req, res) => {
                 description: data.description,
                 regularPrice: data.regularPrice,
                 quantity: data.quantity,
-                color: data.color,
                 category: data.category,
                 productImage: currentImages,
                 updatedAt: new Date()

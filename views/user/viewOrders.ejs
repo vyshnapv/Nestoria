@@ -44,6 +44,9 @@
     .order-history .pending {
         background-color: #ffc107;
     }
+    .order-history .failed {
+        background-color: #dc3545; 
+    }
     .order-history .view-btn {
         background-color: #007bff;
         color: white;
@@ -106,13 +109,15 @@
                         <tr>
                             <td><%= order.orderId %></td>
                             <td><%= order.date %></td>
-                            <td>₹<%= Math.round(order.totalPrice) %></td>
+                            <td>₹<%= Math.floor(order.totalPrice) %></td>
                             <td>
                                 <span class="status <%= helpers.getStatusClass(order.paymentStatus) %>">
                                     <%= order.paymentStatus %>
                                 </span>
                             </td>
-                            <td><%= order.orderStatus %></td>
+                            <td>
+                                <%= order.paymentMethod === 'Razorpay' && order.paymentStatus === 'Failed' ? 'pending' : order.orderStatus %>
+                            </td>
                             <td>
                                 <a href="/orderDetails/<%= order.orderId %>" class="view-btn">View Details</a>
                             </td>

@@ -76,6 +76,7 @@ user_route.delete('/deleteAddress/:addressId/:index',userAuth,userController.del
 //Order
 user_route.post('/place-order',userAuth,orderController.createOrder);
 user_route.post('/verify-razorpay-payment',orderController.verifyRazorpayPayment);
+user_route.post('/create-razorpay-order', orderController.createRazorpayOrder);
 user_route.get('/ordersuccess/:orderId', userAuth,orderController.orderSuccess);
 user_route.get("/viewOrders", userAuth,orderController.getViewOrders)
 user_route.get("/orderDetails/:orderId", userAuth,orderController.getOrderDetails)

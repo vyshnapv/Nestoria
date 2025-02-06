@@ -1,968 +1,746 @@
-//this is my product page in my user side 
-
+//this is my order details page 
 <%- include('../layoutsUser/userheader') %>
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <style>
-        .price {
-            color: #28a745;
-            font-size: 24px;
-            font-weight: bold;
-        }
 
-        .rating {
-            color: #f0ad4e;
-        }
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f8f9fa;
+}
 
-        .category{
-            margin-top: 10px;
-            color: #28a745;
-        }
-
-        .stock {
-            margin-top: 10px;
-            color: #28a745;
-        }
-
-        .limited-stock {
-            color: #dc3545;
-            font-weight: bold;
-            margin-top: 20px;
-        }
-
-        .btn-custom {
-           background-color: #007bff; 
-           color: #fff;
-           border-radius: 5px; 
-           padding: 10px 30px; 
-           width: 200px; 
-           border: none; 
-        }
-
-        .btn-custom:hover {
-           background-color: #0f64be; 
-        }
-
-        .icon_btn {
-            padding: 13px;
-            background: none;
-            border: none;
-            cursor: pointer;
-            color: #e65564; 
-            font-size: 24px; 
-        }
-
-        .table {
-            margin-top: 30px;
-        }
-
-        .table th, .table td {
-            text-align: center;
-        }
-
-        .product-box {
-            border: 1px solid #ddd;
-            padding: 20px;
-            margin-top: 20px;
-            border-radius: 10px;
-            background-color: #f9f9f9;
-        }
-
-        .page-border {
-            border: 1px solid #ddd; 
-            border-radius: 10px;
-            padding: 20px; 
-            margin-top: 20px; 
-            background-color: #fff; 
-        }
-        .container{
-            width: 70%;
-        }
-        .btn-custom {
-            background: linear-gradient(45deg, #ff6b6b, #f7b733);
-        }
-       .btn-custom:hover {
-            background: linear-gradient(45deg, #f7b733, #ff6b6b); 
-        }
-        .availability {
-            color: black; 
-            font-weight: bold;
-        }
-       .in-stock {
-            color: green; 
-        }
-
-       .only-left {
-           color:orange
-        }
-       .out-of-stock {
-           color: red; 
-        }
-       .container {
-           width: 70%;
-        }
-       .product-gallery {
-           flex: 1;
-        }
-       .product-details {
-           flex: 1; 
-        }
-       .product-details-top {
-           display: flex; 
-        }
-       .product-details-tab {
-           margin-top: 20px;
-        }
-        .offer-badge {
-           margin-bottom: 10px;
-        }
-        .badge {
-            font-size: 14px;
-            padding: 5px 10px;
-        }
-        .regular-price {
-            text-decoration: line-through;
-            color: #6c757d;
-            margin-right: 10px;
-        }
-        .offer-price {
-            color: #28a745;
-            font-size: 24px;
-            font-weight: bold;
-        }
-</style>
-
-<main class="main">
-    <nav aria-label="breadcrumb" class="breadcrumb-nav border-0 mb-0">
-        <div class="container d-flex align-items-center">
-            <ol class="breadcrumb">
-                <li class="breadcrumb-item"><a href="/">Home</a></li>
-                <li class="breadcrumb-item"><a href="/shop">Shop</a></li>
-                <li class="breadcrumb-item active" aria-current="page">Products</li>
-            </ol>
-        </div>
-    </nav>
-
-    <div class="page-content">
-        <div class="container">
-            <div class="product-details-top mb-2">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="product-gallery product-gallery-vertical">
-                                <div class="row">
-                                    <figure class="product-main-image">
-                                       
-                                        <img id="product-zoom" src="/uploads/cropped/<%= product.productImage[0] %>" data-zoom-image="/uploads/cropped/<%= product.productImage[0] %>" alt="product image">
-
-                                    </figure>
-
-                                    <div id="product-zoom-gallery" class="product-image-gallery">
-                                        <% for(let i=0;i<product.productImage.length;i++){ %>
-                                            <a class="product-gallery-item <%= i === 0 ? 'active' : '' %>" href="#" data-image="/uploads/cropped/<%= product.productImage[i] %>" data-zoom-image="/uploads/cropped/<%= product.productImage[i] %>">
-                                                <img src="/uploads/cropped/<%= product.productImage[i] %>" alt="product side">
-                                            </a>
-                                        <% } %>
-                                     
-    
-                                    </div><!-- End .product-image-gallery -->
-                                </div><!-- End .row -->
-                            </div><!-- End .product-gallery -->
-                        </div><!-- End .col-md-6 -->
-
-                <div class="product-details">
-                    <h1 class="product-title" style="font-size: xx-large;"><%= product.productName %></h1>
-
-                    <div class="ratings-container">
-                        <div class="ratings">
-                            <div class="ratings-val" style="width: 80%;"></div><!-- End .ratings-val -->
-                        </div><!-- End .ratings -->
-                        <a class="ratings-text" href="#product-review-link" id="review-link">( 2 Reviews )</a>
-                    </div><!-- End .rating-container -->
-
-                    
-                    <div class="price">
-                        <% if (product.offer) { %>
-                            <div class="offer-badge">
-                                <span class="badge bg-danger">-<%= product.offer.discount %>%</span>
-                            </div>
-                            <p class="regular-price text-muted" style="text-decoration: line-through;">₹<%= product.regularPrice %></p>
-                            <p class="offer-price">₹<%= (product.regularPrice * (1 - product.offer.discount / 100)).toFixed(2) %></p>
-                        <% } else { %>
-                            <p class="price">₹<%= product.regularPrice %></p>
-                        <% } %>
-                    </div>
-
-                    <div class="category">
-                        <span class="availability">Category:</span> <%= product.category ? product.category.name : 'Uncategorized' %>  
-                    </div>
-
-                    <% if (product.quantity >= 10) { %>
-                        <div class="stock in-stock"><span class="availability">Availability:</span> In Stock (Total: <%= product.quantity %>)</div>
-                    <% } else if (product.quantity >0) { %>
-                        <div class="stock only-left"><span class="availability">Availability:</span> Only <%= product.quantity %> left in stock (Total: <%= product.quantity %>)</div>
-                    <% } else { %>
-                        <div class="stock out-of-stock"><span class="availability">Availability:</span> Out of stock</div>
-                    <% } %>
-
-                    <br><br>
-                    <div class="product-details-action">
-                        <% if (product.quantity > 0) { %>
-                        <a href="#" class="btn-product btn-cart addToCart" data-product-id="<%= product._id %>">
-                            <span>Add to Cart</span>
-                        </a>
-                        <% } else { %>
-                            <a  class="btn-product btn-cart addToCart" >
-                                <span>Out of Stock</span>
-                            </a>
-                        <% } %>
-                        <div class="details-action-wrapper">
-                            <a href="#" class="btn-product btn-wishlist" title="Wishlist"><span></span></a>
-                        </div>
-                    </div>
-                </div><!-- End .product-details -->
-            </div><!-- End .product-details-top -->
-        </div>
-            <div class="product-details-tab">
-                <ul class="nav nav-pills justify-content-center" role="tablist">
-                    <li class="nav-item">
-                        <a class="nav-link active" id="product-desc-link" data-toggle="tab" href="#product-desc-tab" role="tab" aria-controls="product-desc-tab" aria-selected="true">Description</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" id="product-info-link" data-toggle="tab" href="#product-info-tab" role="tab" aria-controls="product-info-tab" aria-selected="false">Additional Information</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" id="product-review-link" data-toggle="tab" href="#product-review-tab" role="tab" aria-controls="product-review-tab" aria-selected="false">Reviews (2)</a>
-                    </li>
-                </ul>
-                <div class="tab-content">
-                    <div class="tab-pane fade show active" id="product-desc-tab" role="tabpanel" aria-labelledby="product-desc-link">
-                        <div class="product-desc-content">
-                            <p><%= product.description %></p>
-                        </div><!-- End .product-desc-content -->
-                    </div><!-- .End .tab-pane -->
-                    <div class="tab-pane fade" id="product-info-tab" role="tabpanel" aria-labelledby="product-info-link">
-                        <div class="product-desc-content">
-                            <h3>Information</h3>
-                            <p>Lorem ipsum dolor sit amet, consectetuer adipiscing elit...</p>
-
-                            <h3>Fabric & Care</h3>
-                            <p>Lorem ipsum dolor sit amet...</p>
-
-                            <h3>Size</h3>
-                            <p>One Size</p>
-                        </div><!-- End .product-desc-content -->
-                    </div><!-- .End .tab-pane -->
-                    <div class="tab-pane fade" id="product-review-tab" role="tabpanel" aria-labelledby="product-review-link">
-                        <div class="reviews">
-                            <h3>Reviews (2)</h3>
-                            <div class="review">
-                                <div class="row no-gutters">
-                                    <div class="col-auto">
-                                        <h4><a href="#">Samanta J.</a></h4>
-                                        <div class="ratings-container">
-                                            <div class="ratings">
-                                                <div class="ratings-val" style="width: 80%;"></div><!-- End .ratings-val -->
-                                            </div><!-- End .ratings -->
-                                        </div><!-- End .rating-container -->
-                                        <span class="review-date">6 days ago</span>
-                                    </div><!-- End .col -->
-                                    <div class="col">
-                                        <h4>Good, perfect size</h4>
-                                        <div class="review-content">
-                                            <p>Lorem ipsum dolor sit amet...</p>
-                                        </div><!-- End .review-content -->
-                                        <div class="review-action">
-                                            <a href="#"><i class="icon-thumbs-up"></i>Helpful (2)</a>
-                                            <a href="#"><i class="icon-thumbs-down"></i>Unhelpful (0)</a>
-                                        </div><!-- End .review-action -->
-                                    </div><!-- End .col-auto -->
-                                </div><!-- End .row -->
-                            </div><!-- End .review -->
-                        </div><!-- End .reviews -->
-                    </div><!-- .End .tab-pane -->
-                </div><!-- End .tab-content -->
-            </div><!-- End .product-details-tab -->
-
-        </div><!-- End .container -->
-    </div><!-- End .page-content -->
-</main><!-- End .main -->
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<script>
-   $(document).ready(function() {
-    $('.addToCart').on('click', function(e) {
-        e.preventDefault();  
-        var productId = $(this).data('product-id');  
-        $.ajax({
-            url: '/addToCart', 
-            method: 'POST',
-            data: { productId: productId },
-            success: function(response) {
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Added to Cart!',
-                    text: 'Your product has been added to the cart successfully.',
-                    confirmButtonText: 'Okay'
-                });
-            },
-            error: function(error) {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error!',
-                    text: 'please login.',
-                    confirmButtonText: 'Okay'
-                });
-            }
-        });
-    });
-});
-
-</script>
-<%- include('../layoutsUser/userfooter') %>
-
-
-//this is my shop page in admin side 
-<%- include('../layoutsUser/userheader') %>
-<link href="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.32/dist/sweetalert2.min.css" rel="stylesheet">
-<style>
-    
-.stock.in-stock {
-    background-color: #28a745; 
-    color: white;
-    padding: 5px;
-    border-radius: 3px;
+.order-detail-heading {
+    margin-top: 30px;
     font-weight: bold;
+    font-size: 2.5rem; 
+    text-align: center; 
 }
 
-.stock.only-left {
-    background-color: #ffc107; 
-    color: black;
-    padding: 5px;
-    border-radius: 3px;
+.order-detail-date {
+    font-size: 0.9rem;
+    text-align: center; 
+}
+
+.order-detail-section-title {
+    font-size: 1rem;
     font-weight: bold;
+    color: #6c757d;
+    margin-top: 1rem;
 }
 
-.stock.out-of-stock {
-    background-color: #dc3545;
-    color: white;
-    padding: 5px;
-    border-radius: 3px;
-    font-weight: bold;
-}
-.btn-product-icon.wishlist-btn.active {
-    color: red;
+.order-detail-container {
+    background-color: #ffffff;
+    padding: 20px;
+    border-radius: 5px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
-.product-price {
-    display: flex;
-    align-items: center;
-    gap: 10px; 
-    justify-content: center;
-    
-}
-
-.price-offer {
-    color: #ff0019; 
-    font-weight: bold;
-    display: flex;
-    align-items: center;
-    gap: 4px;  
+.order-detail-text {
     margin: 0;
+    color: #333;
 }
 
-.arrow-down {
-    color: #ff0019;  
-    font-size: 14px; 
+.order-detail-section {
+    padding-top: 10px;
 }
 
-.product-price .product-price:nth-child(2) {
+.order-detail-table-responsive {
+    margin-top: 20px;
+}
+
+.order-detail-table {
+    background-color: #ffffff;
+}
+
+.order-detail-table-header {
+    background-color: #f1f1f1;
+    font-weight: bold;
+    text-align: center;
+}
+
+.order-detail-table-bordered th, .order-detail-table-bordered td {
+    border: 1px solid #dee2e6;
+    vertical-align: middle;
+    text-align: center;
+}
+
+.order-detail-product-image {
+    max-width: 50px;
+    height: auto;
+}
+
+.order-detail-btn-cancel {
+    font-size: 1rem;
+   
+    color: #fff;
+    background-color: #dc3545;
+    border: none;
+}
+
+.order-detail-btn-cancel:hover {
+    background-color: #c82333;
+}
+
+.order-detail-summary-title {
+    color: #495057;
+}
+
+.order-detail-summary-text {
+    font-size: 0.9rem;
+    color: #495057;
+}
+.modal-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.modal-footer {
+    background-color: #f8f9fa;
+    border-top: 1px solid #dee2e6;
+}
+
+.form-label {
+    font-weight: 500;
+    color: #495057;
+}
+
+.form-control:focus {
+    border-color: #80bdff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.btn-danger {
+    background-color: #dc3545;
+}
+
+.btn-danger:hover {
+    background-color: #c82333;
+}
+
+.btn-loading {
+    position: relative;
+    pointer-events: none;
+    opacity: 0.65;
+}
+
+.btn-loading:after {
+    content: '';
+    width: 1rem;
+    height: 1rem;
+    margin-left: 0.5rem;
+    display: inline-block;
+    vertical-align: text-bottom;
+    border: 0.2em solid currentColor;
+    border-right-color: transparent;
+    border-radius: 50%;
+    animation: spinner-border .75s linear infinite;
+}
+
+.original-price {
     text-decoration: line-through;
-    color: #999; 
+    color: #999;
+    margin-right: 8px;
     font-size: 0.9em;
 }
 
-.product-price .product-price:nth-child(3) {
-   
-    color: #c96;
+.offer-price {
+    color: #000;
+    font-weight: bold;
 }
 
-.product-price .product-price {
-    display: inline-block; 
-    margin: 0;
-    padding: 0;
+.discount-badge {
+    background-color: #28a745;
+    color: white;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 0.8em;
+    margin-left: 8px;
 }
-.product-price > .product-price {
-    flex: none;
+
+.summary-item {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
 }
+
+.summary-item.total {
+    border-top: 1px solid #ddd;
+    margin-top: 12px;
+    padding-top: 12px;
+    font-weight: bold;
+}
+.original-price {
+    font-size: 0.9em;
+    color: #6c757d;
+}
+
+.offer-price {
+    font-weight: bold;
+}
+
+.discount-badge {
+    font-size: 0.8em;
+    padding: 2px 6px;
+}
+del {
+        text-decoration: line-through;
+    }
+    .badge {
+        font-size: 0.75rem;
+        padding: 0.25em 0.5em;
+    }
+    .retry-payment-btn {
+        background-color: #28a745;
+        color: white;
+        padding: 8px 16px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 0.9em;
+        margin-top: 8px;
+        display: inline-block;
+        text-decoration: none;
+    }
+    
+    .retry-payment-btn:hover {
+        background-color: #218838;
+    }
 
 </style>
-
-<main class="main">
-    <div class="page-header text-center" style="background-image: url('/productAssets/assets/images/page-header-bg.jpg')">
-        <div class="container">
-            <h1 class="page-title">Furniture<span>Shop</span></h1>
-        </div><!-- End .container -->
-    </div><!-- End .page-header -->
-
-    <nav aria-label="breadcrumb" class="breadcrumb-nav mb-2">
-        <div class="container d-flex justify-content-between align-items-center">
-            <ol class="breadcrumb mb-0">
-                <li class="breadcrumb-item"><a href="/">Home</a></li>
-                <li class="breadcrumb-item active" aria-current="page">Shop</li>
-            </ol>
+<h5 class="order-detail-heading">Order Details</h5>
+<div class="order-detail-container mt-5">
     
-            <!-- Search Form -->
-            <form action="/shop" method="get" class="search-form d-flex align-items-center">
-                <div class="header-search-wrapper d-flex align-items-center" style="gap: 0; padding-top: 30px;">
-                    <label for="q" class="sr-only" >Search</label>
-                    <input type="search" class="form-control" name="q" id="q" placeholder="Search in..." value="<%= searchQuery || '' %>" required>
-                    <input type="hidden" name="page" value="1">
-                    <% if (selectedCategory) { %>
-                        <input type="hidden" name="Category" value="<%= selectedCategory %>">
-                    <% } %>
-                    <% if (priceSort) { %>
-                        <input type="hidden" name="price-sort" value="<%= priceSort %>">
-                    <% } %>
-                    <% if (nameSort) { %>
-                        <input type="hidden" name="name-sort" value="<%= nameSort %>">
-                    <% } %>
-                    <button type="submit" class="btn" style="margin-left: -60px; margin-top:-18px; font-size:x-large; font-weight:bold;"><i class="icon-search"></i></button>
-                </div>
-            </form>
+    <div class="row">
+        <div class="col-12">
+            
+            <p class="order-detail-date">Ordered on <%= order.orderDate %> | Order ID: <%= order.orderId %></p>
         </div>
-    </nav>
+    </div>
 
-    <div class="page-content">
-        <div class="container">
-            <div class="row">
-                <div class="col-lg-9">
-                    <div class="products mb-3">
-                        <div class="row justify-content-center">
-                            <% if (products && products.length > 0) { %>
-                                <% products.forEach(product => { %>
-                                    <div class="col-6 col-md-4 col-lg-4">
-                                        <div class="product product-7 text-center">
-                                            <figure class="product-media">
-                                                <span class="product-label label-out">
-                                                    <% if (product.quantity >= 10) { %>
-                                                        <div class="stock in-stock">In Stock</div>
-                                                    <% } else if (product.quantity > 0) { %>
-                                                        <div class="stock only-left">Only <%= product.quantity %> left in stock</div>
-                                                    <% } else { %>
-                                                        <div class="stock out-of-stock">Out of stock</div>
-                                                    <% } %>
-                                                </span>
-                                                <a href="/product/<%= product._id %>">
-                                                    <img src="/uploads/cropped/<%= product.productImage[0] %>" alt="Product image" class="product-image">
-                                                </a>
-                                                <div class="product-action-vertical">
-                                                    <% if (product.quantity > 0) { %>
-                                                        <a href="#" 
-                                                           class="btn-product-icon btn-wishlist wishlist-btn <%= product.isWishlisted ? 'active' : '' %> icon-heart" 
-                                                           data-product-id="<%= product._id %>">
-                                                        </a>
-                                                    <% } else { %>
-                                                        <a class="btn-product-icon wishlist-btn disabled icon-heart" style="pointer-events: none; opacity: 0.5;">
-                                                        </a>
-                                                    <% } %>
-                                                </div>
-                    
-                                                <div class="product-action">
-                                                    <% if (product.quantity > 0) { %>
-                                                        <a href="#" id="addToCart" class="btn-product btn-cart" data-product-id="<%= product._id %>">
-                                                            <span>add to cart</span>
-                                                        </a>
-                                                    <% } else { %>
-                                                         
-                                                        <a  class="btn-product" >
-                                                            <span>Out of Stock</span>
-                                                        </a>
-                                                    <% } %>
-                                                    
-                                                </div><!-- End .product-action -->
-                                            </figure><!-- End .product-media -->
-                    
-                                            <div class="product-body">
-                                                
-                    
-                                                <h3 class="product-title">
-                                                    <a href="/product/<%= product._id %>"><%= product.productName %></a>
-                                                </h3><!-- End .product-title -->
-
-                                                <div class="product-price">
-                                                    <% if (product.highestDiscount > 0) { %>
-                                                        <span class="price-offer">
-                                                            <i class="fas fa-arrow-down arrow-down"></i>
-                                                            <%= product.highestDiscount %>%
-                                                        </span>
-                                                        <div class="product-price text-muted" style="text-decoration: line-through;">
-                                                            ₹<%= product.regularPrice %>
-                                                        </div>
-                                                        <div class="product-price">
-                                                            ₹<%= Math.round(product.offerPrice) %>
-                                                        </div>
-                                                    <% } else { %>
-                                                        <div class="product-price">
-                                                            ₹<%= product.regularPrice %>
-                                                        </div>
-                                                    <% } %>
-                                                </div>
-                                                <div class="ratings-container">
-                                                    <div class="ratings">
-                                                        <div class="ratings-val" style="width: 20%;"></div><!-- End .ratings-val -->
-                                                    </div><!-- End .ratings -->
-                                                    <span class="ratings-text">( 2 Reviews )</span>
-                                                </div><!-- End .rating-container -->
-                                            </div><!-- End .product-body -->
-                                        </div><!-- End .product -->
-                                    </div><!-- End .col -->
-                                <% }) %>
-                            <% } else { %>
-                                <p>No products available at the moment.</p>
+    <div class="row">
+        <div class="col-md-4 order-detail-section">
+            <h6 class="order-detail-section-title">Shipping Address</h6>
+            <p class="order-detail-text">
+                <%= order.address.name %><br>
+                +91 <%= order.address.phone %><br>
+                <%= order.address.house %><br>
+                <%= order.address.district %><br>
+                <%= order.address.city %>, <%= order.address.state %> <%= order.address.pincode %>
+            </p>
+        </div>
+        <div class="col-md-4 order-detail-section">
+            <h6 class="order-detail-section-title">Payment Method</h6>
+            <p class="order-detail-text"><%= order.paymentMethod %></p>
+        </div>
+        <div class="col-md-4 order-detail-section">
+            <h6 class="order-detail-section-title">Payment Status</h6>
+            <p class="order-detail-text"><%= order.paymentStatus %></p>
+            <% if (order.paymentStatus === 'Failed' && order.paymentMethod === 'Razorpay') { %>
+                <button onclick="retryPayment('<%= order.orderId %>', '<%= order.totalPrice %>')" class="retry-payment-btn">
+                    Try Payment Again
+                </button>
+            <% } %>
+        </div>
+    </div>
+    
+    <div class="order-detail-table-responsive">
+        <table class="table order-detail-table order-detail-table-bordered">
+            <thead class="order-detail-table-header">
+                <tr>
+                    <th>Product Name</th>
+                    <th>Category</th>
+                    <th>Image</th>
+                    <th>Quantity</th>
+                    <th>Price</th>
+                    <th>
+                        Final Price <br>
+                        (include coupon)
+                    </th>
+                    <th>Order Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% order.items.forEach(item => { %>
+                <tr>
+                    <td><%= item.productName %></td>
+                    <td><%= item.category.name %></td>
+                    <td><img src="/uploads/cropped/<%= item.image %>"  alt="<%= item.productName %>" class="order-detail-product-image"></td>
+                    <td><%= item.quantity %></td>
+                    <td>
+                        <% if (item.offerPrice && item.offerPrice < item.price) { %>
+                            <div>
+                                <del class="text-muted">₹<%= item.price.toFixed(2) %></del>
+                            </div>
+                            <div>
+                                <strong class="text-success">₹<%= Math.round(item.offerPrice).toFixed(2) %></strong>
+                                <small class="badge bg-success ms-1"><%= Math.round(((item.price - item.offerPrice) / item.price) * 100) %>% OFF</small>
+                            </div>
+                        <% } else { %>
+                            <div>₹<%= item.price.toFixed(2) %></div>
+                        <% } %>
+                    </td>
+                    <td>₹<%= Math.round(item.finalPrice.toFixed(2) )%></td>
+                    <td><%= item.itemStatus %></td>
+                    <td>
+                        <% if (item.itemStatus === 'Ordered') { %>
+                            <button class="btn btn-sm order-detail-btn-cancel" 
+                               onclick="cancelOrderItem('<%= order.orderId %>', '<%= item.productName %>')">
+                               ✖ Cancel
+                            </button>
+                        <% } else if (order.orderStatus === 'Delivered' && item.itemStatus !== 'Returned' && item.itemStatus !== 'Cancelled') { %>
+                            <% if (item.itemStatus === 'Delivered') { %>
+                                <button class="btn btn-sm order-detail-btn-return" 
+                                   onclick="returnOrderItem('<%= order.orderId %>', '<%= item.productName %>')">
+                                   ↩ Return
+                                </button>
+                            <% } else if (item.returnStatus === 'Return Requested') { %>
+                                <span class="text-warning">Return Requested</span>
+                            <% } else if (item.returnStatus === 'Return Accepted') { %>
+                                <span class="text-success">Return Accepted</span>
+                            <% } else if (item.returnStatus === 'Return Rejected') { %>
+                                <span class="text-danger">Return Rejected</span>
                             <% } %>
-                        </div><!-- End .row -->
+                        <% } else { %>
+                            <%= item.itemStatus %>
+                        <% } %>
+                    </td>
+                </tr>
+                <% }); %>
+            </tbody>
+        </table>
+    </div>
+    <div class="row mt-4">
+        <div class="col-md-6 offset-md-6">
+            <div class="order-detail-summary">
+                <h6 class="order-detail-summary-title">Order Summary</h6>
+                <div class="summary-item">
+                    <span>Original Total:</span>
+                    <span>₹<%= order.items.reduce((total, item) => 
+                        total + (item.itemStatus !== 'Cancelled' ? item.price * item.quantity : 0), 0).toFixed(2) %>
+                    </span>
+                </div>
+                <% if (order.items.some(item => item.highestDiscount > 0)) { %>
+                    <div class="summary-item">
+                        <span>Offer Discount:</span>
+                        <span class="text-success">-₹<%= order.items.reduce((total, item) => {
+                            if (item.itemStatus !== 'Cancelled' && item.highestDiscount > 0) {
+                                return total + ((item.price - item.offerPrice) * item.quantity);
+                            }
+                            return total;
+                        }, 0).toFixed(2) %></span>
                     </div>
-                    <!-- End .products -->
+                <% } %>
+                <div class="summary-item">
+                    <span>Subtotal:(include coupon)</span>
+                    <span>₹<%= order.items.reduce((total, item) => total + (item.itemStatus !== 'Cancelled' ? item.finalPrice : 0), 0).toFixed(2) %></span>
+                </div>
+                <div class="summary-item">
+                    <span>shipping Charge:</span>
+                    <span>₹50</span>
+                </div>
+                <% if (order.appliedCoupon) { %>
+                    <div class="summary-item">
+                        <span>Coupon Discount (<%= order.appliedCoupon.code %>):</span>
+                        <span class="text-success">-₹<%= order.appliedCoupon.discountAmount.toFixed(2) %></span>
+                    </div>
+                <% } %>
+                <div class="summary-item total">
+                    <span>Total Amount(include shipping):</span>
+                    <span>₹<%= order.totalPrice.toFixed(2) %></span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="cancelOrderModal" tabindex="-1" role="dialog" aria-labelledby="cancelOrderModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="cancelOrderModalLabel">Cancel Order Item</h5>
+                <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="cancelOrderForm">
+                    <div class="form-group mb-3">
+                        <label for="cancelReason" class="form-label">Reason for Cancellation</label>
+                        <select class="form-control" id="cancelReason" required>
+                            <option value="" disabled selected>Select a reason</option>
+                            <option value="Changed my mind">Changed my mind</option>
+                            <option value="Ordered wrong product">Ordered wrong product</option>
+                            <option value="Found better price elsewhere">Found better price elsewhere</option>
+                            <option value="Shipping time too long">Shipping time too long</option>
+                            <option value="Ordered by mistake">Ordered by mistake</option>
+                            <option value="Payment issues">Payment issues</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group mb-3 d-none" id="otherReasonDiv">
+                        <label for="otherReason" class="form-label">Please specify other reason</label>
+                        <textarea class="form-control" id="otherReason" rows="3"></textarea>
+                    </div>
+                    <input type="hidden" id="cancelOrderId">
+                    <input type="hidden" id="cancelProductName">
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-danger" id="confirmCancelOrder">Cancel Item</button>
+            </div>
+        </div>
+    </div>
+</div>
 
-                    <nav aria-label="Page navigation">
-                        <ul class="pagination justify-content-center">
-                            <% if (currentPage > 1) { %>
-                                <li class="page-item">
-                                    <a class="page-link page-link-prev"
-                                       href="?page=<%= currentPage - 1 %>&price-sort=<%= priceSort || '' %>&name-sort=<%= nameSort || '' %>&Category=<%= selectedCategory || '' %>&q=<%= searchQuery || '' %>"
-                                       aria-label="Previous">
-                                        <span aria-hidden="true"><i class="icon-long-arrow-left"></i></span>Prev
-                                    </a>
-                                </li>
-                            <% } else { %>
-                                <li class="page-item disabled">
-                                    <a class="page-link page-link-prev" href="#" aria-label="Previous" tabindex="-1" aria-disabled="true">
-                                        <span aria-hidden="true"><i class="icon-long-arrow-left"></i></span>Prev
-                                    </a>
-                                </li>
-                            <% } %>
-                            
-                            <% for (let i = 1; i <= totalPages; i++) { %>
-                                <li class="page-item <%= currentPage === i ? 'active' : '' %>">
-                                    <a class="page-link"
-                                       href="?page=<%= i %>&price-sort=<%= priceSort || '' %>&name-sort=<%= nameSort || '' %>&Category=<%= selectedCategory || '' %>&q=<%= searchQuery || '' %>">
-                                        <%= i %>
-                                    </a>
-                                </li>
-                            <% } %>
-                            
-                            <% if (currentPage < totalPages) { %>
-                                <li class="page-item">
-                                    <a class="page-link page-link-next"
-                                       href="?page=<%= currentPage + 1 %>&price-sort=<%= priceSort || '' %>&name-sort=<%= nameSort || '' %>&Category=<%= selectedCategory || '' %>&q=<%= searchQuery || '' %>"
-                                       aria-label="Next">
-                                        Next <span aria-hidden="true"><i class="icon-long-arrow-right"></i></span>
-                                    </a>
-                                </li>
-                            <% } else { %>
-                                <li class="page-item disabled">
-                                    <a class="page-link page-link-next" href="#" aria-label="Next" tabindex="-1" aria-disabled="true">
-                                        Next <span aria-hidden="true"><i class="icon-long-arrow-right"></i></span>
-                                    </a>
-                                </li>
-                            <% } %>
-                        </ul>
-                    </nav>
-                    
-                </div><!-- End .col-lg-9 -->
+<div class="modal fade" id="returnOrderModal" tabindex="-1" role="dialog" aria-labelledby="returnOrderModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="returnOrderModalLabel">Return Order Item</h5>
+                <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="returnOrderForm">
+                    <div class="form-group mb-3">
+                        <label for="returnReason" class="form-label">Reason for Return</label>
+                        <select class="form-control" id="returnReason" required>
+                            <option value="" disabled selected>Select a reason</option>
+                            <option value="Defective Product">Defective Product</option>
+                            <option value="Wrong Product">Wrong Product</option>
+                            <option value="Not Satisfied">Not Satisfied</option>
+                            <option value="Size/Fit Issues">Size/Fit Issues</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group mb-3 d-none" id="otherReasonDiv">
+                        <label for="otherReason" class="form-label">Please specify other reason</label>
+                        <textarea class="form-control" id="otherReason" rows="3"></textarea>
+                    </div>
+                    <input type="hidden" id="returnOrderId">
+                    <input type="hidden" id="returnProductName">
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" id="confirmReturnOrder">Return Item</button>
+            </div>
+        </div>
+    </div>
+</div>
 
-                <aside class="col-lg-3 order-lg-first">
-                    <div class="sidebar sidebar-shop">
-                        <div class="widget widget-clean">
-                            <label>Filters:</label>
-                            <a href="/shop" class="sf-with-ul">Clean All</a>
-                        </div>
-                        <div class="widget widget-collapsible">
-                            <h3 class="widget-title">Category</h3>
-                            <div class="collapse show" id="widget-1">
-                                <div class="widget-body">
-                                    <div class="filter-items filter-items-count">
-                                        <% if (category && category.length > 0) { %>
-                                            <% category.forEach((cat, i) => { %>
-                                                <div class="filter-item">
-                                                    <div class="custom-control custom-checkbox">
-                                                        <input type="checkbox" class="custom-control-input" id="cat-<%= i %>" 
-                                                            <%= selectedCategory === cat.name ? 'checked' : '' %>
-                                                            onchange="window.location.href='/shop?Category=<%= cat.name %>'">
-                                                        <label class="custom-control-label" for="cat-<%= i %>">
-                                                            <a href="/shop?Category=<%= cat.name %>" 
-                                                               class="category-link <%= selectedCategory === cat.name ? 'active' : '' %>">
-                                                                <%= cat.name %>
-                                                            </a>
-                                                        </label>
-                                                    </div>
-                                                    <span class="item-count"><%= cat.count %></span>
-                                                </div>
-                                            <% }) %>
-                                        <% } else { %>
-                                            <p>No categories available.</p>
-                                        <% } %>
-                                    </div><!-- End .filter-items -->
-                                </div><!-- End .widget-body -->
-                            </div><!-- End .collapse -->
-                        </div><!-- End .widget -->
-                        <div class="sort-container">
-                            <h3 class="widget-title">price</h3>
-                            <div class="sort-options">
-                                <label>
-                                    <input type="radio" name="price-sort" value="lowToHigh" 
-                                           onclick="window.location.href='?page=1&price-sort=lowToHigh&Category=<%= selectedCategory %>'"
-                                           <%= priceSort === 'lowToHigh' ? 'checked' : '' %>> Low to High
-                                </label>
-                                <br>
-                                <label>
-                                    <input type="radio" name="price-sort" value="highToLow"
-                                           onclick="window.location.href='?page=1&price-sort=highToLow&Category=<%= selectedCategory %>'"
-                                           <%= priceSort === 'highToLow' ? 'checked' : '' %>> High to Low
-                                </label>
-                                <hr>
-                            </div>
-                            <div class="sort-container">
-                                <h3 class="widget-title">Sort by Name</h3>
-                                <div class="sort-options">
-                                    <label>
-                                        <input type="radio" name="name-sort" value="aToZ" 
-                                               onclick="window.location.href='?page=1&name-sort=aToZ&Category=<%= selectedCategory %>&price-sort=<%= priceSort %>'"
-                                               <%= nameSort === 'aToZ' ? 'checked' : '' %>> aA-zZ
-                                    </label>
-                                    <br>
-                                    <label>
-                                        <input type="radio" name="name-sort" value="zToA" 
-                                               onclick="window.location.href='?page=1&name-sort=zToA&Category=<%= selectedCategory %>&price-sort=<%= priceSort %>'"
-                                               <%= nameSort === 'zToA' ? 'checked' : '' %>> zZ-aA
-                                    </label>
-                                </div>
-                            </div>
-                        </div>
-                    </div><!-- End .sidebar sidebar-shop -->
-                </aside><!-- End .col-lg-3 -->
-            </div><!-- End .row -->
-        </div><!-- End .container -->
-    </div><!-- End .page-content -->
-</main><!-- End .main -->
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
+    <%- include('../layoutsUser/userfooter') %>
 
 <script>
-    function sortNames(order) {
-        const nameList = document.getElementById('nameList');
-        let names = Array.from(nameList.querySelectorAll('.name-item'));
 
-        names.sort((a, b) => {
-            let nameA = a.textContent.toLowerCase();
-            let nameB = b.textContent.toLowerCase();
-            if (order === 'asc') {
-                return nameA.localeCompare(nameB);
-            } else {
-                return nameB.localeCompare(nameA);
-            }
-        });
-
-        nameList.innerHTML = '';
-        names.forEach(name => nameList.appendChild(name));
-    }
-
-    // Add to cart
-    document.addEventListener('DOMContentLoaded', () => {
-    // Add to Cart Handler
-    function handleAddToCart(button) {
-        const productId = button.getAttribute('data-product-id');
-        const productName = button.closest('.product, .product-details') 
-            ?.querySelector('.product-title a, .product-title')?.textContent;
-
-        fetch('/addToCart', {
+async function retryPayment(orderId, amount) {
+    try {
+        const response = await fetch(`/create-razorpay-order`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ productId })
-        })
-        .then(response => response.json())
-        .then(result => {
-            if (result.success) {
-                // Update cart count
-                const cartCountElement = document.querySelector('.cart-count');
-                if (cartCountElement && result.cartCount) {
-                    cartCountElement.textContent = result.cartCount;
-                }
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                orderId: orderId,
+                amount: amount
+            })
+        });
 
-                Swal.fire({
-                    title: 'Added to Cart!',
-                    text: `${productName} was added to your cart successfully!`,
-                    icon: 'success',
-                    showConfirmButton: true,
-                    confirmButtonText: 'View Cart',
-                    showCancelButton: true,
-                    cancelButtonText: 'Continue Shopping'
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        window.location.href = '/cart';
+        const data = await response.json();
+        
+        if (!data.success) {
+            throw new Error(data.message);
+        }
+
+        const options = {
+            key: data.key,
+            amount: data.amount,
+            currency: data.currency,
+            name: "Your Store Name",
+            description: "Order Payment",
+            order_id: data.orderId,
+            handler: async function (response) {
+                try {
+                    const verifyResponse = await fetch('/verify-razorpay-payment', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            razorpay_order_id: response.razorpay_order_id,
+                            razorpay_payment_id: response.razorpay_payment_id,
+                            razorpay_signature: response.razorpay_signature
+                        })
+                    });
+
+                    const verifyData = await verifyResponse.json();
+
+                    if (verifyData.success) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Payment Successful',
+                            text: 'Your payment has been processed successfully!',
+                            showConfirmButton: false,
+                            timer: 1500
+                        }).then(() => {
+                            window.location.reload();
+                        });
+                    } else {
+                        throw new Error(verifyData.message);
                     }
-                });
-            } else {
-                throw new Error(result.message || 'Failed to add product');
+                } catch (error) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Payment Verification Failed',
+                        text: error.message || 'Failed to verify payment'
+                    });
+                }
+            },
+            prefill: {
+                name: "<%= order.address.name %>",
+                contact: "<%= order.address.phone %>"
+            },
+            theme: {
+                color: "#3399cc"
             }
-        })
-        .catch(error => {
-            if (error.message.includes('login')) {
-                Swal.fire({
-                    title: 'Login Required!',
-                    text: 'Please login to add items to your cart',
-                    icon: 'info',
-                    showCancelButton: true,
-                    confirmButtonText: 'Login Now',
-                    cancelButtonText: 'Continue Shopping'
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        window.location.href = '/login';  
-                    }
-                });
-            } else {
-                Swal.fire({
-                    title: 'Error!',
-                    text: error.message,
-                    icon: 'error'
-                });
-            }
+        };
+
+        const rzp = new Razorpay(options);
+        rzp.open();
+
+        rzp.on('payment.failed', function (response) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Payment Failed',
+                text: 'The payment process failed. Please try again.'
+            });
+        });
+
+    } catch (error) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: error.message || 'Failed to initiate payment'
         });
     }
+}
 
-    // Wishlist Handler
-    function handleWishlist(button) {
-        const productId = button.getAttribute('data-product-id');
-        const productName = button.closest('.product, .product-details')
-            ?.querySelector('.product-title a, .product-title')?.textContent;
+document.getElementById('cancelReason').addEventListener('change', function() {
+    const otherReasonDiv = document.getElementById('otherReasonDiv');
+    if (this.value === 'Other') {
+        otherReasonDiv.classList.remove('d-none');
+    } else {
+        otherReasonDiv.classList.add('d-none');
+    }
+});
 
-        fetch('/addWishlist', {
+
+function cancelOrderItem(orderId, productName) {
+    document.getElementById('cancelOrderId').value = orderId;
+    document.getElementById('cancelProductName').value = productName;
+    
+    document.getElementById('cancelReason').value = '';
+    document.getElementById('otherReason').value = '';
+    document.getElementById('otherReasonDiv').classList.add('d-none');
+
+    const modal = new bootstrap.Modal(document.getElementById('cancelOrderModal'));
+    modal.show();
+}
+
+
+document.getElementById('confirmCancelOrder').addEventListener('click', async function() {
+    const button = this;
+    const orderId = document.getElementById('cancelOrderId').value;
+    const productName = document.getElementById('cancelProductName').value;
+    const reasonSelect = document.getElementById('cancelReason');
+    
+    if (!reasonSelect.value) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Required',
+            text: 'Please select a reason for cancellation'
+        });
+        return;
+    }
+    
+    const reason = reasonSelect.value === 'Other' 
+        ? document.getElementById('otherReason').value.trim()
+        : reasonSelect.value;
+        
+    if (reasonSelect.value === 'Other' && !reason) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Required',
+            text: 'Please specify the other reason'
+        });
+        return;
+    }
+
+    try {
+       
+        button.classList.add('btn-loading');
+        button.disabled = true;
+
+        const response = await fetch(`/orderDetails/${orderId}/cancel-item`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ productId })
-        })
-        .then(response => response.json())
-        .then(result => {
-            if (result.success) {
-                button.classList.toggle('active');
-                
-                Swal.fire({
-                    title: result.isWishlisted ? 'Added to Wishlist!' : 'Removed from Wishlist',
-                    text: result.message,
-                    icon: 'success',
-                    timer: 1500,
-                    showConfirmButton: false
-                });
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                productName: productName,
+                reason: reason
+            })
+        });
 
-                const wishlistCountElement = document.querySelector('.wishlist-count');
-                if (wishlistCountElement && result.wishlistCount !== undefined) {
-                    wishlistCountElement.textContent = result.wishlistCount;
-                }
-            } else {
-                throw new Error(result.message || 'Failed to update wishlist');
+        const data = await response.json();
+        
+        
+        button.classList.remove('btn-loading');
+        button.disabled = false;
+        
+        if (data.success) {
+            const orderSummaryElement = document.querySelector('.order-detail-summary-text');
+            if (orderSummaryElement && data.updatedTotalPrice !== undefined) {
+                orderSummaryElement.textContent = `Total Amount: ₹${data.updatedTotalPrice.toFixed(2)}`;
             }
-        })
-        .catch(error => {
-            if (error.message.includes('login')) {
-                Swal.fire({
-                    title: 'Login Required!',
-                    text: 'Please login to manage your wishlist',
-                    icon: 'info',
-                    showCancelButton: true,
-                    confirmButtonText: 'Login Now',
-                    cancelButtonText: 'Continue Shopping'
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        window.location.href = '/login';  
-                    }
-                });
-            } else {
-                Swal.fire({
-                    title: 'Error!',
-                    text: error.message,
-                    icon: 'error'
-                });
-            }
+            
+            Swal.fire({
+                icon: 'success',
+                title: 'Success',
+                text: 'Order item cancelled successfully',
+                showConfirmButton: false,
+                timer: 1500
+            }).then(() => {
+                location.reload();
+            });
+        } else {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: data.message || 'Failed to cancel order item'
+            });
+        }
+    } catch (error) {
+        button.classList.remove('btn-loading');
+        button.disabled = false;
+        
+        console.error('Error cancelling order item:', error);
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'An error occurred while cancelling the order item'
         });
     }
+});
 
-    // Event Listeners
-    document.querySelectorAll('#addToCart, .addToCart').forEach(button => {
-        button.addEventListener('click', (e) => {
-            e.preventDefault();
-            handleAddToCart(button);
-        });
-    });
+document.addEventListener('DOMContentLoaded', function() {
+    if (!document.getElementById('cancelOrderModal')) {
+        console.error('Cancel order modal element not found');
+    }
+});
 
-    document.querySelectorAll('.wishlist-btn, .btn-wishlist').forEach(button => {
-        button.addEventListener('click', (e) => {
-            e.preventDefault();
-            handleWishlist(button);
+document.getElementById('returnReason').addEventListener('change', function() {
+    const otherReasonDiv = document.getElementById('otherReasonDiv');
+    if (this.value === 'Other') {
+        otherReasonDiv.classList.remove('d-none');
+    } else {
+        otherReasonDiv.classList.add('d-none');
+    }
+});
+
+function returnOrderItem(orderId, productName) {
+    document.getElementById('returnOrderId').value = orderId;
+    document.getElementById('returnProductName').value = productName;
+    
+    document.getElementById('returnReason').value = '';
+    document.getElementById('otherReason').value = '';
+    document.getElementById('otherReasonDiv').classList.add('d-none');
+
+    const modal = new bootstrap.Modal(document.getElementById('returnOrderModal'));
+    modal.show();
+}
+
+document.getElementById('confirmReturnOrder').addEventListener('click', async function() {
+    const button = this;
+    const orderId = document.getElementById('returnOrderId').value;
+    const productName = document.getElementById('returnProductName').value;
+    const reasonSelect = document.getElementById('returnReason');
+    
+    if (!reasonSelect.value) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Required',
+            text: 'Please select a reason for return'
         });
-    });
+        return;
+    }
+    
+    const reason = reasonSelect.value === 'Other' 
+        ? document.getElementById('otherReason').value.trim()
+        : reasonSelect.value;
+        
+    if (reasonSelect.value === 'Other' && !reason) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Required',
+            text: 'Please specify the other reason'
+        });
+        return;
+    }
+
+    try {
+        button.classList.add('btn-loading');
+        button.disabled = true;
+
+        const response = await fetch(`/orderDetails/${orderId}/return-item`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                productName: productName,
+                reason: reason
+            })
+        });
+
+        const data = await response.json();
+        
+        button.classList.remove('btn-loading');
+        button.disabled = false;
+        
+        if (data.success) {
+            Swal.fire({
+                icon: 'success',
+                title: 'Return Requested',
+                text: 'Your return request has been submitted. Our team will review it soon.',
+                showConfirmButton: false,
+                timer: 2500
+            }).then(() => {
+                location.reload();
+            });
+        } else {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: data.message || 'Failed to submit return request'
+            });
+        }
+    } catch (error) {
+        button.classList.remove('btn-loading');
+        button.disabled = false;
+        
+        console.error('Error submitting return request:', error);
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'An error occurred while submitting the return request'
+        });
+    }
 });
 
 </script>
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.32/dist/sweetalert2.all.min.js"></script>
-<%- include('../layoutsUser/userfooter') %>
-//this is product controller page 
-const shop = async (req, res) => {
-    try {
-        const userData = await User.findById(req.session.user);
-        
-        const wishlistedProducts = userData 
-        ? (await Wishlist.findOne({ userId: userData._id }))?.items.map(item => item.productId.toString()) 
-        : [];
-
-        const { 
-            Category: selectedCategory, 
-            q: searchQuery = '', 
-            page = 1, 
-            'price-sort': priceSort, 
-            'name-sort': nameSort 
-        } = req.query;
-        const limit = 9;
-        const skip = (parseInt(page) - 1) * limit;
-
-        const listedCategories = await Category.aggregate([
-            { $match: { isListed: true } },
-            {
-                $lookup: {
-                    from: "products", 
-                    let: { categoryId: "$_id" },
-                    pipeline: [
-                        { $match: { $expr: { $eq: ["$category", "$$categoryId"] }, isBlocked: false } } 
-                    ],
-                    as: "products"
-                }
-            },
-            { $addFields: { count: { $size: "$products" } } },
-            { $project: { _id: 1, name: 1, count: 1 } }
-        ]);
-
-        const categoryIds = listedCategories.map(category => category._id);
-
-        const filter = {
-            isBlocked: false,
-            category: selectedCategory 
-                ? await Category.findOne({ name: selectedCategory, isListed: true }).then(cat => cat?._id)
-                : { $in: categoryIds }
-        };
-
-
-        if (searchQuery) {
-            filter.$or = [{ 
-                productName: { 
-                    $regex: new RegExp(searchQuery.split(/\s+/).map(term => `\\b${term}`).join('|'), 'i') 
-                }
-            }];
-        }
-
-        const sortOption = {};
-        if (priceSort === 'lowToHigh') sortOption.regularPrice = 1;
-        if (priceSort === 'highToLow') sortOption.regularPrice = -1;
-        if (nameSort === 'aToZ') sortOption.productName = 1;
-        if (nameSort === 'zToA') sortOption.productName = -1;
-
-        const totalProducts = await Product.countDocuments(filter);
-        const totalPages = Math.ceil(totalProducts / limit);
-
-        const currentDate = new Date();
-        const offers = await Offer.find({
-            status: 'Active',
-            expireDate: { $gt: currentDate }
-        });
-
-
-        const products = await Product.find(filter)
-            .sort(sortOption)
-            .skip(skip)
-            .limit(limit)
-            .populate('category');
-
-
-        const productsWithOffers = products.map(product => {
-            const productOffer = offers.find(offer => 
-                (offer.productIds?.includes(product._id)) ||
-                (offer.categoryIds?.includes(product.category._id))
-            );
-
-
-            const offerPrice = productOffer 
-            ? product.regularPrice * (1 - productOffer.discount / 100)
-            : product.regularPrice;
-
-
-            return {
-                ...product.toObject(),
-                regularPrice: product.regularPrice,
-                offerPrice,
-                highestDiscount: productOffer?.discount || 0,
-                isWishlisted: wishlistedProducts.includes(product._id.toString())
-            };
-        });
-
-        res.render("shop", {
-            products: productsWithOffers,
-            userData,
-            category: listedCategories,
-            selectedCategory,
-            currentPage: parseInt(page),
-            totalPages,
-            priceSort,
-            nameSort,
-            searchQuery
-        });
-    } catch (error) {
-        console.error("Error in shop", error);
-        res.status(500).json({ success: false, message: "An error occurred" });
-    }
-};
-  
-//product detailed page
-const productDetails=async(req,res)=>{
-  try {
-    const userData=await User.findById(req.session.user);
-    const productId=req.params.id;
-
-    const product=await Product.findOne({_id:productId}).populate("category")
-
-    if (!product || !product.category || !product.category.isListed) {
-        return res.redirect("/shop");
-    }
-
-    const currentDate = new Date();
-        const productOffer = await Offer.findOne({
-            $or: [
-                { productIds: productId, status: 'Active', expireDate: { $gt: currentDate } },
-                { categoryIds: product.category._id, status: 'Active', expireDate: { $gt: currentDate } }
-            ]
-        });
-        if (productOffer) {
-            product.offer = {
-                discount: productOffer.discount,
-                offerType: productOffer.offerType
-            };
-        }
-
-        if (!product || !product.category || !product.category.isListed) {
-            return res.redirect("/shop");
-        }
-
-        const isWishlisted = userData 
-            ? await Wishlist.exists({ 
-                userId: userData._id, 
-                'items.productId': productId 
-            })
-            : false;
-
-          const categories = await Category.find({ isListed: true });
-          res.render("product", { 
-            product, 
-            userData, 
-            categories, 
-            isWishlisted 
-        });
-    } catch (error) {
-        console.error("Error in productDetails", error);
-        res.render("404");
-    }
-};
-
+//this is my order controler 

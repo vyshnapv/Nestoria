@@ -1,12 +1,20 @@
+<style>
+   .heading {
+    padding-left: 300px; 
+    font-size: 42px; 
+    font-family:cursive;
+    font-weight: bold; 
+    color: #28b573;
+    letter-spacing: 2px; 
+    text-shadow:7px 7px 9px rgba(10, 158, 59, 0.2); 
+}
 
+</style>
 <main class="main-wrap">
     <header class="main-header navbar">
         <div class="col-search">
             <form class="searchform">
-                <div class="input-group">
-                    <input list="search_terms" type="text" class="form-control" placeholder="Search term" />
-                    <button class="btn btn-light bg" type="button"><i class="material-icons md-search"></i></button>
-                </div>
+                <h1 class="heading">Nestoria</h1>
                 <datalist id="search_terms">
                     <option value="Products"></option>
                     <option value="New orders"></option>
@@ -42,12 +50,6 @@
                 <li class="dropdown nav-item">
                     <a class="dropdown-toggle" data-bs-toggle="dropdown" href="#" id="dropdownAccount" aria-expanded="false"> <img class="img-xs rounded-circle" src="/assets/imgs/people/avatar-2.png" alt="User" /></a>
                     <div class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownAccount">
-                        <a class="dropdown-item" href="#"><i class="material-icons md-perm_identity"></i>Edit Profile</a>
-                        <a class="dropdown-item" href="#"><i class="material-icons md-settings"></i>Account Settings</a>
-                        <a class="dropdown-item" href="#"><i class="material-icons md-account_balance_wallet"></i>Wallet</a>
-                        <a class="dropdown-item" href="#"><i class="material-icons md-receipt"></i>Billing</a>
-                        <a class="dropdown-item" href="#"><i class="material-icons md-help_outline"></i>Help center</a>
-                        <div class="dropdown-divider"></div>
                         <a class="dropdown-item text-danger" href="/admin/logout"><i class="material-icons md-exit_to_app"></i>Logout</a>
                     </div>
                 </li>

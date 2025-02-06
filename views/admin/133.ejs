@@ -1,403 +1,336 @@
-//admin dashboard 
-<%- include('../layoutsAdmin/adminheader') %>
-<%- include('../layoutsAdmin/header') %>
-            <section class="content-main">
-                <div class="content-header">
-                    <div>
-                        <h2 class="content-title card-title">welcome Admin</h2>
-                        <p>Whole data about your business here</p>
-                    </div>
-                    <div>
-                        <a href="#" class="btn btn-primary"><i class="text-muted material-icons md-post_add"></i>Create report</a>
-                    </div>
+//this is some parts of my order details page  my order details page 
+<%- include('../layoutsUser/userheader') %>
+<style>
+
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f8f9fa;
+}
+
+.order-detail-heading {
+    margin-top: 30px;
+    font-weight: bold;
+    font-size: 2.5rem; 
+    text-align: center; 
+}
+
+.order-detail-date {
+    font-size: 0.9rem;
+    text-align: center; 
+}
+
+.order-detail-section-title {
+    font-size: 1rem;
+    font-weight: bold;
+    color: #6c757d;
+    margin-top: 1rem;
+}
+
+.order-detail-container {
+    background-color: #ffffff;
+    padding: 20px;
+    border-radius: 5px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.order-detail-text {
+    margin: 0;
+    color: #333;
+}
+
+.order-detail-section {
+    padding-top: 10px;
+}
+
+.order-detail-table-responsive {
+    margin-top: 20px;
+}
+
+.order-detail-table {
+    background-color: #ffffff;
+}
+
+.order-detail-table-header {
+    background-color: #f1f1f1;
+    font-weight: bold;
+    text-align: center;
+}
+
+.order-detail-table-bordered th, .order-detail-table-bordered td {
+    border: 1px solid #dee2e6;
+    vertical-align: middle;
+    text-align: center;
+}
+
+.order-detail-product-image {
+    max-width: 50px;
+    height: auto;
+}
+
+.order-detail-btn-cancel {
+    font-size: 1rem;
+   
+    color: #fff;
+    background-color: #dc3545;
+    border: none;
+}
+
+.order-detail-btn-cancel:hover {
+    background-color: #c82333;
+}
+
+.order-detail-summary-title {
+    color: #495057;
+}
+
+.order-detail-summary-text {
+    font-size: 0.9rem;
+    color: #495057;
+}
+.modal-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.modal-footer {
+    background-color: #f8f9fa;
+    border-top: 1px solid #dee2e6;
+}
+
+.form-label {
+    font-weight: 500;
+    color: #495057;
+}
+
+.form-control:focus {
+    border-color: #80bdff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.btn-danger {
+    background-color: #dc3545;
+}
+
+.btn-danger:hover {
+    background-color: #c82333;
+}
+
+.btn-loading {
+    position: relative;
+    pointer-events: none;
+    opacity: 0.65;
+}
+
+.btn-loading:after {
+    content: '';
+    width: 1rem;
+    height: 1rem;
+    margin-left: 0.5rem;
+    display: inline-block;
+    vertical-align: text-bottom;
+    border: 0.2em solid currentColor;
+    border-right-color: transparent;
+    border-radius: 50%;
+    animation: spinner-border .75s linear infinite;
+}
+
+.original-price {
+    text-decoration: line-through;
+    color: #999;
+    margin-right: 8px;
+    font-size: 0.9em;
+}
+
+.offer-price {
+    color: #000;
+    font-weight: bold;
+}
+
+.discount-badge {
+    background-color: #28a745;
+    color: white;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 0.8em;
+    margin-left: 8px;
+}
+
+.summary-item {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+.summary-item.total {
+    border-top: 1px solid #ddd;
+    margin-top: 12px;
+    padding-top: 12px;
+    font-weight: bold;
+}
+.original-price {
+    font-size: 0.9em;
+    color: #6c757d;
+}
+
+.offer-price {
+    font-weight: bold;
+}
+
+.discount-badge {
+    font-size: 0.8em;
+    padding: 2px 6px;
+}
+del {
+        text-decoration: line-through;
+    }
+    .badge {
+        font-size: 0.75rem;
+        padding: 0.25em 0.5em;
+    }
+</style>
+<h5 class="order-detail-heading">Order Details</h5>
+<div class="order-detail-container mt-5">
+    
+    <div class="row">
+        <div class="col-12">
+            
+            <p class="order-detail-date">Ordered on <%= order.orderDate %> | Order ID: <%= order.orderId %></p>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-4 order-detail-section">
+            <h6 class="order-detail-section-title">Shipping Address</h6>
+            <p class="order-detail-text">
+                <%= order.address.name %><br>
+                +91 <%= order.address.phone %><br>
+                <%= order.address.house %><br>
+                <%= order.address.district %><br>
+                <%= order.address.city %>, <%= order.address.state %> <%= order.address.pincode %>
+            </p>
+        </div>
+        <div class="col-md-4 order-detail-section">
+            <h6 class="order-detail-section-title">Payment Method</h6>
+            <p class="order-detail-text"><%= order.paymentMethod %></p>
+        </div>
+        <div class="col-md-4 order-detail-section">
+            <h6 class="order-detail-section-title">Payment Status</h6>
+            <p class="order-detail-text"><%= order.paymentStatus %></p>
+        </div>
+    </div>
+
+    <div class="order-detail-table-responsive">
+        <table class="table order-detail-table order-detail-table-bordered">
+            <thead class="order-detail-table-header">
+                <tr>
+                    <th>Product Name</th>
+                    <th>Category</th>
+                    <th>Image</th>
+                    <th>Quantity</th>
+                    <th>Price</th>
+                    <th>
+                        Final Price <br>
+                        (include coupon)
+                    </th>
+                    <th>Order Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% order.items.forEach(item => { %>
+                <tr>
+                    <td><%= item.productName %></td>
+                    <td><%= item.category.name %></td>
+                    <td><img src="/uploads/cropped/<%= item.image %>"  alt="<%= item.productName %>" class="order-detail-product-image"></td>
+                    <td><%= item.quantity %></td>
+                    <td>
+                        <% if (item.offerPrice && item.offerPrice < item.price) { %>
+                            <div>
+                                <del class="text-muted">₹<%= item.price.toFixed(2) %></del>
+                            </div>
+                            <div>
+                                <strong class="text-success">₹<%= Math.round(item.offerPrice).toFixed(2) %></strong>
+                                <small class="badge bg-success ms-1"><%= Math.round(((item.price - item.offerPrice) / item.price) * 100) %>% OFF</small>
+                            </div>
+                        <% } else { %>
+                            <div>₹<%= item.price.toFixed(2) %></div>
+                        <% } %>
+                    </td>
+                    <td>₹<%= Math.round(item.finalPrice.toFixed(2) )%></td>
+                    <td><%= item.itemStatus %></td>
+                    <td>
+                        <% if (item.itemStatus === 'Ordered') { %>
+                            <button class="btn btn-sm order-detail-btn-cancel" 
+                               onclick="cancelOrderItem('<%= order.orderId %>', '<%= item.productName %>')">
+                               ✖ Cancel
+                            </button>
+                        <% } else if (order.orderStatus === 'Delivered' && item.itemStatus !== 'Returned' && item.itemStatus !== 'Cancelled') { %>
+                            <% if (item.itemStatus === 'Delivered') { %>
+                                <button class="btn btn-sm order-detail-btn-return" 
+                                   onclick="returnOrderItem('<%= order.orderId %>', '<%= item.productName %>')">
+                                   ↩ Return
+                                </button>
+                            <% } else if (item.returnStatus === 'Return Requested') { %>
+                                <span class="text-warning">Return Requested</span>
+                            <% } else if (item.returnStatus === 'Return Accepted') { %>
+                                <span class="text-success">Return Accepted</span>
+                            <% } else if (item.returnStatus === 'Return Rejected') { %>
+                                <span class="text-danger">Return Rejected</span>
+                            <% } %>
+                        <% } else { %>
+                            <%= item.itemStatus %>
+                        <% } %>
+                    </td>
+                </tr>
+                <% }); %>
+            </tbody>
+        </table>
+    </div>
+    <div class="row mt-4">
+        <div class="col-md-6 offset-md-6">
+            <div class="order-detail-summary">
+                <h6 class="order-detail-summary-title">Order Summary</h6>
+                <div class="summary-item">
+                    <span>Original Total:</span>
+                    <span>₹<%= order.items.reduce((total, item) => 
+                        total + (item.itemStatus !== 'Cancelled' ? item.price * item.quantity : 0), 0).toFixed(2) %>
+                    </span>
                 </div>
-                <div class="row">
-                    <div class="col-lg-3">
-                        <div class="card card-body mb-4">
-                            <article class="icontext">
-                                <span class="icon icon-sm rounded-circle bg-primary-light"><i class="text-primary material-icons md-monetization_on"></i></span>
-                                <div class="text">
-                                    <h6 class="mb-1 card-title">Revenue</h6>
-                                    <span>$13,456.5</span>
-                                    <span class="text-sm"> Shipping fees are not included </span>
-                                </div>
-                            </article>
-                        </div>
+                <% if (order.items.some(item => item.highestDiscount > 0)) { %>
+                    <div class="summary-item">
+                        <span>Offer Discount:</span>
+                        <span class="text-success">-₹<%= order.items.reduce((total, item) => {
+                            if (item.itemStatus !== 'Cancelled' && item.highestDiscount > 0) {
+                                return total + ((item.price - item.offerPrice) * item.quantity);
+                            }
+                            return total;
+                        }, 0).toFixed(2) %></span>
                     </div>
-                    <div class="col-lg-3">
-                        <div class="card card-body mb-4">
-                            <article class="icontext">
-                                <span class="icon icon-sm rounded-circle bg-success-light"><i class="text-success material-icons md-local_shipping"></i></span>
-                                <div class="text">
-                                    <h6 class="mb-1 card-title">Orders</h6>
-                                    <span>53.668</span>
-                                    <span class="text-sm"> Excluding orders in transit </span>
-                                </div>
-                            </article>
-                        </div>
-                    </div>
-                    <div class="col-lg-3">
-                        <div class="card card-body mb-4">
-                            <article class="icontext">
-                                <span class="icon icon-sm rounded-circle bg-warning-light"><i class="text-warning material-icons md-qr_code"></i></span>
-                                <div class="text">
-                                    <h6 class="mb-1 card-title">Products</h6>
-                                    <span>9.856</span>
-                                    <span class="text-sm"> In 19 Categories </span>
-                                </div>
-                            </article>
-                        </div>
-                    </div>
-                    <div class="col-lg-3">
-                        <div class="card card-body mb-4">
-                            <article class="icontext">
-                                <span class="icon icon-sm rounded-circle bg-info-light"><i class="text-info material-icons md-shopping_basket"></i></span>
-                                <div class="text">
-                                    <h6 class="mb-1 card-title">Monthly Earning</h6>
-                                    <span>$6,982</span>
-                                    <span class="text-sm"> Based in your local time. </span>
-                                </div>
-                            </article>
-                        </div>
-                    </div>
+                <% } %>
+                <div class="summary-item">
+                    <span>Subtotal:(include coupon)</span>
+                    <span>₹<%= order.items.reduce((total, item) => total + (item.itemStatus !== 'Cancelled' ? item.finalPrice : 0), 0).toFixed(2) %></span>
                 </div>
-                <div class="row">
-                    <div class="col-xl-8 col-lg-12">
-                        <div class="card mb-4">
-                            <article class="card-body">
-                                <h5 class="card-title">Sale statistics</h5>
-                                <canvas id="myChart" height="120px"></canvas>
-                            </article>
-                        </div>
-                        <!-- <div class="row">
-                            <div class="col-lg-5">
-                                <div class="card mb-4">
-                                    <article class="card-body">
-                                        <h5 class="card-title">New Members</h5>
-                                        <div class="new-member-list">
-                                            <div class="d-flex align-items-center justify-content-between mb-4">
-                                                <div class="d-flex align-items-center">
-                                                    <img src="/assets/imgs/people/avatar-4.png" alt="" class="avatar" />
-                                                    <div>
-                                                        <h6>Patric Adams</h6>
-                                                        <p class="text-muted font-xs">Sanfrancisco</p>
-                                                    </div>
-                                                </div>
-                                                <a href="#" class="btn btn-xs"><i class="material-icons md-add"></i> Add</a>
-                                            </div>
-                                            <div class="d-flex align-items-center justify-content-between mb-4">
-                                                <div class="d-flex align-items-center">
-                                                    <img src="/assets/imgs/people/avatar-2.png" alt="" class="avatar" />
-                                                    <div>
-                                                        <h6>Dilan Specter</h6>
-                                                        <p class="text-muted font-xs">Sanfrancisco</p>
-                                                    </div>
-                                                </div>
-                                                <a href="#" class="btn btn-xs"><i class="material-icons md-add"></i> Add</a>
-                                            </div>
-                                            <div class="d-flex align-items-center justify-content-between mb-4">
-                                                <div class="d-flex align-items-center">
-                                                    <img src="/assets/imgs/people/avatar-3.png" alt="" class="avatar" />
-                                                    <div>
-                                                        <h6>Tomas Baker</h6>
-                                                        <p class="text-muted font-xs">Sanfrancisco</p>
-                                                    </div>
-                                                </div>
-                                                <a href="#" class="btn btn-xs"><i class="material-icons md-add"></i> Add</a>
-                                            </div>
-                                        </div>
-                                    </article>
-                                </div>
-                            </div>
-                            <div class="col-lg-7">
-                                <div class="card mb-4">
-                                    <article class="card-body">
-                                        <h5 class="card-title">Recent activities</h5>
-                                        <ul class="verti-timeline list-unstyled font-sm">
-                                            <li class="event-list">
-                                                <div class="event-timeline-dot">
-                                                    <i class="material-icons md-play_circle_outline font-xxl"></i>
-                                                </div>
-                                                <div class="media">
-                                                    <div class="me-3">
-                                                        <h6><span>Today</span> <i class="material-icons md-trending_flat text-brand ml-15 d-inline-block"></i></h6>
-                                                    </div>
-                                                    <div class="media-body">
-                                                        <div>Lorem ipsum dolor sit amet consectetur</div>
-                                                    </div>
-                                                </div>
-                                            </li>
-                                            <li class="event-list active">
-                                                <div class="event-timeline-dot">
-                                                    <i class="material-icons md-play_circle_outline font-xxl animation-fade-right"></i>
-                                                </div>
-                                                <div class="media">
-                                                    <div class="me-3">
-                                                        <h6><span>17 May</span> <i class="material-icons md-trending_flat text-brand ml-15 d-inline-block"></i></h6>
-                                                    </div>
-                                                    <div class="media-body">
-                                                        <div>Debitis nesciunt voluptatum dicta reprehenderit</div>
-                                                    </div>
-                                                </div>
-                                            </li>
-                                            <li class="event-list">
-                                                <div class="event-timeline-dot">
-                                                    <i class="material-icons md-play_circle_outline font-xxl"></i>
-                                                </div>
-                                                <div class="media">
-                                                    <div class="me-3">
-                                                        <h6><span>13 May</span> <i class="material-icons md-trending_flat text-brand ml-15 d-inline-block"></i></h6>
-                                                    </div>
-                                                    <div class="media-body">
-                                                        <div>Accusamus voluptatibus voluptas.</div>
-                                                    </div>
-                                                </div>
-                                            </li>
-                                            <li class="event-list">
-                                                <div class="event-timeline-dot">
-                                                    <i class="material-icons md-play_circle_outline font-xxl"></i>
-                                                </div>
-                                                <div class="media">
-                                                    <div class="me-3">
-                                                        <h6><span>05 April</span> <i class="material-icons md-trending_flat text-brand ml-15 d-inline-block"></i></h6>
-                                                    </div>
-                                                    <div class="media-body">
-                                                        <div>At vero eos et accusamus et iusto odio dignissi</div>
-                                                    </div>
-                                                </div>
-                                            </li>
-                                            <li class="event-list">
-                                                <div class="event-timeline-dot">
-                                                    <i class="material-icons md-play_circle_outline font-xxl"></i>
-                                                </div>
-                                                <div class="media">
-                                                    <div class="me-3">
-                                                        <h6><span>26 Mar</span> <i class="material-icons md-trending_flat text-brand ml-15 d-inline-block"></i></h6>
-                                                    </div>
-                                                    <div class="media-body">
-                                                        <div>Responded to need “Volunteer Activities</div>
-                                                    </div>
-                                                </div>
-                                            </li>
-                                        </ul>
-                                    </article>
-                                </div>
-                            </div>
-                        </div> -->
-                    </div>
-                    <div class="col-xl-4 col-lg-12">
-                        <div class="card mb-4">
-                            <article class="card-body">
-                                <h5 class="card-title">Revenue Base on Area</h5>
-                                <canvas id="myChart2" height="217"></canvas>
-                            </article>
-                        </div>
-                        <!-- <div class="card mb-4">
-                            <article class="card-body">
-                                <h5 class="card-title">Marketing Chanel</h5>
-                                <span class="text-muted font-xs">Facebook</span>
-                                <div class="progress mb-3">
-                                    <div class="progress-bar" role="progressbar" style="width: 15%">15%</div>
-                                </div>
-                                <span class="text-muted font-xs">Instagram</span>
-                                <div class="progress mb-3">
-                                    <div class="progress-bar" role="progressbar" style="width: 65%">65%</div>
-                                </div>
-                                <span class="text-muted font-xs">Google</span>
-                                <div class="progress mb-3">
-                                    <div class="progress-bar" role="progressbar" style="width: 51%">51%</div>
-                                </div>
-                                <span class="text-muted font-xs">Twitter</span>
-                                <div class="progress mb-3">
-                                    <div class="progress-bar" role="progressbar" style="width: 80%">80%</div>
-                                </div>
-                                <span class="text-muted font-xs">Other</span>
-                                <div class="progress mb-3">
-                                    <div class="progress-bar" role="progressbar" style="width: 80%">80%</div>
-                                </div>
-                            </article>
-                        </div> -->
-                    </div>
+                <div class="summary-item">
+                    <span>shipping Charge:</span>
+                    <span>₹50</span>
                 </div>
-                <div class="card mb-4">
-                    <header class="card-header">
-                        <h4 class="card-title">Latest orders</h4>
-                        <div class="row align-items-center">
-                            <div class="col-md-3 col-12 me-auto mb-md-0 mb-3">
-                                <div class="custom_select">
-                                    <select class="form-select select-nice">
-                                        <option selected>All Categories</option>
-                                        <option>Women's Clothing</option>
-                                        <option>Men's Clothing</option>
-                                        <option>Cellphones</option>
-                                        <option>Computer & Office</option>
-                                        <option>Consumer Electronics</option>
-                                        <option>Jewelry & Accessories</option>
-                                        <option>Home & Garden</option>
-                                        <option>Luggage & Bags</option>
-                                        <option>Shoes</option>
-                                        <option>Mother & Kids</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="col-md-2 col-6">
-                                <input type="date" value="02.05.2021" class="form-control" />
-                            </div>
-                            <div class="col-md-2 col-6">
-                                <div class="custom_select">
-                                    <select class="form-select select-nice">
-                                        <option selected>Status</option>
-                                        <option>All</option>
-                                        <option>Paid</option>
-                                        <option>Chargeback</option>
-                                        <option>Refund</option>
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
-                    </header>
-                    <div class="card-body">
-                        <div class="table-responsive">
-                            <div class="table-responsive">
-                                <table class="table align-middle table-nowrap mb-0">
-                                    <thead class="table-light">
-                                        <tr>
-                                            <th scope="col" class="text-center">
-                                                <div class="form-check align-middle">
-                                                    <input class="form-check-input" type="checkbox" id="transactionCheck01" />
-                                                    <label class="form-check-label" for="transactionCheck01"></label>
-                                                </div>
-                                            </th>
-                                            <th class="align-middle" scope="col">Order ID</th>
-                                            <th class="align-middle" scope="col">Billing Name</th>
-                                            <th class="align-middle" scope="col">Date</th>
-                                            <th class="align-middle" scope="col">Total</th>
-                                            <th class="align-middle" scope="col">Payment Status</th>
-                                            <th class="align-middle" scope="col">Payment Method</th>
-                                            <th class="align-middle" scope="col">View Details</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr>
-                                            <td class="text-center">
-                                                <div class="form-check">
-                                                    <input class="form-check-input" type="checkbox" id="transactionCheck02" />
-                                                    <label class="form-check-label" for="transactionCheck02"></label>
-                                                </div>
-                                            </td>
-                                            <td><a href="#" class="fw-bold">#SK2540</a></td>
-                                            <td>Neal Matthews</td>
-                                            <td>07 Oct, 2021</td>
-                                            <td>$400</td>
-                                            <td>
-                                                <span class="badge badge-pill badge-soft-success">Paid</span>
-                                            </td>
-                                            <td><i class="material-icons md-payment font-xxl text-muted mr-5"></i> Mastercard</td>
-                                            <td>
-                                                <a href="#" class="btn btn-xs"> View details</a>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td class="text-center">
-                                                <div class="form-check">
-                                                    <input class="form-check-input" type="checkbox" id="transactionCheck03" />
-                                                    <label class="form-check-label" for="transactionCheck03"></label>
-                                                </div>
-                                            </td>
-                                            <td><a href="#" class="fw-bold">#SK2541</a></td>
-                                            <td>Jamal Burnett</td>
-                                            <td>07 Oct, 2021</td>
-                                            <td>$380</td>
-                                            <td>
-                                                <span class="badge badge-pill badge-soft-danger">Chargeback</span>
-                                            </td>
-                                            <td><i class="material-icons md-payment font-xxl text-muted mr-5"></i> Visa</td>
-                                            <td>
-                                                <a href="#" class="btn btn-xs"> View details</a>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td class="text-center">
-                                                <div class="form-check">
-                                                    <input class="form-check-input" type="checkbox" id="transactionCheck04" />
-                                                    <label class="form-check-label" for="transactionCheck04"></label>
-                                                </div>
-                                            </td>
-                                            <td><a href="#" class="fw-bold">#SK2542</a></td>
-                                            <td>Juan Mitchell</td>
-                                            <td>06 Oct, 2021</td>
-                                            <td>$384</td>
-                                            <td>
-                                                <span class="badge badge-pill badge-soft-success">Paid</span>
-                                            </td>
-                                            <td><i class="material-icons md-payment font-xxl text-muted mr-5"></i> Paypal</td>
-                                            <td>
-                                                <a href="#" class="btn btn-xs"> View details</a>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td class="text-center">
-                                                <div class="form-check">
-                                                    <input class="form-check-input" type="checkbox" id="transactionCheck05" />
-                                                    <label class="form-check-label" for="transactionCheck05"></label>
-                                                </div>
-                                            </td>
-                                            <td><a href="#" class="fw-bold">#SK2543</a></td>
-                                            <td>Barry Dick</td>
-                                            <td>05 Oct, 2021</td>
-                                            <td>$412</td>
-                                            <td>
-                                                <span class="badge badge-pill badge-soft-success">Paid</span>
-                                            </td>
-                                            <td><i class="material-icons md-payment font-xxl text-muted mr-5"></i> Mastercard</td>
-                                            <td>
-                                                <a href="#" class="btn btn-xs"> View details</a>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td class="text-center">
-                                                <div class="form-check">
-                                                    <input class="form-check-input" type="checkbox" id="transactionCheck06" />
-                                                    <label class="form-check-label" for="transactionCheck06"></label>
-                                                </div>
-                                            </td>
-                                            <td><a href="#" class="fw-bold">#SK2544</a></td>
-                                            <td>Ronald Taylor</td>
-                                            <td>04 Oct, 2021</td>
-                                            <td>$404</td>
-                                            <td>
-                                                <span class="badge badge-pill badge-soft-warning">Refund</span>
-                                            </td>
-                                            <td><i class="material-icons md-payment font-xxl text-muted mr-5"></i> Visa</td>
-                                            <td>
-                                                <a href="#" class="btn btn-xs"> View details</a>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td class="text-center">
-                                                <div class="form-check">
-                                                    <input class="form-check-input" type="checkbox" id="transactionCheck07" />
-                                                    <label class="form-check-label" for="transactionCheck07"></label>
-                                                </div>
-                                            </td>
-                                            <td><a href="#" class="fw-bold">#SK2545</a></td>
-                                            <td>Jacob Hunter</td>
-                                            <td>04 Oct, 2021</td>
-                                            <td>$392</td>
-                                            <td>
-                                                <span class="badge badge-pill badge-soft-success">Paid</span>
-                                            </td>
-                                            <td><i class="material-icons md-payment font-xxl text-muted mr-5"></i> Paypal</td>
-                                            <td>
-                                                <a href="#" class="btn btn-xs"> View details</a>
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                        <!-- table-responsive end// -->
+                <% if (order.appliedCoupon) { %>
+                    <div class="summary-item">
+                        <span>Coupon Discount (<%= order.appliedCoupon.code %>):</span>
+                        <span class="text-success">-₹<%= order.appliedCoupon.discountAmount.toFixed(2) %></span>
                     </div>
+                <% } %>
+                <div class="summary-item total">
+                    <span>Total Amount(include shipping):</span>
+                    <span>₹<%= order.totalPrice.toFixed(2) %></span>
                 </div>
-                <%- include('../layoutsAdmin/adminfooter') %>
-              
+            </div>
+        </div>
+    </div>
+</div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <%- include('../layoutsUser/userfooter') %>

@@ -39,6 +39,13 @@ const OrderSchema = new mongoose.Schema({
                 type: Number,
                 required: true
             },
+            highestDiscount: {
+                type: Number,
+                default: 0
+            },
+            offerPrice: {
+                type: Number,
+            },
             finalPrice: {
                 type: Number,
                 required: true
@@ -96,7 +103,7 @@ const OrderSchema = new mongoose.Schema({
     orderStatus: {
         type: String,
         required: true,
-        enum:['Processing','Shipped','Delivered','Cancelled','Return Request','Returned'],
+        enum:['Processing','Shipped','Delivered','Cancelled','Return Request','Returned','pending'],
         default: "Processing"
     },
     razorpayOrderId: {
@@ -104,6 +111,10 @@ const OrderSchema = new mongoose.Schema({
         required: function() {
             return this.paymentMethod === 'Razorpay';
         }
+    },
+    deliveryCharge: {
+        type: Number,
+        default: 50
     }
 },{timestamps:true});
 
