@@ -1,746 +1,828 @@
-//this is my order details page 
-<%- include('../layoutsUser/userheader') %>
-<style>
+//this is my admin controller page 
 
-body {
-    font-family: Arial, sans-serif;
-    background-color: #f8f9fa;
-}
+//admindashboard
+const loadDashboard = async (req, res) => {
+      try {
+         
+          res.render("dashboard");
+      } catch (error) {
+          res.redirect("/pageerror");
+      }
+  }
+  
+//orderlist
+const loadOrdersList = async (req, res) => {
+  try {
+      const { search = '', page = 1 } = req.query;
+      const limit = 5;
+      const skip = (page - 1) * limit;
 
-.order-detail-heading {
-    margin-top: 30px;
-    font-weight: bold;
-    font-size: 2.5rem; 
-    text-align: center; 
-}
+      const searchTerm = search.trim();
 
-.order-detail-date {
-    font-size: 0.9rem;
-    text-align: center; 
-}
+      const currentDate = new Date();
+      const offers = await Offer.find({
+          status: 'Active',
+          expireDate: { $gt: currentDate }
+      });
 
-.order-detail-section-title {
-    font-size: 1rem;
-    font-weight: bold;
-    color: #6c757d;
-    margin-top: 1rem;
-}
+      let orders = [];
+      let totalOrders = 0;
 
-.order-detail-container {
-    background-color: #ffffff;
-    padding: 20px;
-    border-radius: 5px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-}
+      if (searchTerm) {
+          const matchingUsers = await User.find({
+              name: { $regex: searchTerm, $options: 'i' }
+          }).select('_id');
 
-.order-detail-text {
-    margin: 0;
-    color: #333;
-}
+          const userIds = matchingUsers.map(user => user._id);
 
-.order-detail-section {
-    padding-top: 10px;
-}
+          const searchCriteria = {
+              $or: [
+                  { orderId: { $regex: searchTerm, $options: 'i' } },
+                  { paymentMethod: { $regex: searchTerm, $options: 'i' } },
+                  { paymentStatus: { $regex: searchTerm, $options: 'i' } },
+                  { orderStatus: { $regex: searchTerm, $options: 'i' } },
+                  { userId: { $in: userIds } }
+              ]
+          };
 
-.order-detail-table-responsive {
-    margin-top: 20px;
-}
+          totalOrders = await Order.countDocuments(searchCriteria);
 
-.order-detail-table {
-    background-color: #ffffff;
-}
+          orders = await Order.find(searchCriteria)
+              .sort({ createdAt: -1 })
+              .skip(skip)
+              .limit(limit)
+              .lean();
+      } else {
+          totalOrders = await Order.countDocuments();
+          orders = await Order.find()
+              .sort({ createdAt: -1 })
+              .skip(skip)
+              .limit(limit)
+              .lean();
+      }
 
-.order-detail-table-header {
-    background-color: #f1f1f1;
-    font-weight: bold;
-    text-align: center;
-}
+      const formattedOrders = await Promise.all(
+          orders.map(async (order) => {
+              const customerName = await getCustomerName(order.userId);
+              let subtotal = 0;
+              let activeItemsCount = 0;
 
-.order-detail-table-bordered th, .order-detail-table-bordered td {
-    border: 1px solid #dee2e6;
-    vertical-align: middle;
-    text-align: center;
-}
+              const itemsWithPricing = order.items.map(item => {
+                  if (item.itemStatus !== 'Cancelled') {
+                      activeItemsCount++;
+                      
+                      const productOffer = offers.find(offer =>
+                          (offer.productIds?.includes(item.productId)) ||
+                          (offer.categoryIds?.includes(item.category))
+                      );
 
-.order-detail-product-image {
-    max-width: 50px;
-    height: auto;
-}
+                      const priceAfterOffer = productOffer
+                          ? item.price * (1 - productOffer.discount / 100)
+                          : item.price;
 
-.order-detail-btn-cancel {
-    font-size: 1rem;
-   
-    color: #fff;
-    background-color: #dc3545;
-    border: none;
-}
+                      const finalItemPrice = item.finalPrice || priceAfterOffer;
+                      subtotal += finalItemPrice * item.quantity;
 
-.order-detail-btn-cancel:hover {
-    background-color: #c82333;
-}
+                      return {
+                          ...item,
+                          originalPrice: item.price,
+                          finalPrice: finalItemPrice,
+                          offerDiscount: productOffer ? productOffer.discount : 0
+                      };
+                  }
+                  return item;
+              });
 
-.order-detail-summary-title {
-    color: #495057;
-}
+              let finalTotal = subtotal;
+              let couponDiscount = 0;
+              if (order.appliedCoupon && activeItemsCount > 0) {
+                  couponDiscount = (subtotal / order.totalPrice) * order.appliedCoupon.discountAmount;
+                  finalTotal = subtotal - couponDiscount;
+              }
 
-.order-detail-summary-text {
-    font-size: 0.9rem;
-    color: #495057;
-}
-.modal-header {
-    background-color: #f8f9fa;
-    border-bottom: 1px solid #dee2e6;
-}
+              const highestDiscount = Math.max(
+                  ...itemsWithPricing
+                      .filter(item => item.offerDiscount)
+                      .map(item => item.offerDiscount),
+                  order.appliedCoupon ? (couponDiscount / subtotal * 100) : 0
+              );
 
-.modal-footer {
-    background-color: #f8f9fa;
-    border-top: 1px solid #dee2e6;
-}
+              const hasReturnRequest = order.items.some(item =>
+                  item.returnStatus &&
+                  ['Return Requested', 'Return Accepted'].includes(item.returnStatus)
+              );
 
-.form-label {
-    font-weight: 500;
-    color: #495057;
-}
+              return {
+                  _id: order._id,
+                  orderId: order.orderId,
+                  orderDate: new Date(order.createdAt).toLocaleDateString('en-GB'),
+                  customerName: customerName || "Unknown Customer",
+                  subtotal: subtotal.toFixed(2),
+                  couponDiscount: couponDiscount.toFixed(2),
+                  totalPrice: finalTotal.toFixed(2),
+                  originalPrice: order.totalPrice.toFixed(2),
+                  highestDiscount: highestDiscount.toFixed(1),
+                  appliedCoupon: order.appliedCoupon,
+                  paymentMethod: order.paymentMethod,
+                  orderStatus: order.orderStatus,
+                  paymentStatus: order.paymentStatus,
+                  hasReturnRequest: hasReturnRequest,
+                  returnItems: order.items.filter(item =>
+                      item.returnStatus &&
+                      ['Return Requested', 'Return Accepted'].includes(item.returnStatus)
+                  ).map(item => ({
+                      ...item,
+                      returnDisplayStatus: item.returnStatus === 'Return Accepted' ? 'Accepted' :
+                          item.returnStatus === 'Return Rejected' ? 'Rejected' :
+                              'Requested'
+                  }))
+              };
+          })
+      );
 
-.form-control:focus {
-    border-color: #80bdff;
-    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
-}
+      const pagination = {
+          totalPages: Math.ceil(totalOrders / limit),
+          currentPage: Number(page),
+          hasNextPage: Number(page) < Math.ceil(totalOrders / limit),
+          hasPrevPage: Number(page) > 1,
+          nextPage: Number(page) + 1,
+          prevPage: Number(page) - 1,
+          totalOrders: totalOrders,
+          ordersPerPage: limit,
+          startOrder: skip + 1,
+          endOrder: Math.min(skip + limit, totalOrders)
+      };
 
-.btn-danger {
-    background-color: #dc3545;
-}
+      res.render('orders', {
+          orders: formattedOrders,
+          pagination,
+          search: searchTerm
+      });
+  } catch (error) {
+      console.error('Error in loadOrdersList:', error);
+      res.status(500).render('error', {
+          message: 'An error occurred while fetching the orders list',
+          error: process.env.NODE_ENV === 'development' ? error : {}
+      });
+  }
+};
 
-.btn-danger:hover {
-    background-color: #c82333;
-}
+async function getCustomerName(userId) {
+  try {
+    const user = await User.findById(userId).select('name');
+    return user ? user.name:'Unknown Customer';
+  } catch (error) {
+    console.error('Error fetching customer name:', error);
+    return null;
+  }
+};
 
-.btn-loading {
-    position: relative;
-    pointer-events: none;
-    opacity: 0.65;
-}
 
-.btn-loading:after {
-    content: '';
-    width: 1rem;
-    height: 1rem;
-    margin-left: 0.5rem;
-    display: inline-block;
-    vertical-align: text-bottom;
-    border: 0.2em solid currentColor;
-    border-right-color: transparent;
-    border-radius: 50%;
-    animation: spinner-border .75s linear infinite;
-}
+//orderdetails page 
+const adminOrderDetails = async (req, res) => {
+  try {
+      const { orderId } = req.params;
+      
+      const currentDate = new Date();
+      const offers = await Offer.find({
+          status: 'Active',
+          expireDate: { $gt: currentDate }
+      });
 
-.original-price {
-    text-decoration: line-through;
-    color: #999;
-    margin-right: 8px;
-    font-size: 0.9em;
-}
+      const order = await Order.findOne({ orderId })
+          .populate({
+              path: 'items.productId',
+              model: 'Product',
+              populate: {
+                  path: 'category',
+                  model: 'Category',
+                  select: 'name'
+              },
+              select: 'productName category productImage isBlocked'
+          });
 
-.offer-price {
-    color: #000;
-    font-weight: bold;
-}
+      if (!order) {
+          return res.status(404).render('error', {
+              message: 'Order not found',
+              error: { status: 404 }
+          });
+      }
 
-.discount-badge {
-    background-color: #28a745;
-    color: white;
-    padding: 2px 6px;
-    border-radius: 3px;
-    font-size: 0.8em;
-    margin-left: 8px;
-}
+      const customer = await User.findById(order.userId).select('name email phone');
 
-.summary-item {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 8px;
-}
+      let activeSubtotal = 0;
+      let activeItemsCount = 0;
 
-.summary-item.total {
-    border-top: 1px solid #ddd;
-    margin-top: 12px;
-    padding-top: 12px;
-    font-weight: bold;
-}
-.original-price {
-    font-size: 0.9em;
-    color: #6c757d;
-}
+      const processedItems = order.items.map(item => {
+          const productOffer = offers.find(offer => 
+              (offer.productIds?.includes(item.productId?._id)) ||
+              (offer.categoryIds?.includes(item.productId?.category))
+          );
 
-.offer-price {
-    font-weight: bold;
-}
+          const highestDiscount = productOffer ? productOffer.discount : 0;
+          const offerPrice = productOffer 
+              ? item.price * (1 - productOffer.discount / 100)
+              : item.price;
+          
+          const itemFinalPrice = productOffer 
+              ? item.quantity * offerPrice 
+              : item.finalPrice;
 
-.discount-badge {
-    font-size: 0.8em;
-    padding: 2px 6px;
-}
-del {
-        text-decoration: line-through;
-    }
-    .badge {
-        font-size: 0.75rem;
-        padding: 0.25em 0.5em;
-    }
-    .retry-payment-btn {
-        background-color: #28a745;
-        color: white;
-        padding: 8px 16px;
-        border: none;
-        border-radius: 4px;
-        cursor: pointer;
-        font-size: 0.9em;
-        margin-top: 8px;
-        display: inline-block;
-        text-decoration: none;
-    }
-    
-    .retry-payment-btn:hover {
-        background-color: #218838;
-    }
+          if (item.itemStatus !== 'Cancelled') {
+              activeSubtotal += itemFinalPrice;
+              activeItemsCount++;
+          }
 
-</style>
-<h5 class="order-detail-heading">Order Details</h5>
-<div class="order-detail-container mt-5">
-    
-    <div class="row">
-        <div class="col-12">
-            
-            <p class="order-detail-date">Ordered on <%= order.orderDate %> | Order ID: <%= order.orderId %></p>
-        </div>
-    </div>
+          return {
+              productId: item.productId?._id || '',
+              productName: item.productId?.productName || 'Product Unavailable',
+              category: item.productId?.category?.name || 'Uncategorized',
+              image: item.productId?.productImage?.[0] 
+                  ? `/uploads/cropped/${item.productId.productImage[0]}` 
+                  : '/placeholder-image.jpg',
+              quantity: item.quantity,
+              price: item.price.toFixed(2),
+              offerPrice: offerPrice.toFixed(2),
+              highestDiscount,
+              finalPrice: itemFinalPrice.toFixed(2),
+              status: item.itemStatus,
+              isAvailable: !item.productId?.isBlocked
+          };
+      });
 
-    <div class="row">
-        <div class="col-md-4 order-detail-section">
-            <h6 class="order-detail-section-title">Shipping Address</h6>
-            <p class="order-detail-text">
-                <%= order.address.name %><br>
-                +91 <%= order.address.phone %><br>
-                <%= order.address.house %><br>
-                <%= order.address.district %><br>
-                <%= order.address.city %>, <%= order.address.state %> <%= order.address.pincode %>
-            </p>
-        </div>
-        <div class="col-md-4 order-detail-section">
-            <h6 class="order-detail-section-title">Payment Method</h6>
-            <p class="order-detail-text"><%= order.paymentMethod %></p>
-        </div>
-        <div class="col-md-4 order-detail-section">
-            <h6 class="order-detail-section-title">Payment Status</h6>
-            <p class="order-detail-text"><%= order.paymentStatus %></p>
-            <% if (order.paymentStatus === 'Failed' && order.paymentMethod === 'Razorpay') { %>
-                <button onclick="retryPayment('<%= order.orderId %>', '<%= order.totalPrice %>')" class="retry-payment-btn">
-                    Try Payment Again
-                </button>
-            <% } %>
-        </div>
-    </div>
-    
-    <div class="order-detail-table-responsive">
-        <table class="table order-detail-table order-detail-table-bordered">
-            <thead class="order-detail-table-header">
-                <tr>
-                    <th>Product Name</th>
-                    <th>Category</th>
-                    <th>Image</th>
-                    <th>Quantity</th>
-                    <th>Price</th>
-                    <th>
-                        Final Price <br>
-                        (include coupon)
-                    </th>
-                    <th>Order Status</th>
-                    <th>Action</th>
-                </tr>
-            </thead>
-            <tbody>
-                <% order.items.forEach(item => { %>
-                <tr>
-                    <td><%= item.productName %></td>
-                    <td><%= item.category.name %></td>
-                    <td><img src="/uploads/cropped/<%= item.image %>"  alt="<%= item.productName %>" class="order-detail-product-image"></td>
-                    <td><%= item.quantity %></td>
-                    <td>
-                        <% if (item.offerPrice && item.offerPrice < item.price) { %>
-                            <div>
-                                <del class="text-muted">₹<%= item.price.toFixed(2) %></del>
-                            </div>
-                            <div>
-                                <strong class="text-success">₹<%= Math.round(item.offerPrice).toFixed(2) %></strong>
-                                <small class="badge bg-success ms-1"><%= Math.round(((item.price - item.offerPrice) / item.price) * 100) %>% OFF</small>
-                            </div>
-                        <% } else { %>
-                            <div>₹<%= item.price.toFixed(2) %></div>
-                        <% } %>
-                    </td>
-                    <td>₹<%= Math.round(item.finalPrice.toFixed(2) )%></td>
-                    <td><%= item.itemStatus %></td>
-                    <td>
-                        <% if (item.itemStatus === 'Ordered') { %>
-                            <button class="btn btn-sm order-detail-btn-cancel" 
-                               onclick="cancelOrderItem('<%= order.orderId %>', '<%= item.productName %>')">
-                               ✖ Cancel
-                            </button>
-                        <% } else if (order.orderStatus === 'Delivered' && item.itemStatus !== 'Returned' && item.itemStatus !== 'Cancelled') { %>
-                            <% if (item.itemStatus === 'Delivered') { %>
-                                <button class="btn btn-sm order-detail-btn-return" 
-                                   onclick="returnOrderItem('<%= order.orderId %>', '<%= item.productName %>')">
-                                   ↩ Return
-                                </button>
-                            <% } else if (item.returnStatus === 'Return Requested') { %>
-                                <span class="text-warning">Return Requested</span>
-                            <% } else if (item.returnStatus === 'Return Accepted') { %>
-                                <span class="text-success">Return Accepted</span>
-                            <% } else if (item.returnStatus === 'Return Rejected') { %>
-                                <span class="text-danger">Return Rejected</span>
-                            <% } %>
-                        <% } else { %>
-                            <%= item.itemStatus %>
-                        <% } %>
-                    </td>
-                </tr>
-                <% }); %>
-            </tbody>
-        </table>
-    </div>
-    <div class="row mt-4">
-        <div class="col-md-6 offset-md-6">
-            <div class="order-detail-summary">
-                <h6 class="order-detail-summary-title">Order Summary</h6>
-                <div class="summary-item">
-                    <span>Original Total:</span>
-                    <span>₹<%= order.items.reduce((total, item) => 
-                        total + (item.itemStatus !== 'Cancelled' ? item.price * item.quantity : 0), 0).toFixed(2) %>
-                    </span>
-                </div>
-                <% if (order.items.some(item => item.highestDiscount > 0)) { %>
-                    <div class="summary-item">
-                        <span>Offer Discount:</span>
-                        <span class="text-success">-₹<%= order.items.reduce((total, item) => {
-                            if (item.itemStatus !== 'Cancelled' && item.highestDiscount > 0) {
-                                return total + ((item.price - item.offerPrice) * item.quantity);
-                            }
-                            return total;
-                        }, 0).toFixed(2) %></span>
-                    </div>
-                <% } %>
-                <div class="summary-item">
-                    <span>Subtotal:(include coupon)</span>
-                    <span>₹<%= order.items.reduce((total, item) => total + (item.itemStatus !== 'Cancelled' ? item.finalPrice : 0), 0).toFixed(2) %></span>
-                </div>
-                <div class="summary-item">
-                    <span>shipping Charge:</span>
-                    <span>₹50</span>
-                </div>
-                <% if (order.appliedCoupon) { %>
-                    <div class="summary-item">
-                        <span>Coupon Discount (<%= order.appliedCoupon.code %>):</span>
-                        <span class="text-success">-₹<%= order.appliedCoupon.discountAmount.toFixed(2) %></span>
-                    </div>
-                <% } %>
-                <div class="summary-item total">
-                    <span>Total Amount(include shipping):</span>
-                    <span>₹<%= order.totalPrice.toFixed(2) %></span>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-<div class="modal fade" id="cancelOrderModal" tabindex="-1" role="dialog" aria-labelledby="cancelOrderModalLabel" aria-hidden="true">
-    <div class="modal-dialog" role="dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="cancelOrderModalLabel">Cancel Order Item</h5>
-                <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-            <div class="modal-body">
-                <form id="cancelOrderForm">
-                    <div class="form-group mb-3">
-                        <label for="cancelReason" class="form-label">Reason for Cancellation</label>
-                        <select class="form-control" id="cancelReason" required>
-                            <option value="" disabled selected>Select a reason</option>
-                            <option value="Changed my mind">Changed my mind</option>
-                            <option value="Ordered wrong product">Ordered wrong product</option>
-                            <option value="Found better price elsewhere">Found better price elsewhere</option>
-                            <option value="Shipping time too long">Shipping time too long</option>
-                            <option value="Ordered by mistake">Ordered by mistake</option>
-                            <option value="Payment issues">Payment issues</option>
-                            <option value="Other">Other</option>
-                        </select>
-                    </div>
-                    <div class="form-group mb-3 d-none" id="otherReasonDiv">
-                        <label for="otherReason" class="form-label">Please specify other reason</label>
-                        <textarea class="form-control" id="otherReason" rows="3"></textarea>
-                    </div>
-                    <input type="hidden" id="cancelOrderId">
-                    <input type="hidden" id="cancelProductName">
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                <button type="button" class="btn btn-danger" id="confirmCancelOrder">Cancel Item</button>
-            </div>
-        </div>
-    </div>
-</div>
 
-<div class="modal fade" id="returnOrderModal" tabindex="-1" role="dialog" aria-labelledby="returnOrderModalLabel" aria-hidden="true">
-    <div class="modal-dialog" role="dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="returnOrderModalLabel">Return Order Item</h5>
-                <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-            <div class="modal-body">
-                <form id="returnOrderForm">
-                    <div class="form-group mb-3">
-                        <label for="returnReason" class="form-label">Reason for Return</label>
-                        <select class="form-control" id="returnReason" required>
-                            <option value="" disabled selected>Select a reason</option>
-                            <option value="Defective Product">Defective Product</option>
-                            <option value="Wrong Product">Wrong Product</option>
-                            <option value="Not Satisfied">Not Satisfied</option>
-                            <option value="Size/Fit Issues">Size/Fit Issues</option>
-                            <option value="Other">Other</option>
-                        </select>
-                    </div>
-                    <div class="form-group mb-3 d-none" id="otherReasonDiv">
-                        <label for="otherReason" class="form-label">Please specify other reason</label>
-                        <textarea class="form-control" id="otherReason" rows="3"></textarea>
-                    </div>
-                    <input type="hidden" id="returnOrderId">
-                    <input type="hidden" id="returnProductName">
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                <button type="button" class="btn btn-primary" id="confirmReturnOrder">Return Item</button>
-            </div>
-        </div>
-    </div>
-</div>
+      let finalTotal = activeSubtotal;
+      let appliedCouponInfo = null;
 
-    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+      if (order.appliedCoupon && activeItemsCount > 0) {
+          const proportionalDiscount = (activeSubtotal / order.totalPrice) * order.appliedCoupon.discountAmount;
+          finalTotal = activeSubtotal - proportionalDiscount;
 
-    <%- include('../layoutsUser/userfooter') %>
+          appliedCouponInfo = {
+              code: order.appliedCoupon.code,
+              originalDiscount: order.appliedCoupon.discountAmount,
+              appliedDiscount: proportionalDiscount.toFixed(2)
+          };
+      }
 
-<script>
+      const formattedOrder = {
+          orderId: order.orderId,
+          orderDate: new Date(order.createdAt).toLocaleDateString('en-GB'),
+          paymentMethod: order.paymentMethod,
+          paymentStatus: order.paymentStatus,
+          customer: {
+              name: customer?.name || 'Unknown Customer',
+              email: customer?.email || 'N/A',
+              phone: customer?.phone || 'N/A'
+          },
+          address: order.address,
+          items: processedItems,
+          subtotal: activeSubtotal.toFixed(2),
+          appliedCoupon: appliedCouponInfo,
+          finalTotal: finalTotal.toFixed(2)
+      };
 
-async function retryPayment(orderId, amount) {
+      res.render('adminOrderDetails', { order: formattedOrder });
+
+  } catch (error) {
+      console.error('Error in adminOrderDetails:', error);
+      res.status(500).render('error', {
+          message: 'An error occurred while fetching order details',
+          error: process.env.NODE_ENV === 'development' ? error : {}
+      });
+  }
+};
+
+//this is my admin category controller 
+const Category = require("../../models/categoryModel");
+
+
+const categoryInfo=async(req,res)=>{
     try {
-        const response = await fetch(`/create-razorpay-order`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                orderId: orderId,
-                amount: amount
-            })
-        });
-
-        const data = await response.json();
+        const page=parseInt(req.query.page) || 1;
+        const limit=4;
+        const skip=(page-1)*limit;
+         
         
-        if (!data.success) {
-            throw new Error(data.message);
-        }
+        const categoryData=await Category.find({})
+        .sort({createdAt:-1})
+        .skip(skip)
+        .limit(limit);
 
-        const options = {
-            key: data.key,
-            amount: data.amount,
-            currency: data.currency,
-            name: "Your Store Name",
-            description: "Order Payment",
-            order_id: data.orderId,
-            handler: async function (response) {
-                try {
-                    const verifyResponse = await fetch('/verify-razorpay-payment', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            razorpay_order_id: response.razorpay_order_id,
-                            razorpay_payment_id: response.razorpay_payment_id,
-                            razorpay_signature: response.razorpay_signature
-                        })
-                    });
+        const totalCategories=await Category.countDocuments();
 
-                    const verifyData = await verifyResponse.json();
-
-                    if (verifyData.success) {
-                        Swal.fire({
-                            icon: 'success',
-                            title: 'Payment Successful',
-                            text: 'Your payment has been processed successfully!',
-                            showConfirmButton: false,
-                            timer: 1500
-                        }).then(() => {
-                            window.location.reload();
-                        });
-                    } else {
-                        throw new Error(verifyData.message);
-                    }
-                } catch (error) {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Payment Verification Failed',
-                        text: error.message || 'Failed to verify payment'
-                    });
-                }
-            },
-            prefill: {
-                name: "<%= order.address.name %>",
-                contact: "<%= order.address.phone %>"
-            },
-            theme: {
-                color: "#3399cc"
-            }
-        };
-
-        const rzp = new Razorpay(options);
-        rzp.open();
-
-        rzp.on('payment.failed', function (response) {
-            Swal.fire({
-                icon: 'error',
-                title: 'Payment Failed',
-                text: 'The payment process failed. Please try again.'
-            });
-        });
-
+        const totalPages=Math.ceil(totalCategories / limit);
+        res.render("category",{
+            cat:categoryData,
+            currentPage:page,
+            totalPages:totalPages,
+            totalCategories:totalCategories
+        })
+           
     } catch (error) {
-        Swal.fire({
-            icon: 'error',
-            title: 'Error',
-            text: error.message || 'Failed to initiate payment'
-        });
+        console.error(error);
+        res.status(500).render("error", { message: "Internal Server Error" });          
     }
 }
 
-document.getElementById('cancelReason').addEventListener('change', function() {
-    const otherReasonDiv = document.getElementById('otherReasonDiv');
-    if (this.value === 'Other') {
-        otherReasonDiv.classList.remove('d-none');
-    } else {
-        otherReasonDiv.classList.add('d-none');
-    }
-});
-
-
-function cancelOrderItem(orderId, productName) {
-    document.getElementById('cancelOrderId').value = orderId;
-    document.getElementById('cancelProductName').value = productName;
-    
-    document.getElementById('cancelReason').value = '';
-    document.getElementById('otherReason').value = '';
-    document.getElementById('otherReasonDiv').classList.add('d-none');
-
-    const modal = new bootstrap.Modal(document.getElementById('cancelOrderModal'));
-    modal.show();
-}
-
-
-document.getElementById('confirmCancelOrder').addEventListener('click', async function() {
-    const button = this;
-    const orderId = document.getElementById('cancelOrderId').value;
-    const productName = document.getElementById('cancelProductName').value;
-    const reasonSelect = document.getElementById('cancelReason');
-    
-    if (!reasonSelect.value) {
-        Swal.fire({
-            icon: 'warning',
-            title: 'Required',
-            text: 'Please select a reason for cancellation'
-        });
-        return;
-    }
-    
-    const reason = reasonSelect.value === 'Other' 
-        ? document.getElementById('otherReason').value.trim()
-        : reasonSelect.value;
-        
-    if (reasonSelect.value === 'Other' && !reason) {
-        Swal.fire({
-            icon: 'warning',
-            title: 'Required',
-            text: 'Please specify the other reason'
-        });
-        return;
-    }
-
+//category add
+const addCategory=async(req,res)=>{
+    const {name,description}=req.body;
     try {
+        const normalizedName=name.trim().toLowerCase();
+        const existingCategory=await Category.findOne({ name: { $regex: new RegExp(`^${normalizedName}$`, 'i') } });
+
+        if(existingCategory)
+        {
+            return res.status(400).json({error:"category already exist"})
+        }
+     
+        const newCategory=new Category({
+            name:normalizedName,
+            description,
+        })
+
+        await newCategory.save();
+        return res.json({message:"Category Added Successfully"})
+        
+    } catch (error) {
+        console.error(error);
+        
+        return res.status(500).json({error:"Internal server error"})
+    }
+}
+
+//list category
+const listCategory=async(req,res)=>{
+    try {
+        let id=req.query.id;
+        const result=await Category.updateOne({ _id: id }, { $set: { isListed: false } });
+
+        if(!result){
+            return res.json({message:"Category not found or already unlisted"})
+        }
+        res.json({message:"Product unlisted successfully"})
+    } catch (error) {
+        console.error(error);
+        res.json({message:"Filed to unlist the product"})
+    }
+}
+
+
+//unlist category
+const unListCategory=async(req,res)=>{
+    try {
+        let id=req.query.id;
+        const result=await Category.updateOne({ _id: id }, { $set: { isListed: true } }); 
+
+        if(!result){
+            return res.json({message:"Category not found or already listed"})
+        }
+        res.json({message:"Product listed successfully"})
+    } catch (error) {
+        console.error(error);
+        res.json({message:"Filed to list the product"})
+    }
+}
+
+//get edit category
+const getEditCategory=async(req,res)=>{
+    try {
+        const id=req.query.id;
+        const category=await Category.findOne({_id:id});
+    res.render("editcategory", { category: category });
+    } catch (error) {
+        res.redirect("/pageerror");
+    }
+}
+
+//category edit post
+const editCategory=async(req,res)=>{
+    try {
+         const id=req.params.id;
+         const {categoryName,description}=req.body;
+        const normalizedName = categoryName.trim()
+
+        const existingCategory = await Category.findOne({
+            _id: { $ne: id },
+            name: { $regex: new RegExp(`^${normalizedName}$`, 'i') }
+          });
+
+         if(existingCategory){
+            return res.status(400).json({error:"Category exists,please choose another name"})
+         }
+
+         const updateCategory=await Category.findByIdAndUpdate(id,{
+            name:normalizedName,
+            description:description,
+         },{new:true})
+         
+         if(updateCategory)
+         {
+            res.status(200).json({success:true})
+         }
+         else
+         {
+            res.status(404).json({error:"Category not found"})
+         }
+    } catch (error) {
+        res.status(500).json({error:"Internal server error"})
+    }
+}
+
+module.exports={
+    categoryInfo,
+    addCategory,
+    listCategory,
+    unListCategory,
+    getEditCategory,
+    editCategory,
+}
+//this is customer controller 
+const User = require("../../models/userModel");
+
+const customerInfo=async(req,res)=>{
+    try {
+        let search="";
+        if(req.query.search)
+            {
+                search=req.query.search
+            }  
+         let page=1;
+         if(req.query.page)
+         {
+            page=req.query.page
+         }
+        
+         const limit=5
+         
+         const userData=await User.find({
+            is_admin:false,
+            $or:[
+                {name:{$regex:".*"+search+".*",$options:"i"}}, 
+                {email:{$regex:".*"+search+".*",$options:"i"}},
+                {mobile:{$regex:".*"+search+".*", $options:'i'}},
+            ],
+         })
+
+         .limit(limit*1)
+         .skip((page-1)*limit)
+         .exec();
+
+         const count=await User.find({
+            is_admin:false,
+            $or:[
+                {name:{$regex:".*"+search+".*",$options:"i"}},
+                {email:{$regex:".*"+search+".*",$options:"i"}},
+                {mobile:{$regex:".*"+search+".*", $options:'i'}},
+            ],
+         }).countDocuments();
+
+         const totalPages = Math.ceil(count / limit);
+     
+         res.render("customer", {
+            data: userData,
+            totalPages: totalPages,
+            currentPage: page,
+            search:search
+         });
+    } catch (error) {
+        console.error(error); 
+        res.status(500).send("Internal Server Error");
+    }
+}
+
+//customer blocked
+const customerBlocked=async(req,res)=>{
+    try {
+        let id = req.query.id;
+        const result=await User.updateOne({ _id: id }, { $set: { is_blocked: true } });
+
+        if (!result) {
+           
+            return res.json({ message: "Product not found or already blocked." });
+        }
+        res.json({ message: "User has been blocked successfully." }); 
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Internal Server Error" });
+    }
+}
+
+//customer unblocked
+const customerunBlocked=async(req,res)=>{
+    try {
+        let id = req.query.id;
+        const result=await User.updateOne({ _id: id }, { $set: { is_blocked: false } });
+        if (!result) {
+           
+            return res.json({ message: "Product not found or already unblocked." });
+        }
+        res.json({ message: "User has been unblocked successfully." }); 
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Internal Server Error" }); 
+    }
+}
+
+
+
+module.exports={
+    customerInfo,
+    customerBlocked,
+    customerunBlocked,
+}
+
+//this is product controller 
+const Product = require("../../models/productModel");
+const User = require("../../models/userModel");
+const Category = require("../../models/categoryModel");
+const fs=require("fs")
+const path=require("path")
+const sharp=require("sharp")
+
+
+
+const getProductAddPage=async(req,res)=>{
+    try {
+        const category=await Category.find({isListed:true})
+        res.render("productadd",{
+            category,
+        })
+    } catch (error) {
        
-        button.classList.add('btn-loading');
-        button.disabled = true;
-
-        const response = await fetch(`/orderDetails/${orderId}/cancel-item`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                productName: productName,
-                reason: reason
-            })
-        });
-
-        const data = await response.json();
-        
-        
-        button.classList.remove('btn-loading');
-        button.disabled = false;
-        
-        if (data.success) {
-            const orderSummaryElement = document.querySelector('.order-detail-summary-text');
-            if (orderSummaryElement && data.updatedTotalPrice !== undefined) {
-                orderSummaryElement.textContent = `Total Amount: ₹${data.updatedTotalPrice.toFixed(2)}`;
-            }
-            
-            Swal.fire({
-                icon: 'success',
-                title: 'Success',
-                text: 'Order item cancelled successfully',
-                showConfirmButton: false,
-                timer: 1500
-            }).then(() => {
-                location.reload();
-            });
-        } else {
-            Swal.fire({
-                icon: 'error',
-                title: 'Error',
-                text: data.message || 'Failed to cancel order item'
-            });
-        }
-    } catch (error) {
-        button.classList.remove('btn-loading');
-        button.disabled = false;
-        
-        console.error('Error cancelling order item:', error);
-        Swal.fire({
-            icon: 'error',
-            title: 'Error',
-            text: 'An error occurred while cancelling the order item'
-        });
+        res.redirect("/pageerror")
     }
-});
-
-document.addEventListener('DOMContentLoaded', function() {
-    if (!document.getElementById('cancelOrderModal')) {
-        console.error('Cancel order modal element not found');
-    }
-});
-
-document.getElementById('returnReason').addEventListener('change', function() {
-    const otherReasonDiv = document.getElementById('otherReasonDiv');
-    if (this.value === 'Other') {
-        otherReasonDiv.classList.remove('d-none');
-    } else {
-        otherReasonDiv.classList.add('d-none');
-    }
-});
-
-function returnOrderItem(orderId, productName) {
-    document.getElementById('returnOrderId').value = orderId;
-    document.getElementById('returnProductName').value = productName;
-    
-    document.getElementById('returnReason').value = '';
-    document.getElementById('otherReason').value = '';
-    document.getElementById('otherReasonDiv').classList.add('d-none');
-
-    const modal = new bootstrap.Modal(document.getElementById('returnOrderModal'));
-    modal.show();
 }
 
-document.getElementById('confirmReturnOrder').addEventListener('click', async function() {
-    const button = this;
-    const orderId = document.getElementById('returnOrderId').value;
-    const productName = document.getElementById('returnProductName').value;
-    const reasonSelect = document.getElementById('returnReason');
-    
-    if (!reasonSelect.value) {
-        Swal.fire({
-            icon: 'warning',
-            title: 'Required',
-            text: 'Please select a reason for return'
-        });
-        return;
-    }
-    
-    const reason = reasonSelect.value === 'Other' 
-        ? document.getElementById('otherReason').value.trim()
-        : reasonSelect.value;
-        
-    if (reasonSelect.value === 'Other' && !reason) {
-        Swal.fire({
-            icon: 'warning',
-            title: 'Required',
-            text: 'Please specify the other reason'
-        });
-        return;
-    }
-
+const addProducts = async (req, res) => {
     try {
-        button.classList.add('btn-loading');
-        button.disabled = true;
+        const products = req.body;
 
-        const response = await fetch(`/orderDetails/${orderId}/return-item`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                productName: productName,
-                reason: reason
-            })
+        const productExists = await Product.findOne({
+            productName: products.productName,
         });
+            
+        if (!productExists) {
+            const images = [];
+            if (req.files && req.files.length > 0) {
+                const uploadsDir = path.join(__dirname, '..', '..', 'public', 'uploads');
+                const croppedDir = path.join(__dirname, '..', '..', 'public', 'uploads', 'cropped');
+                
+                if (!fs.existsSync(uploadsDir)) {
+                    fs.mkdirSync(uploadsDir, { recursive: true });
+                }
+                if (!fs.existsSync(croppedDir)) {
+                    fs.mkdirSync(croppedDir, { recursive: true });
+                }
 
-        const data = await response.json();
-        
-        button.classList.remove('btn-loading');
-        button.disabled = false;
-        
-        if (data.success) {
-            Swal.fire({
-                icon: 'success',
-                title: 'Return Requested',
-                text: 'Your return request has been submitted. Our team will review it soon.',
-                showConfirmButton: false,
-                timer: 2500
-            }).then(() => {
-                location.reload();
+                for (const file of req.files) {
+                    try {
+                        
+                        const originalImagePath = path.join(uploadsDir, file.filename);
+                        const resizedImagePath = path.join(croppedDir, file.filename);
+                        
+                        if (!fs.existsSync(originalImagePath)) {
+                            console.error('Original image not found:', originalImagePath);
+                            continue;
+                        }
+
+                        await sharp(file.path)
+                            .resize(440, 440, {
+                                fit: 'cover',
+                                position: 'center'
+                            })
+                            .toFile(resizedImagePath);
+
+                        images.push(file.filename);
+                        
+                        fs.unlink(file.path, (err) => {
+                            if (err) console.error('Error deleting original file:', err);
+                        });
+                    } catch (err) {
+                        console.error('Error processing image:', err);
+                        continue;
+                    }
+                }
+            }
+
+            const categoryId = await Category.findOne({_id: products.category});
+            
+            if (!categoryId) {
+                return res.status(400).json({ message: "Invalid category name" });
+            }
+
+            const newProduct = new Product({
+                productName: products.productName,
+                description: products.description,
+                category: categoryId._id,
+                regularPrice: products.regularPrice,
+                createdOn: new Date(),
+                quantity: products.quantity,
+                productImage: images,
+                status: 'Available',
             });
+
+            await newProduct.save();
+            return res.redirect("/admin/Products");
         } else {
-            Swal.fire({
-                icon: 'error',
-                title: 'Error',
-                text: data.message || 'Failed to submit return request'
-            });
+            return res.status(400).json({ message: "Product already exists, please try with another name" });
         }
     } catch (error) {
-        button.classList.remove('btn-loading');
-        button.disabled = false;
-        
-        console.error('Error submitting return request:', error);
-        Swal.fire({
-            icon: 'error',
-            title: 'Error',
-            text: 'An error occurred while submitting the return request'
-        });
+        console.error("Error saving product:", error);
+        return res.redirect("/admin/pageerror");
     }
-});
+};
 
-</script>
-//this is my order controler 
+//product list page
+const getAllProducts=async(req,res)=>{
+    try {
+        const search=req.query.search || "";
+        const page=parseInt(req.query.page) || 1;
+        const limit=4;
+        const skip=(page-1)*limit
+
+        const productData=await Product.find({
+            
+            $or:[
+                {productName:{$regex:new RegExp(".*"+search+".*","i")}},
+            ],
+        }).skip(skip).limit(limit).populate("category").exec()
+
+
+        const count=await Product.find({
+            $or:[
+                {productName:{$regex:new RegExp(".*"+search+".*","i")}},
+            ],
+        }).countDocuments();
+
+        const category=await Category.find({isListed:true});
+
+        if(category)
+        {
+            res.render("products",{
+                data:productData,
+                currentPage:page,
+                totalPages:Math.ceil(count/limit),
+                cat:category,
+                search: search,
+            })
+        }
+        else{
+            res.render("page-404");
+        }
+    } catch (error) {
+        console.error(error);
+        res.redirect("/pageerror")
+    }
+}
+
+
+//block properties
+const blockProduct=async(req,res)=>{
+    try {
+        let id=req.query.id;
+        const result = await Product.updateOne({ _id: id }, { $set: { isBlocked: true } });
+        
+        if (!result) {
+           
+            return res.json({ message: "Product not found or already blocked." });
+        }
+        res.json({ message: "Product blocked successfully" });
+    } catch (error) {
+        console.error(error); 
+        res.json({ message: "Failed to block the product" });
+    }
+}
+
+//unblock category
+const unblockProduct = async (req, res) => {
+    try {
+        let id=req.query.id;
+        const result = await Product.updateOne({ _id: id }, { $set: { isBlocked: false } });
+        
+        if (!result) {
+           
+            return res.json({ message: "Product not found or already unblocked." });
+        }
+        res.json({ message: "Product unblocked successfully" });
+    } catch (error) {
+        console.error(error);
+        res.json({ message: "Failed to unblock the product" });
+    }
+}
+
+//edit product
+const getEditProduct=async(req,res)=>{
+    try {
+        const id=req.query.id;
+        const product=await Product.findOne({_id:id});
+        const category=await Category.find({})
+
+        res.render("editproduct",{
+            product:product,
+            cat:category,
+        })
+        
+    } catch (error) {
+      console.error('Error in getEditProduct:', error);
+        res.redirect("/pageerror");
+    }
+}
+
+//edit product
+const editProduct = async (req, res) => {
+    try {
+        const id = req.params.id;
+        const product = await Product.findById(id);
+        const data = req.body;
+
+        if (!product) {
+            return res.status(404).json({ error: "Product not found" });
+        }
+
+        const existingProduct = await Product.findOne({
+            productName: data.productName,
+            _id: { $ne: id }
+        });
+
+        if (existingProduct) {
+            return res.status(400).json({ error: "Product name already exists" });
+        }
+
+        const deletedImages = JSON.parse(data.deletedImages || '[]');
+        let currentImages = product.productImage.filter(img => !deletedImages.includes(img));
+
+        for (const filename of deletedImages) {
+            const imagePath = path.join(__dirname, '..', '..', 'public', 'uploads', 'cropped', filename);
+            try {
+                if (fs.existsSync(imagePath)) {
+                    fs.unlinkSync(imagePath);
+                }
+            } catch (err) {
+                console.error('Error deleting image file:', err);
+            }
+        }
+
+        if (req.files && req.files.length > 0) {
+            const uploadsDir = path.join(__dirname, '..', '..', 'public', 'uploads');
+            const croppedDir = path.join(__dirname, '..', '..', 'public', 'uploads', 'cropped');
+            
+            fs.mkdirSync(uploadsDir, { recursive: true });
+            fs.mkdirSync(croppedDir, { recursive: true });
+
+            for (const file of req.files) {
+                try {
+                    const resizedImagePath = path.join(croppedDir, file.filename);
+                    
+                    await sharp(file.path)
+                        .resize(440, 440, {
+                            fit: 'cover',
+                            position: 'center'
+                        })
+                        .toFile(resizedImagePath);
+
+                    currentImages.push(file.filename);
+                    
+                    fs.unlinkSync(file.path);
+                } catch (err) {
+                    console.error('Error processing new image:', err);
+                }
+            }
+        }
+
+        const updatedProduct = await Product.findByIdAndUpdate(
+            id,
+            {
+                productName: data.productName,
+                description: data.description,
+                regularPrice: data.regularPrice,
+                quantity: data.quantity,
+                category: data.category,
+                productImage: currentImages,
+                updatedAt: new Date()
+            },
+            { new: true }
+        );
+
+        if (!updatedProduct) {
+            return res.status(404).json({ error: "Failed to update product" });
+        }
+
+        res.redirect("/admin/products");
+
+    } catch (error) {
+        console.error('Error in editProduct:', error);
+        res.status(500).redirect("/pageerror");
+    }
+};
+
+module.exports={
+    getProductAddPage,
+    addProducts,
+    getAllProducts,
+    blockProduct,
+    unblockProduct,
+    getEditProduct,
+    editProduct,
+}

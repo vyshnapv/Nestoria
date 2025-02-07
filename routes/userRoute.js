@@ -82,6 +82,7 @@ user_route.get("/viewOrders", userAuth,orderController.getViewOrders)
 user_route.get("/orderDetails/:orderId", userAuth,orderController.getOrderDetails)
 user_route.post('/orderDetails/:orderId/cancel-item', userAuth, orderController.cancelOrderItem);
 user_route.post('/orderDetails/:orderId/return-item', userAuth, orderController.returnOrderItem);
+user_route.get('/order/:orderId/download-pdf', userAuth,orderController.generateOrderSummaryPDF);
 
 //wishlist
 user_route.get("/wishlist",wishlistController.wishlist);

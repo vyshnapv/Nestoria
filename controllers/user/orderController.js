@@ -9,6 +9,9 @@ const Category = require("../../models/categoryModel");
 const Coupon=require("../../models/couponModel")
 const Wallet=require("../../models/walletModel")
 const {addToWallet}=require("../../controllers/user/walletController")
+const PDFDocument = require('pdfkit');
+const fs = require('fs');
+const path = require('path');
 
 const Razorpay = require('razorpay');
 const crypto = require('crypto');
@@ -885,6 +888,203 @@ const returnOrderItem = async (req, res) => {
     }
 };
 
+//download order summary
+const generateOrderSummaryPDF = async (req, res) => {
+    try {
+        const { orderId } = req.params;
+        const order = await Order.findOne({ orderId }).populate({
+            path: 'items.productId',
+            model: 'Product',
+            populate: {
+                path: 'category',
+                model: 'Category',
+                select: 'name'
+            }
+        });
+
+        if (!order) {
+            return res.status(404).json({ success: false, message: 'Order not found' });
+        }
+
+        const doc = new PDFDocument({
+            margin: 30,
+            size: 'A4'
+        });
+
+        const filename = `order-summary-${orderId}.pdf`;
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename=${filename}`);
+        doc.pipe(res);
+
+        // Helper function to draw a box
+        const drawBox = (title, startY, height) => {
+            const boxPadding = 5;
+            const pageWidth = doc.page.width - 60; // 30px margin on each side
+            
+            // Draw box
+            doc.rect(30, startY, pageWidth, height)
+               .stroke('#000000');
+            
+            // Draw title background
+            doc.fill('#f0f0f0')
+               .rect(30, startY, pageWidth, 20)
+               .fill();
+            
+            // Draw title
+            doc.fill('#000000')
+               .fontSize(12)
+               .font('Helvetica-Bold')
+               .text(title, 35, startY + 4, {
+                   width: pageWidth - 10,
+                   align: 'left'
+               });
+
+            return startY + 20 + boxPadding;
+        };
+
+        // Store Header
+        doc.fontSize(18)
+           .font('Helvetica-Bold')
+           .text('NESTORIA', { align: 'center' })
+
+        // First row: Payment Details and Order Details side by side
+        let currentY = 50;
+        let leftBoxWidth = (doc.page.width - 70) / 2;
+
+        // Payment Details Box (Left)
+        doc.rect(30, currentY, leftBoxWidth, 70).stroke();
+        doc.fill('#f0f0f0')
+           .rect(30, currentY, leftBoxWidth, 20)
+           .fill();
+        doc.fill('#000000')
+           .fontSize(12)
+           .font('Helvetica-Bold')
+           .text('Payment Details', 35, currentY + 4);
+        
+        doc.font('Helvetica')
+           .fontSize(10)
+           .text(`Payment Method: ${order.paymentMethod}`, 35, currentY + 25)
+           .text(`Payment Status: ${order.paymentStatus}`, 35, currentY + 40);
+
+        // Order Details Box (Right)
+        doc.rect(leftBoxWidth + 40, currentY, leftBoxWidth, 70).stroke();
+        doc.fill('#f0f0f0')
+           .rect(leftBoxWidth + 40, currentY, leftBoxWidth, 20)
+           .fill();
+        doc.fill('#000000')
+           .fontSize(12)
+           .font('Helvetica-Bold')
+           .text('Order Details', leftBoxWidth + 45, currentY + 4);
+        
+        doc.font('Helvetica')
+           .fontSize(10)
+           .text(`Order ID: ${order.orderId}`, leftBoxWidth + 45, currentY + 25)
+           .text(`Order Date: ${new Date(order.createdAt).toLocaleDateString()}`, leftBoxWidth + 45, currentY + 40);
+
+        // Shipping Information Box
+        currentY = 130;
+        contentY = drawBox('Shipping Information', currentY, 85);
+        
+        doc.font('Helvetica')
+           .fontSize(10)
+           .text(`Name: ${order.address.name}`, 35, contentY)
+           .text(`Phone: ${order.address.phone}`, 35, contentY + 15)
+           .text(`Address: ${order.address.house}, ${order.address.district}`, 35, contentY + 30)
+           .text(`${order.address.city}, ${order.address.state} - ${order.address.pincode}`, 35, contentY + 45);
+
+        // Product Details Box
+        currentY = 225;
+        contentY = drawBox('Product Details', currentY, 200);
+
+        // Product table headers
+        doc.font('Helvetica-Bold')
+           .fontSize(10)
+           .text('Image', 35, contentY, { width: 60 })
+           .text('Product', 100, contentY, { width: 180 })
+           .text('Category', 280, contentY, { width: 100 })
+           .text('Qty', 380, contentY, { width: 40 })
+           .text('Price', 420, contentY, { width: 70 });
+
+        let productY = contentY + 15;
+        const imageSize = 40;
+
+        // Process each product
+        for (const item of order.items) {
+            if (productY > 380) { // Check if we need a new page
+                doc.addPage();
+                currentY = 30;
+                contentY = drawBox('Product Details (Continued)', currentY, 200);
+                productY = contentY + 15;
+            }
+
+            try {
+                const imagePath = path.join(__dirname, '..', 'public', 'uploads', 'cropped', item.productId.productImage[0]);
+                if (fs.existsSync(imagePath)) {
+                    doc.image(imagePath, 35, productY, {
+                        fit: [imageSize, imageSize],
+                        align: 'center',
+                        valign: 'center'
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading product image:', error);
+            }
+
+            doc.font('Helvetica')
+               .fontSize(10)
+               .text(item.productName, 100, productY + 10, { width: 180 })
+               .text(item.productId.category.name, 280, productY + 10, { width: 100 })
+               .text(item.quantity.toString(), 380, productY + 10, { width: 40 })
+               .text(`₹${item.finalPrice.toFixed(2)}`, 420, productY + 10, { width: 70 });
+
+            productY += 45;
+        }
+
+        // Order Summary Box
+        currentY = productY + 20;
+        contentY = drawBox('Order Summary', currentY, 100);
+
+        const subtotal = order.items.reduce((sum, item) => sum + item.finalPrice, 0);
+        
+        // Right-aligned summary details
+        doc.font('Helvetica')
+           .fontSize(10);
+
+        let summaryY = contentY + 5;
+        doc.text('Subtotal:', 35, summaryY)
+           .text(`₹${subtotal.toFixed(2)}`, 420, summaryY, { width: 70, align: 'right' });
+
+        summaryY += 15;
+        doc.text('Shipping Charge:', 35, summaryY)
+           .text('₹50.00', 420, summaryY, { width: 70, align: 'right' });
+
+        if (order.appliedCoupon) {
+            summaryY += 15;
+            doc.text(`Coupon Discount (${order.appliedCoupon.code}):`, 35, summaryY)
+               .text(`-₹${order.appliedCoupon.discountAmount.toFixed(2)}`, 420, summaryY, { width: 70, align: 'right' });
+        }
+
+        summaryY += 20;
+        doc.font('Helvetica-Bold')
+           .text('Total Amount:', 35, summaryY)
+           .text(`₹${order.totalPrice.toFixed(2)}`, 420, summaryY, { width: 70, align: 'right' });
+
+        // Footer
+        doc.font('Helvetica')
+           .fontSize(9)
+           .text('Thank you for shopping with us!', 0, doc.page.height - 50, {
+               align: 'center',
+               width: doc.page.width
+           });
+
+        doc.end();
+
+    } catch (error) {
+        console.error('Error generating PDF:', error);
+        res.status(500).json({ success: false, message: 'Error generating PDF' });
+    }
+};
+
 module.exports={
     createOrder,
     verifyRazorpayPayment,
@@ -894,4 +1094,5 @@ module.exports={
     getOrderDetails,
     cancelOrderItem,
     returnOrderItem,
+    generateOrderSummaryPDF
 }

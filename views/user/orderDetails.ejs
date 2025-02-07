@@ -202,7 +202,7 @@ del {
     .retry-payment-btn:hover {
         background-color: #218838;
     }
-
+   
 </style>
 <h5 class="order-detail-heading">Order Details</h5>
 <div class="order-detail-container mt-5">
@@ -238,6 +238,7 @@ del {
                 </button>
             <% } %>
         </div>
+        
     </div>
     
     <div class="order-detail-table-responsive">
@@ -345,6 +346,14 @@ del {
                 <div class="summary-item total">
                     <span>Total Amount(include shipping):</span>
                     <span>₹<%= order.totalPrice.toFixed(2) %></span>
+                </div>
+                <div class="text-center">
+                    <% if (order.orderStatus === 'Delivered' && order.paymentStatus === 'Paid') { %>
+                        <a href="/order/<%= order.orderId %>/download-pdf" 
+                           class="btn btn-primary">
+                            <i class="fas fa-download"></i> Download Order Summary
+                        </a>
+                    <% } %>
                 </div>
             </div>
         </div>
