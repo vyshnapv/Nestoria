@@ -129,7 +129,7 @@
                     <div class="col-md-8 col-lg-9">
                         <div class="wallet-box">
                             <h3>Current Balance</h3>
-                            <h2>₹<%= wallet.balance.toFixed(2) %></h2>
+                            <h2>₹<%= Math.round(wallet.balance).toFixed(2) %></h2>
                         </div>
 
                         <div class="wallet-transactions">
@@ -169,7 +169,7 @@
                                                         </span>
                                                     </td>
                                                     <td class="<%= transaction.type === 'credit' ? 'text-success' : 'text-danger' %>">
-                                                        <%= transaction.type === 'credit' ? '+' : '-' %>₹<%= transaction.amount.toFixed(2) %>
+                                                        <%= transaction.type === 'credit' ? '+' : '-' %>₹<%= Math.round(transaction.amount).toFixed(2) %>
                                                     </td>
                                                     <td>₹<%= transaction.balance.toFixed(2) %></td>
                                                 </tr>

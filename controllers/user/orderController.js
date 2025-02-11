@@ -441,10 +441,10 @@ const getViewOrders = async (req, res) => {
         const page = parseInt(req.query.page) || 1;
         const limit = 5;
         const skip = (page - 1) * limit;
-
+  
         const totalOrdersCount = await Order.countDocuments({ userId: userData._id });
         const totalPages = Math.ceil(totalOrdersCount / limit);
-
+  
         const orders = await Order.find({ userId: userData._id })
             .populate({
                 path: 'items.productId',
@@ -457,7 +457,7 @@ const getViewOrders = async (req, res) => {
             .skip(skip)
             .limit(limit)
             .lean();
-
+  
         if (!orders || orders.length === 0) {
             return res.render("viewOrders", {
                 userData,
@@ -480,31 +480,22 @@ const getViewOrders = async (req, res) => {
                 }
             });
         }
-
+  
         const formattedOrders = orders.map(order => {
-            let subtotal = 0;
-            let activeItemsCount = 0;
-            
-            const itemsWithOffers = order.items.map(item => {
-                if (item.itemStatus !== 'Cancelled') {
-                    activeItemsCount++;
-                    subtotal += item.finalPrice;
-                }
-                
-                return {
-                    ...item,
-                    originalPrice: item.price,
-                    finalPrice: item.finalPrice
-                };
-            });
-
-            let finalTotal = subtotal;
-            if (order.appliedCoupon && activeItemsCount > 0) {
-                const couponDiscount = (subtotal / order.totalPrice) * order.appliedCoupon.discountAmount;
-                finalTotal = subtotal - couponDiscount;
+            // Calculate total price including all items regardless of status
+            const totalWithoutDelivery = order.items.reduce((total, item) => {
+                return total + item.finalPrice;
+            }, 0);
+  
+            // Apply coupon discount if exists
+            let finalTotal = totalWithoutDelivery;
+            if (order.appliedCoupon) {
+                finalTotal = totalWithoutDelivery - order.appliedCoupon.discountAmount;
             }
-            finalTotal+=50;
-
+  
+            // Add delivery charge
+            finalTotal += 50;
+  
             return {
                 orderId: order.orderId,
                 date: new Date(order.createdAt).toLocaleDateString('en-US', {
@@ -517,11 +508,15 @@ const getViewOrders = async (req, res) => {
                 deliveryCharge: 50,
                 paymentStatus: order.paymentStatus,
                 orderStatus: order.orderStatus,
-                items: itemsWithOffers,
+                items: order.items.map(item => ({
+                    ...item,
+                    originalPrice: item.price,
+                    finalPrice: item.finalPrice
+                })),
                 appliedCoupon: order.appliedCoupon
             };
         });
-
+  
         res.render("viewOrders", {
             userData,
             orders: formattedOrders,
@@ -542,10 +537,10 @@ const getViewOrders = async (req, res) => {
                 }
             }
         });
-
+  
     } catch (error) {
         console.error('Error in getViewOrders:', error);
-
+  
         res.render("viewOrders", {
             userData: req.session.user ? await User.findById(req.session.user) : null,
             orders: [],
@@ -568,7 +563,7 @@ const getViewOrders = async (req, res) => {
             }
         });
     }
-};
+  };
 
 //get order details
 const getOrderDetails = async (req, res) => {

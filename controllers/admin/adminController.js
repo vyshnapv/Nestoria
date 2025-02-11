@@ -2,6 +2,8 @@
 const Admin = require("../../models/adminModel");
 const Order = require('../../models/orderModel');
 const User = require('../../models/userModel');
+const Category= require('../../models/categoryModel');
+const Coupon= require('../../models/couponModel')
 const Product = require("../../models/productModel");
 const Offer = require("../../models/offerModel")
 const ExcelJS = require('exceljs');
@@ -92,8 +94,6 @@ const loadDashboard = async (req, res) => {
   }
 };
 
-
-
 //page Error
 const pageerror=async(req,res)=>{
     res.render("adminerror")
@@ -170,7 +170,7 @@ const loadOrdersList = async (req, res) => {
                           : item.price;
 
                       const finalItemPrice = item.finalPrice || priceAfterOffer;
-                      subtotal += finalItemPrice * item.quantity;
+                      subtotal += finalItemPrice;
 
                       return {
                           ...item,
@@ -184,10 +184,15 @@ const loadOrdersList = async (req, res) => {
 
               let finalTotal = subtotal;
               let couponDiscount = 0;
+              const shippingCharge = 50;
+
               if (order.appliedCoupon && activeItemsCount > 0) {
                   couponDiscount = (subtotal / order.totalPrice) * order.appliedCoupon.discountAmount;
-                  finalTotal = subtotal - couponDiscount;
-              }
+                  finalTotal = subtotal - couponDiscount+shippingCharge
+              } else {
+                finalTotal = subtotal + shippingCharge;
+            }
+            
 
               const highestDiscount = Math.max(
                   ...itemsWithPricing
@@ -207,6 +212,7 @@ const loadOrdersList = async (req, res) => {
                   orderDate: new Date(order.createdAt).toLocaleDateString('en-GB'),
                   customerName: customerName || "Unknown Customer",
                   subtotal: subtotal.toFixed(2),
+                  shippingCharge: shippingCharge.toFixed(2),
                   couponDiscount: couponDiscount.toFixed(2),
                   totalPrice: finalTotal.toFixed(2),
                   originalPrice: order.totalPrice.toFixed(2),
@@ -228,7 +234,6 @@ const loadOrdersList = async (req, res) => {
               };
           })
       );
-
       const pagination = {
           totalPages: Math.ceil(totalOrders / limit),
           currentPage: Number(page),
@@ -256,6 +261,7 @@ const loadOrdersList = async (req, res) => {
   }
 };
 
+//helper function for getcustomer name
 async function getCustomerName(userId) {
   try {
     const user = await User.findById(userId).select('name');
@@ -295,10 +301,9 @@ const updateReturnStatus = async (req, res) => {
       
       if (returnItem) {
         const newReturnStatus= status === 'Accepted' ? 'Return Accepted' : 'Return Rejected';
-          
-      item.returnStatus = newReturnStatus;
-      item.isApproved = status === 'Accepted';
-    }
+           item.returnStatus = newReturnStatus;
+           item.isApproved = status === 'Accepted';
+      }
       return item;
     });
 
@@ -311,10 +316,10 @@ const updateReturnStatus = async (req, res) => {
     );
 
     if (allItemsProcessed) {
-      const hasAcceptedReturns = order.items.some(
-        item => item.returnStatus === 'Return Accepted'
-      );
-      order.orderStatus = hasAcceptedReturns ? 'Returned' : 'Delivered';
+       const hasAcceptedReturns = order.items.some(
+         item => item.returnStatus === 'Return Accepted'
+       );
+       order.orderStatus = hasAcceptedReturns ? 'Returned' : 'Delivered';
     }
     await order.save();
     
@@ -385,8 +390,8 @@ const adminOrderDetails = async (req, res) => {
               : item.finalPrice;
 
           if (item.itemStatus !== 'Cancelled') {
-              activeSubtotal += itemFinalPrice;
-              activeItemsCount++;
+            activeSubtotal += parseFloat(item.finalPrice);
+            activeItemsCount++;
           }
 
           return {
@@ -398,9 +403,9 @@ const adminOrderDetails = async (req, res) => {
                   : '/placeholder-image.jpg',
               quantity: item.quantity,
               price: item.price.toFixed(2),
-              offerPrice: offerPrice.toFixed(2),
-              highestDiscount,
-              finalPrice: itemFinalPrice.toFixed(2),
+              offerPrice: item.offerPrice ? item.offerPrice.toFixed(2) : item.price.toFixed(2),
+              highestDiscount: item.highestDiscount || 0,
+              finalPrice: item.finalPrice.toFixed(2),
               status: item.itemStatus,
               isAvailable: !item.productId?.isBlocked
           };
@@ -408,6 +413,7 @@ const adminOrderDetails = async (req, res) => {
 
 
       let finalTotal = activeSubtotal;
+      const shippingCharge = order.deliveryCharge || 50;
       let appliedCouponInfo = null;
 
       if (order.appliedCoupon && activeItemsCount > 0) {
@@ -418,8 +424,10 @@ const adminOrderDetails = async (req, res) => {
               code: order.appliedCoupon.code,
               originalDiscount: order.appliedCoupon.discountAmount,
               appliedDiscount: proportionalDiscount.toFixed(2)
-          };
-      }
+          }
+        } else {
+            finalTotal = activeSubtotal;
+        }
 
       const formattedOrder = {
           orderId: order.orderId,
@@ -434,8 +442,9 @@ const adminOrderDetails = async (req, res) => {
           address: order.address,
           items: processedItems,
           subtotal: activeSubtotal.toFixed(2),
+          shippingCharge: shippingCharge.toFixed(2),
           appliedCoupon: appliedCouponInfo,
-          finalTotal: finalTotal.toFixed(2)
+          finalTotal: (finalTotal + shippingCharge).toFixed(2)
       };
 
       res.render('adminOrderDetails', { order: formattedOrder });
@@ -455,23 +464,23 @@ const updateOrderStatus = async (req, res) => {
       const { orderId, productId, status } = req.body;
 
       const [order, product] = await Promise.all([
-        Order.findOne({ orderId }),
-        Product.findById(productId)
-    ]);
+          Order.findOne({ orderId }),
+          Product.findById(productId)
+      ]);
 
-    if (!order) {
-      return res.status(404).json({
+     if (!order) {
+        return res.status(404).json({
           success: false,
           message: 'Order not found'
-      });
-  }
+        });
+      }
 
-  if (!product) {
-      return res.status(404).json({
+     if (!product) {
+        return res.status(404).json({
           success: false,
           message: 'Product not found'
-      });
-  }
+        });
+      }
 
       const itemIndex = order.items.findIndex(item => 
           item.productId.toString() === productId
@@ -479,8 +488,8 @@ const updateOrderStatus = async (req, res) => {
 
       if (itemIndex === -1) {
           return res.status(404).json({
-              success: false,
-              message: 'Product not found in order'
+            success: false,
+            message: 'Product not found in order'
           });
       }
 
@@ -517,7 +526,7 @@ const updateOrderStatus = async (req, res) => {
   }
 };
 
-
+//updateallproductstatus 
 const updateAllProductsStatus = async (req, res) => {
   try {
     const { orderId, status } = req.body;
@@ -614,62 +623,273 @@ const cancelAllProducts = async (req, res) => {
   }
 };
 
+//generate sales report 
 const generateSalesReport = async (req, res) => {
   try {
       const { startDate, endDate, reportType } = req.query;
       let dateQuery = {};
+      let previousPeriodQuery = {};
 
       if (reportType === 'daily') {
-          const today = new Date();
+        const today = new Date();
+        const yesterday = new Date(today);
+        yesterday.setDate(yesterday.getDate() - 1);
+
           dateQuery = {
+                createdAt: {
+                    $gte: new Date(today.setHours(0, 0, 0, 0)),
+                    $lt: new Date(today.setHours(23, 59, 59, 999))
+                }
+            };
+            previousPeriodQuery = {
               createdAt: {
-                  $gte: new Date(today.setHours(0, 0, 0, 0)),
-                  $lt: new Date(today.setHours(23, 59, 59, 999))
+                  $gte: new Date(yesterday.setHours(0, 0, 0, 0)),
+                  $lt: new Date(yesterday.setHours(23, 59, 59, 999))
               }
           };
       } else if (reportType === 'weekly') {
-          const lastWeek = new Date(new Date().setDate(new Date().getDate() - 7));
-          dateQuery = { createdAt: { $gte: lastWeek } };
+          const today = new Date();
+          const weekStart = new Date(today);
+          weekStart.setDate(today.getDate() - today.getDay());
+        
+          const previousWeekStart = new Date(weekStart);
+          previousWeekStart.setDate(previousWeekStart.getDate() - 7);
+          const previousWeekEnd = new Date(weekStart);
+          previousWeekEnd.setSeconds(previousWeekEnd.getSeconds() - 1);
+
+          dateQuery = {
+            createdAt: {
+              $gte: new Date(weekStart.setHours(0, 0, 0, 0)),
+              $lt: new Date(today.setHours(23, 59, 59, 999))
+            }
+          };
+          previousPeriodQuery = {
+            createdAt: {
+              $gte: new Date(previousWeekStart.setHours(0, 0, 0, 0)),
+              $lt: new Date(previousWeekEnd)
+            }
+          };
       } else if (reportType === 'monthly') {
-          const lastMonth = new Date(new Date().setMonth(new Date().getMonth() - 1));
-          dateQuery = { createdAt: { $gte: lastMonth } };
-      } else if (reportType === 'custom' && startDate && endDate) {
+          const today = new Date();
+          const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+        
+          const previousMonthStart = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+          const previousMonthEnd = new Date(today.getFullYear(), today.getMonth(), 0);
+
           dateQuery = {
               createdAt: {
-                  $gte: new Date(startDate),
-                  $lte: new Date(endDate)
+                $gte: new Date(monthStart.setHours(0, 0, 0, 0)),
+                $lt: new Date(today.setHours(23, 59, 59, 999))
+              }
+          };
+          previousPeriodQuery = {
+              createdAt: {
+                $gte: new Date(previousMonthStart.setHours(0, 0, 0, 0)),
+                $lt: new Date(previousMonthEnd.setHours(23, 59, 59, 999))
+              }
+          };
+      }else if (reportType === 'yearly') {
+         const today = new Date();
+         const yearStart = new Date(today.getFullYear(), 0, 1);
+        
+         const previousYearStart = new Date(today.getFullYear() - 1, 0, 1);
+         const previousYearEnd = new Date(today.getFullYear(), 0, 0);
+
+         dateQuery = {
+             createdAt: {
+                $gte: new Date(yearStart.setHours(0, 0, 0, 0)),
+                $lt: new Date(today.setHours(23, 59, 59, 999))
+             }
+         };
+         previousPeriodQuery = {
+             createdAt: {
+                $gte: new Date(previousYearStart.setHours(0, 0, 0, 0)),
+                $lt: new Date(previousYearEnd.setHours(23, 59, 59, 999))
+             }
+         };
+      } else if (reportType === 'custom' && startDate && endDate) {
+          const start = new Date(startDate);
+          const end = new Date(endDate);
+          const daysDiff = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
+        
+          const previousStart = new Date(start);
+          previousStart.setDate(previousStart.getDate() - daysDiff);
+          const previousEnd = new Date(start);
+          previousEnd.setSeconds(previousEnd.getSeconds() - 1);
+
+          dateQuery = {
+              createdAt: {
+                $gte: new Date(start.setHours(0, 0, 0, 0)),
+                $lt: new Date(end.setHours(23, 59, 59, 999))
+              }
+          };
+          previousPeriodQuery = {
+              createdAt: {
+                $gte: new Date(previousStart.setHours(0, 0, 0, 0)),
+                $lt: new Date(previousEnd)
               }
           };
       }
 
-      const orders = await Order.find(dateQuery)
-          .populate('userId', 'name')
-          .sort({ createdAt: -1 });
-
-      if (req.query.download === 'excel') {
-          return await downloadExcel(orders, res);
-      } else if (req.query.download === 'pdf') {
-          return await downloadPDF(orders, res);
-      }
-
-      const report = orders.map(order => ({
-          orderId: order.orderId,
-          customerName: order.userId?.name || 'Unknown',
-          date: order.createdAt.toLocaleDateString(),
-          total: order.items.reduce((sum, item) => sum + item.finalPrice, 0),
-          discount: order.discount || 0,
-          finalAmount: order.items.reduce((sum, item) => sum + item.finalPrice, 0) - (order.discount || 0)
-      }));
-
-      res.json({
-          success: true,
-          report,
-          summary: {
-              totalOrders: orders.length,
-              totalAmount: report.reduce((sum, order) => sum + order.finalAmount, 0),
-              totalDiscount: report.reduce((sum, order) => sum + order.discount, 0)
+      const currentOrders = await Order.find(dateQuery)
+      .populate('userId', 'name')
+      .populate({
+          path: 'items.productId',
+          populate: {
+            path: 'category'
           }
+      })
+      const currentCustomers = await User.distinct('_id', { 
+         _id: { $in: currentOrders.map(order => order.userId) } 
       });
+
+      const previousOrders = await Order.find(previousPeriodQuery);
+          const previousCustomers = await User.distinct('_id', { 
+              _id: { $in: previousOrders.map(order => order.userId) } 
+          });
+
+  
+      const currentRevenue = currentOrders.reduce((sum, order) => 
+        sum + order.items.reduce((itemSum, item) => itemSum + item.finalPrice, 0), 0);
+      const previousRevenue = previousOrders.reduce((sum, order) => 
+        sum + order.items.reduce((itemSum, item) => itemSum + item.finalPrice, 0), 0);
+  
+      const currentDiscount = currentOrders.reduce((sum, order) => {
+           let totalDiscount = 0;
+              if (order.discount) {
+                 totalDiscount += order.discount;
+              }
+         order.items.forEach(item => {
+             const originalPrice = item.price * item.quantity;
+             const finalPrice = item.finalPrice; 
+             const itemDiscount = originalPrice - finalPrice;
+                if (itemDiscount > 0) {
+                  totalDiscount += itemDiscount;
+                }
+         });
+         return sum + totalDiscount;
+      }, 0);
+
+      const stats = {
+          revenue: {
+             current: currentOrders.reduce((sum, order) => 
+             sum + order.items.reduce((itemSum, item) => itemSum + item.finalPrice, 0), 0),
+             change: previousRevenue ? ((currentRevenue - previousRevenue) / previousRevenue) * 100 : 0
+          },
+          orders: {
+             current: currentOrders.length,
+             change: previousOrders.length ? ((currentOrders.length - previousOrders.length) / previousOrders.length) * 100 : 0
+          },
+          customers: {
+             current: currentCustomers.length,
+             change: previousCustomers.length ? ((currentCustomers.length - previousCustomers.length) / previousCustomers.length) * 100 : 0
+          },
+          discounts: {
+             current: currentDiscount 
+          }
+      };
+      const orders = await Order.find(dateQuery)
+            .populate('userId', 'name')
+            .populate({
+                path: 'items.productId',
+                populate: {
+                    path: 'category'
+                }
+            })
+            .sort({ createdAt: -1 });
+            const salesData = await generateSalesData(dateQuery);
+
+            const productSales = {};
+            orders.forEach(order => {
+                order.items.forEach(item => {
+                    if (!productSales[item.productId]) {
+                        productSales[item.productId] = {
+                            name: item.productName,
+                            unitsSold: 0,
+                            revenue: 0
+                        };
+                    }
+                    productSales[item.productId].unitsSold += item.quantity;
+                    productSales[item.productId].revenue += item.finalPrice;
+                });
+            });
+    
+            const topProducts = Object.values(productSales)
+                .sort((a, b) => b.unitsSold - a.unitsSold)
+                .slice(0, 10);
+    
+            const categorySales = {};
+            let totalSales = 0;
+    
+            orders.forEach(order => {
+                order.items.forEach(item => {
+                    if (item.productId && item.productId.category) {
+                        const categoryName = item.productId.category.name;
+                        if (!categorySales[categoryName]) {
+                            categorySales[categoryName] = 0;
+                        }
+                        categorySales[categoryName] += item.finalPrice;
+                        totalSales += item.finalPrice;
+                    }
+                });
+            });
+    
+            const topCategories = Object.entries(categorySales)
+                .map(([name, sales]) => ({
+                    name,
+                    sales,
+                    percentage: ((sales / totalSales) * 100).toFixed(1)
+                }))
+                .sort((a, b) => b.sales - a.sales)
+                .slice(0, 9);
+      
+                if (req.query.download === 'excel') {
+                   return await downloadExcel(orders, topProducts, topCategories, res);
+                } else if (req.query.download === 'pdf') {
+                   return await downloadPDF(orders, topProducts, topCategories, res);
+                }
+      
+
+            const report = currentOrders.map(order => {
+              const totalBeforeDiscount = order.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+              const totalAfterDiscount = order.items.reduce((sum, item) => sum + item.finalPrice, 0);
+              const itemLevelDiscount = totalBeforeDiscount - totalAfterDiscount;
+              const totalDiscount = (order.discount || 0) + itemLevelDiscount;
+              const shippingCharge = 50; 
+    
+              return {
+                orderId: order.orderId,
+                customerName: order.userId?.name || 'Unknown',
+                date: order.createdAt.toLocaleDateString(),
+                total: totalBeforeDiscount,
+                discount: totalDiscount,
+                shippingCharge: shippingCharge, 
+                finalAmount: totalAfterDiscount - (order.discount || 0) + shippingCharge
+              };
+            });
+            const summary = {
+              totalOrders: currentOrders.length,
+              totalAmount: report.reduce((sum, order) => sum + order.total, 0),
+              totalDiscount: report.reduce((sum, order) => sum + order.discount, 0),
+              totalShipping: report.reduce((sum, order) => sum + order.shippingCharge, 0), 
+              finalTotal: report.reduce((sum, order) => sum + order.finalAmount, 0)
+            };
+
+           if (req.query.download === 'excel') {
+              return await downloadExcel(currentOrders, topProducts, topCategories, res);
+           } else if (req.query.download === 'pdf') {
+              return await downloadPDF(currentOrders, topProducts, topCategories, res);
+           }
+
+         res.json({
+           success: true,
+           stats,
+           report,
+           topProducts,
+           topCategories,
+           salesData,
+           summary
+         });
 
   } catch (error) {
       console.error('Error generating sales report:', error);
@@ -677,38 +897,91 @@ const generateSalesReport = async (req, res) => {
   }
 };
 
-// functions for downloading reports
-async function downloadExcel(orders, res) {
-  const workbook = new ExcelJS.Workbook();
-  const worksheet = workbook.addWorksheet('Sales Report');
+//helper function for generate sales data
+async function generateSalesData(dateQuery) {
+    const orders = await Order.find({
+        ...dateQuery,
+        status: { $ne: 'cancelled' }
+    }).sort('createdAt');
 
-  worksheet.columns = [
-      { header: 'Order ID', key: 'orderId' },
-      { header: 'Customer', key: 'customer' },
-      { header: 'Date', key: 'date' },
-      { header: 'Total', key: 'total' },
-      { header: 'Discount', key: 'discount' },
-      { header: 'Final Amount', key: 'final' }
+    const salesMap = new Map();
+  
+    orders.forEach(order => {
+        const date = order.createdAt.toISOString().split('T')[0];
+          if (!salesMap.has(date)) {
+             salesMap.set(date, {
+                sales: 0,
+                orders: 0
+             });
+          }
+        const dayData = salesMap.get(date);
+        dayData.sales += order.items.reduce((sum, item) => sum + item.finalPrice, 0);
+        dayData.orders += 1;
+    });
+
+   const dates = Array.from(salesMap.keys());
+   const sales = Array.from(salesMap.values()).map(data => data.sales);
+   const orderCounts = Array.from(salesMap.values()).map(data => data.orders);
+
+   return {
+      dates,
+      sales,
+      orders: orderCounts
+   };
+}
+
+// functions for downloading reports excel
+async function downloadExcel(orders, topProducts, topCategories, res) {
+  const workbook = new ExcelJS.Workbook();
+  const salesSheet = workbook.addWorksheet('Sales Report');
+
+  salesSheet.columns = [
+    { header: 'Order ID', key: 'orderId' },
+    { header: 'Customer', key: 'customer' },
+    { header: 'Date', key: 'date' },
+    { header: 'Total', key: 'total' },
+    { header: 'Discount', key: 'discount' },
+    { header: 'Shipping Charge', key: 'shipping' }, 
+    { header: 'Final Amount', key: 'final' }
   ];
 
   orders.forEach(order => {
-      worksheet.addRow({
-          orderId: order.orderId,
-          customer: order.userId?.name || 'Unknown',
-          date: order.createdAt.toLocaleDateString(),
-          total: order.items.reduce((sum, item) => sum + item.finalPrice, 0),
-          discount: order.discount || 0,
-          final: order.items.reduce((sum, item) => sum + item.finalPrice, 0) - (order.discount || 0)
-      });
+    salesSheet.addRow({
+        orderId: order.orderId,
+        customer: order.userId?.name || 'Unknown',
+        date: order.createdAt.toLocaleDateString(),
+        total: order.items.reduce((sum, item) => sum + item.finalPrice, 0),
+        discount: order.discount || 0,
+        shipping: 50, // Fixed shipping charge
+        final: order.items.reduce((sum, item) => sum + item.finalPrice, 0) - (order.discount || 0) + 50
+    });
   });
 
-  res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-  res.setHeader('Content-Disposition', 'attachment; filename=sales-report.xlsx');
 
-  await workbook.xlsx.write(res);
+  const productsSheet = workbook.addWorksheet('Top Products');
+  productsSheet.columns = [
+      { header: 'Product Name', key: 'name' },
+      { header: 'Units Sold', key: 'unitsSold' },
+      { header: 'Revenue', key: 'revenue' }
+  ];
+  topProducts.forEach(product => productsSheet.addRow(product));
+
+  const categoriesSheet = workbook.addWorksheet('Top Categories');
+    categoriesSheet.columns = [
+        { header: 'Category', key: 'name' },
+        { header: 'Sales', key: 'sales' },
+        { header: 'Percentage', key: 'percentage' }
+    ];
+    topCategories.forEach(category => categoriesSheet.addRow(category));
+
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', 'attachment; filename=sales-report.xlsx');
+
+    await workbook.xlsx.write(res);
 }
 
-async function downloadPDF(orders, res) {
+//function for downloading pdf
+async function downloadPDF(orders, topProducts, topCategories, res) {
   const doc = new PDFDocument();
   res.setHeader('Content-Type', 'application/pdf');
   res.setHeader('Content-Disposition', 'attachment; filename=sales-report.pdf');
@@ -718,17 +991,41 @@ async function downloadPDF(orders, res) {
   doc.moveDown();
 
   orders.forEach(order => {
-      doc.fontSize(12).text(`Order ID: ${order.orderId}`);
-      doc.fontSize(10).text(`Customer: ${order.userId?.name || 'Unknown'}`);
-      doc.text(`Date: ${order.createdAt.toLocaleDateString()}`);
-      doc.text(`Total: $${order.items.reduce((sum, item) => sum + item.finalPrice, 0)}`);
-      doc.text(`Discount: $${order.discount || 0}`);
-      doc.text(`Final Amount: $${order.items.reduce((sum, item) => sum + item.finalPrice, 0) - (order.discount || 0)}`);
-      doc.moveDown();
-  });
+    const total = order.items.reduce((sum, item) => sum + item.finalPrice, 0);
+    const discount = order.discount || 0;
+    const shipping = 50;
 
-  doc.end();
-}
+    doc.fontSize(12).text(`Order ID: ${order.orderId}`);
+    doc.fontSize(10).text(`Customer: ${order.userId?.name || 'Unknown'}`);
+    doc.text(`Date: ${order.createdAt.toLocaleDateString()}`);
+    doc.text(`Total: $${total}`);
+    doc.text(`Discount: $${discount}`);
+    doc.text(`Shipping Charge: $${shipping}`);
+    doc.text(`Final Amount: $${total - discount + shipping}`);
+    doc.moveDown();
+  });
+  doc.addPage();
+      doc.fontSize(16).text('Top Products', { align: 'center' });
+      doc.moveDown();
+      topProducts.forEach(product => {
+        doc.fontSize(12).text(`${product.name}`);
+        doc.fontSize(10).text(`Units Sold: ${product.unitsSold}`);
+        doc.text(`Revenue: $${product.revenue.toFixed(2)}`);
+        doc.moveDown();
+      });
+
+      doc.addPage();
+      doc.fontSize(16).text('Top Categories', { align: 'center' });
+      doc.moveDown();
+      topCategories.forEach(category => {
+        doc.fontSize(12).text(`${category.name}`);
+        doc.fontSize(10).text(`Sales: $${category.sales.toFixed(2)}`);
+        doc.text(`Percentage: ${category.percentage}%`);
+        doc.moveDown();
+      });
+
+    doc.end();
+  }
 
 module.exports={
     loadLogin,

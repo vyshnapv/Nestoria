@@ -1,448 +1,1851 @@
-//this is my dashboard
-<%- include('../layoutsAdmin/adminheader') %> 
-<%- include('../layoutsAdmin/header') %>
+//this is my orderdetalis page 
+<%- include('../layoutsUser/userheader') %>
 <style>
-    /* Sales Report Table Styles */
-.table-responsive {
-    background: white;
-    padding: 1.5rem;
-    border-radius: 0.5rem;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-}
 
-#salesReportTable {
-    width: 100%;
-    border-collapse: separate;
-    border-spacing: 0;
-    margin-bottom: 1rem;
-}
-
-#salesReportTable thead {
+body {
+    font-family: Arial, sans-serif;
     background-color: #f8f9fa;
 }
 
-#salesReportTable th {
-    padding: 1rem;
-    font-weight: 600;
-    color: #495057;
-    border-bottom: 2px solid #e9ecef;
-    text-transform: uppercase;
-    font-size: 0.85rem;
-    letter-spacing: 0.5px;
+.order-detail-heading {
+    margin-top: 30px;
+    font-weight: bold;
+    font-size: 2.5rem; 
+    text-align: center; 
 }
 
-#salesReportTable tbody tr {
-    transition: background-color 0.2s ease;
+.order-detail-date {
+    font-size: 0.9rem;
+    text-align: center; 
 }
 
-#salesReportTable tbody tr:hover {
-    background-color: #f8f9fa;
+.order-detail-section-title {
+    font-size: 1rem;
+    font-weight: bold;
+    color: #6c757d;
+    margin-top: 1rem;
 }
 
-#salesReportTable td {
-    padding: 1rem;
+.order-detail-container {
+    background-color: #ffffff;
+    padding: 20px;
+    border-radius: 5px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.order-detail-text {
+    margin: 0;
+    color: #333;
+}
+
+.order-detail-section {
+    padding-top: 10px;
+}
+
+.order-detail-table-responsive {
+    margin-top: 20px;
+}
+
+.order-detail-table {
+    background-color: #ffffff;
+}
+
+.order-detail-table-header {
+    background-color: #f1f1f1;
+    font-weight: bold;
+    text-align: center;
+}
+
+.order-detail-table-bordered th, .order-detail-table-bordered td {
+    border: 1px solid #dee2e6;
     vertical-align: middle;
-    border-bottom: 1px solid #e9ecef;
+    text-align: center;
+}
+
+.order-detail-product-image {
+    max-width: 50px;
+    height: auto;
+}
+
+.order-detail-btn-cancel {
+    font-size: 1rem;
+   
+    color: #fff;
+    background-color: #dc3545;
+    border: none;
+}
+
+.order-detail-btn-cancel:hover {
+    background-color: #c82333;
+}
+
+.order-detail-summary-title {
+    color: #495057;
+}
+
+.order-detail-summary-text {
+    font-size: 0.9rem;
+    color: #495057;
+}
+.modal-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.modal-footer {
+    background-color: #f8f9fa;
+    border-top: 1px solid #dee2e6;
+}
+
+.form-label {
+    font-weight: 500;
+    color: #495057;
+}
+
+.form-control:focus {
+    border-color: #80bdff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.btn-danger {
+    background-color: #dc3545;
+}
+
+.btn-danger:hover {
+    background-color: #c82333;
+}
+
+.btn-loading {
+    position: relative;
+    pointer-events: none;
+    opacity: 0.65;
+}
+
+.btn-loading:after {
+    content: '';
+    width: 1rem;
+    height: 1rem;
+    margin-left: 0.5rem;
+    display: inline-block;
+    vertical-align: text-bottom;
+    border: 0.2em solid currentColor;
+    border-right-color: transparent;
+    border-radius: 50%;
+    animation: spinner-border .75s linear infinite;
+}
+
+.original-price {
+    text-decoration: line-through;
+    color: #999;
+    margin-right: 8px;
+    font-size: 0.9em;
+}
+
+.offer-price {
+    color: #000;
+    font-weight: bold;
+}
+
+.discount-badge {
+    background-color: #28a745;
+    color: white;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 0.8em;
+    margin-left: 8px;
+}
+
+.summary-item {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+.summary-item.total {
+    border-top: 1px solid #ddd;
+    margin-top: 12px;
+    padding-top: 12px;
+    font-weight: bold;
+}
+.original-price {
+    font-size: 0.9em;
     color: #6c757d;
 }
 
-#salesReportTable tbody tr:last-child td {
-    border-bottom: none;
+.offer-price {
+    font-weight: bold;
 }
 
-/* Order ID Column */
-#salesReportTable td:first-child {
-    font-weight: 500;
-    color: #2c3345;
+.discount-badge {
+    font-size: 0.8em;
+    padding: 2px 6px;
 }
-
-/* Amount Columns */
-#salesReportTable td:nth-child(4),
-#salesReportTable td:nth-child(5),
-#salesReportTable td:nth-child(6) {
-    font-family: monospace;
-    text-align: right;
-}
-
-/* Table Footer */
-#salesReportTable tfoot {
-    background-color: #f8f9fa;
-    font-weight: 600;
-}
-
-#salesReportTable tfoot td {
-    padding: 1rem;
-    border-top: 2px solid #e9ecef;
-}
-
-#salesReportTable tfoot td:not(:first-child) {
-    text-align: right;
-    font-family: monospace;
-}
-
-/* Responsive Design */
-@media (max-width: 768px) {
-    .table-responsive {
-        padding: 1rem;
+del {
+        text-decoration: line-through;
+    }
+    .badge {
+        font-size: 0.75rem;
+        padding: 0.25em 0.5em;
+    }
+    .retry-payment-btn {
+        background-color: #28a745;
+        color: white;
+        padding: 8px 16px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 0.9em;
+        margin-top: 8px;
+        display: inline-block;
+        text-decoration: none;
     }
     
-    #salesReportTable th,
-    #salesReportTable td {
-        padding: 0.75rem;
-        font-size: 0.9rem;
+    .retry-payment-btn:hover {
+        background-color: #218838;
+    }
+   
+</style>
+<h5 class="order-detail-heading">Order Details</h5>
+<div class="order-detail-container mt-5">
+    
+    <div class="row">
+        <div class="col-12">
+            
+            <p class="order-detail-date">Ordered on <%= order.orderDate %> | Order ID: <%= order.orderId %></p>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-4 order-detail-section">
+            <h6 class="order-detail-section-title">Shipping Address</h6>
+            <p class="order-detail-text">
+                <%= order.address.name %><br>
+                +91 <%= order.address.phone %><br>
+                <%= order.address.house %><br>
+                <%= order.address.district %><br>
+                <%= order.address.city %>, <%= order.address.state %> <%= order.address.pincode %>
+            </p>
+        </div>
+        <div class="col-md-4 order-detail-section">
+            <h6 class="order-detail-section-title">Payment Method</h6>
+            <p class="order-detail-text"><%= order.paymentMethod %></p>
+        </div>
+        <div class="col-md-4 order-detail-section">
+            <h6 class="order-detail-section-title">Payment Status</h6>
+            <p class="order-detail-text"><%= order.paymentStatus %></p>
+            <% if (order.paymentStatus === 'Failed' && order.paymentMethod === 'Razorpay') { %>
+                <button onclick="retryPayment('<%= order.orderId %>', '<%= order.totalPrice %>')" class="retry-payment-btn">
+                    Try Payment Again
+                </button>
+            <% } %>
+        </div>
+        
+    </div>
+    
+    <div class="order-detail-table-responsive">
+        <table class="table order-detail-table order-detail-table-bordered">
+            <thead class="order-detail-table-header">
+                <tr>
+                    <th>Product Name</th>
+                    <th>Category</th>
+                    <th>Image</th>
+                    <th>Quantity</th>
+                    <th>Price</th>
+                    <th>
+                        Final Price <br>
+                        (include coupon)
+                    </th>
+                    <th>Order Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% order.items.forEach(item => { %>
+                <tr>
+                    <td><%= item.productName %></td>
+                    <td><%= item.category.name %></td>
+                    <td><img src="/uploads/cropped/<%= item.image %>"  alt="<%= item.productName %>" class="order-detail-product-image"></td>
+                    <td><%= item.quantity %></td>
+                    <td>₹<%=item.offerPrice.toFixed(2) %></td>
+                    <td>₹<%= Math.round(item.finalPrice.toFixed(2) )%></td>
+                    <td><%= item.itemStatus %></td>
+                    <td>
+                        <% if (item.itemStatus === 'Ordered') { %>
+                            <button class="btn btn-sm order-detail-btn-cancel" 
+                               onclick="cancelOrderItem('<%= order.orderId %>', '<%= item.productName %>')">
+                               ✖ Cancel
+                            </button>
+                        <% } else if (order.orderStatus === 'Delivered' && item.itemStatus !== 'Returned' && item.itemStatus !== 'Cancelled') { %>
+                            <% if (item.itemStatus === 'Delivered') { %>
+                                <button class="btn btn-sm order-detail-btn-return" 
+                                   onclick="returnOrderItem('<%= order.orderId %>', '<%= item.productName %>')">
+                                   ↩ Return
+                                </button>
+                            <% } else if (item.returnStatus === 'Return Requested') { %>
+                                <span class="text-warning">Return Requested</span>
+                            <% } else if (item.returnStatus === 'Return Accepted') { %>
+                                <span class="text-success">Return Accepted</span>
+                            <% } else if (item.returnStatus === 'Return Rejected') { %>
+                                <span class="text-danger">Return Rejected</span>
+                            <% } %>
+                        <% } else { %>
+                            <%= item.itemStatus %>
+                        <% } %>
+                    </td>
+                </tr>
+                <% }); %>
+            </tbody>
+        </table>
+    </div>
+    <div class="row mt-4">
+        <div class="col-md-6 offset-md-6">
+            <div class="order-detail-summary">
+                <h6 class="order-detail-summary-title">Order Summary</h6>
+                <div class="summary-item">
+                    <span>Original Total:</span>
+                    <span>₹<%= order.items.reduce((total, item) => 
+                        total + (item.itemStatus !== 'Cancelled' ? item.price * item.quantity : 0), 0).toFixed(2) %>
+                    </span>
+                </div>
+                <% if (order.items.some(item => item.highestDiscount > 0)) { %>
+                    <div class="summary-item">
+                        <span>Offer Discount:</span>
+                        <span class="text-success">-₹<%= order.items.reduce((total, item) => {
+                            if (item.itemStatus !== 'Cancelled' && item.highestDiscount > 0) {
+                                return total + ((item.price - item.offerPrice) * item.quantity);
+                            }
+                            return total;
+                        }, 0).toFixed(2) %></span>
+                    </div>
+                <% } %>
+                <div class="summary-item">
+                    <span>Subtotal:(include coupon)</span>
+                    <span>₹<%= order.items.reduce((total, item) => total + (item.itemStatus !== 'Cancelled' ? item.finalPrice : 0), 0).toFixed(2) %></span>
+                </div>
+                <div class="summary-item">
+                    <span>shipping Charge:</span>
+                    <span>₹50</span>
+                </div>
+                <% if (order.appliedCoupon) { %>
+                    <div class="summary-item">
+                        <span>Coupon Discount (<%= order.appliedCoupon.code %>):</span>
+                        <span class="text-success">-₹<%= order.appliedCoupon.discountAmount.toFixed(2) %></span>
+                    </div>
+                <% } %>
+                <div class="summary-item total">
+                    <span>Total Amount(include shipping):</span>
+                    <span>₹<%= order.totalPrice.toFixed(2) %></span>
+                </div>
+                <div class="text-center">
+                    <% if (order.orderStatus === 'Delivered' && order.paymentStatus === 'Paid') { %>
+                        <a href="/order/<%= order.orderId %>/download-pdf" 
+                           class="btn btn-primary">
+                            <i class="fas fa-download"></i> Download Order Summary
+                        </a>
+                    <% } %>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="cancelOrderModal" tabindex="-1" role="dialog" aria-labelledby="cancelOrderModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="cancelOrderModalLabel">Cancel Order Item</h5>
+                <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="cancelOrderForm">
+                    <div class="form-group mb-3">
+                        <label for="cancelReason" class="form-label">Reason for Cancellation</label>
+                        <select class="form-control" id="cancelReason" required>
+                            <option value="" disabled selected>Select a reason</option>
+                            <option value="Changed my mind">Changed my mind</option>
+                            <option value="Ordered wrong product">Ordered wrong product</option>
+                            <option value="Found better price elsewhere">Found better price elsewhere</option>
+                            <option value="Shipping time too long">Shipping time too long</option>
+                            <option value="Ordered by mistake">Ordered by mistake</option>
+                            <option value="Payment issues">Payment issues</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group mb-3 d-none" id="otherReasonDiv">
+                        <label for="otherReason" class="form-label">Please specify other reason</label>
+                        <textarea class="form-control" id="otherReason" rows="3"></textarea>
+                    </div>
+                    <input type="hidden" id="cancelOrderId">
+                    <input type="hidden" id="cancelProductName">
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-danger" id="confirmCancelOrder">Cancel Item</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="returnOrderModal" tabindex="-1" role="dialog" aria-labelledby="returnOrderModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="returnOrderModalLabel">Return Order Item</h5>
+                <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="returnOrderForm">
+                    <div class="form-group mb-3">
+                        <label for="returnReason" class="form-label">Reason for Return</label>
+                        <select class="form-control" id="returnReason" required>
+                            <option value="" disabled selected>Select a reason</option>
+                            <option value="Defective Product">Defective Product</option>
+                            <option value="Wrong Product">Wrong Product</option>
+                            <option value="Not Satisfied">Not Satisfied</option>
+                            <option value="Size/Fit Issues">Size/Fit Issues</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group mb-3 d-none" id="otherReasonDiv">
+                        <label for="otherReason" class="form-label">Please specify other reason</label>
+                        <textarea class="form-control" id="otherReason" rows="3"></textarea>
+                    </div>
+                    <input type="hidden" id="returnOrderId">
+                    <input type="hidden" id="returnProductName">
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" id="confirmReturnOrder">Return Item</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <%- include('../layoutsUser/userfooter') %>
+
+<script>
+
+async function retryPayment(orderId, amount) {
+    try {
+        const response = await fetch(`/create-razorpay-order`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                orderId: orderId,
+                amount: amount
+            })
+        });
+
+        const data = await response.json();
+        
+        if (!data.success) {
+            throw new Error(data.message);
+        }
+
+        const options = {
+            key: data.key,
+            amount: data.amount,
+            currency: data.currency,
+            name: "Your Store Name",
+            description: "Order Payment",
+            order_id: data.orderId,
+            handler: async function (response) {
+                try {
+                    const verifyResponse = await fetch('/verify-razorpay-payment', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            razorpay_order_id: response.razorpay_order_id,
+                            razorpay_payment_id: response.razorpay_payment_id,
+                            razorpay_signature: response.razorpay_signature
+                        })
+                    });
+
+                    const verifyData = await verifyResponse.json();
+
+                    if (verifyData.success) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Payment Successful',
+                            text: 'Your payment has been processed successfully!',
+                            showConfirmButton: false,
+                            timer: 1500
+                        }).then(() => {
+                            window.location.reload();
+                        });
+                    } else {
+                        throw new Error(verifyData.message);
+                    }
+                } catch (error) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Payment Verification Failed',
+                        text: error.message || 'Failed to verify payment'
+                    });
+                }
+            },
+            prefill: {
+                name: "<%= order.address.name %>",
+                contact: "<%= order.address.phone %>"
+            },
+            theme: {
+                color: "#3399cc"
+            }
+        };
+
+        const rzp = new Razorpay(options);
+        rzp.open();
+
+        rzp.on('payment.failed', function (response) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Payment Failed',
+                text: 'The payment process failed. Please try again.'
+            });
+        });
+
+    } catch (error) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: error.message || 'Failed to initiate payment'
+        });
     }
 }
-.pagination {
-        display: flex;
-        justify-content: flex-end;
-        align-items: center;
-        margin-top: 1rem;
-        gap: 0.5rem;
+
+document.getElementById('cancelReason').addEventListener('change', function() {
+    const otherReasonDiv = document.getElementById('otherReasonDiv');
+    if (this.value === 'Other') {
+        otherReasonDiv.classList.remove('d-none');
+    } else {
+        otherReasonDiv.classList.add('d-none');
     }
+});
 
-    .pagination select {
-        padding: 0.375rem 0.75rem;
-        border-radius: 0.25rem;
-        border: 1px solid #dee2e6;
+
+function cancelOrderItem(orderId, productName) {
+    document.getElementById('cancelOrderId').value = orderId;
+    document.getElementById('cancelProductName').value = productName;
+    
+    document.getElementById('cancelReason').value = '';
+    document.getElementById('otherReason').value = '';
+    document.getElementById('otherReasonDiv').classList.add('d-none');
+
+    const modal = new bootstrap.Modal(document.getElementById('cancelOrderModal'));
+    modal.show();
+}
+
+
+document.getElementById('confirmCancelOrder').addEventListener('click', async function() {
+    const button = this;
+    const orderId = document.getElementById('cancelOrderId').value;
+    const productName = document.getElementById('cancelProductName').value;
+    const reasonSelect = document.getElementById('cancelReason');
+    
+    if (!reasonSelect.value) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Required',
+            text: 'Please select a reason for cancellation'
+        });
+        return;
     }
-
-    .pagination button {
-        padding: 0.375rem 0.75rem;
-        border-radius: 0.25rem;
-        border: 1px solid #dee2e6;
-        background-color: #fff;
-        cursor: pointer;
-        transition: all 0.2s;
-    }
-
-    .pagination button:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-    }
-
-    .pagination button:hover:not(:disabled) {
-        background-color: #e9ecef;
-    }
-
-    .pagination .current-page {
-        margin: 0 0.5rem;
-    }
-</style>
-<section class="content-main">
-    <div class="content-header">
-        <div>
-            <h2 class="content-title card-title">welcome Admin</h2>
-            <p>Whole data about your business here</p>
-        </div>
-        <div>
-            <a href="#" class="btn btn-primary"><i class="text-muted material-icons md-post_add"></i>Create
-                report</a>
-        </div>
-    </div>
-    <div class="row">
-        <div class="col-lg-3">
-            <div class="card card-body mb-4">
-                <article class="icontext">
-                    <span class="icon icon-sm rounded-circle bg-primary-light"><i
-                            class="text-primary material-icons md-monetization_on"></i></span>
-                    <div class="text">
-                        <h6 class="mb-1 card-title">Revenue</h6>
-                        <span>$13,456.5</span>
-                        <span class="text-sm"> Shipping fees are not included </span>
-                    </div>
-                </article>
-            </div>
-        </div>
-        <div class="col-lg-3">
-            <div class="card card-body mb-4">
-                <article class="icontext">
-                    <span class="icon icon-sm rounded-circle bg-success-light"><i
-                            class="text-success material-icons md-local_shipping"></i></span>
-                    <div class="text">
-                        <h6 class="mb-1 card-title">Orders</h6>
-                        <span>53.668</span>
-                        <span class="text-sm"> Excluding orders in transit </span>
-                    </div>
-                </article>
-            </div>
-        </div>
-        <div class="col-lg-3">
-            <div class="card card-body mb-4">
-                <article class="icontext">
-                    <span class="icon icon-sm rounded-circle bg-warning-light"><i
-                            class="text-warning material-icons md-qr_code"></i></span>
-                    <div class="text">
-                        <h6 class="mb-1 card-title">Products</h6>
-                        <span>9.856</span>
-                        <span class="text-sm"> In 19 Categories </span>
-                    </div>
-                </article>
-            </div>
-        </div>
-        <div class="col-lg-3">
-            <div class="card card-body mb-4">
-                <article class="icontext">
-                    <span class="icon icon-sm rounded-circle bg-info-light"><i
-                            class="text-info material-icons md-shopping_basket"></i></span>
-                    <div class="text">
-                        <h6 class="mb-1 card-title">Monthly Earning</h6>
-                        <span>$6,982</span>
-                        <span class="text-sm"> Based in your local time. </span>
-                    </div>
-                </article>
-            </div>
-        </div>
-    </div>
-    <div class="row">
-        <div class="col-xl-8 col-lg-12">
-            <div class="card mb-4">
-                <article class="card-body">
-                    <h5 class="card-title">Sale statistics</h5>
-                    <canvas id="myChart" height="120px"></canvas>
-                </article>
-            </div>
-        </div>
-        <div class="col-xl-4 col-lg-12">
-            <div class="card mb-4">
-                <article class="card-body">
-                    <h5 class="card-title">Revenue Base on Area</h5>
-                    <canvas id="myChart2" height="217"></canvas>
-                </article>
-            </div>
-        </div>
-    </div>
-    <div class="card mb-4">
-        <header class="card-header">
-            <h4 class="card-title">Sales Report</h4>
-            <div class="row align-items-center">
-                <div class="col-md-3 col-12 mb-3">
-                    <select id="reportType" class="form-select">
-                        <option value="daily">Daily</option>
-                        <option value="weekly">Weekly</option>
-                        <option value="monthly">Monthly</option>
-                        <option value="custom">Custom Range</option>
-                    </select>
-                </div>
-                <div class="col-md-3 col-12 mb-3 date-range" style="display: none">
-                    <input type="date" id="startDate" class="form-control" placeholder="Start Date" />
-                </div>
-                <div class="col-md-3 col-12 mb-3 date-range" style="display: none">
-                    <input type="date" id="endDate" class="form-control" placeholder="End Date" />
-                </div>
-                <div class="col-md-3 col-12 mb-3">
-                    <button class="btn btn-primary" onclick="generateReport()">
-                        Generate Report
-                    </button>
-                </div>
-                <div class="col-md-3 col-12 mb-3">
-                    <div class="dropdown">
-                        <button class="btn btn-secondary dropdown-toggle" type="button" id="downloadDropdown"
-                            data-bs-toggle="dropdown">
-                            Download Report
-                        </button>
-                        <ul class="dropdown-menu">
-                            <li>
-                                <a class="dropdown-item" href="#" onclick="downloadReport('excel')">Excel</a>
-                            </li>
-                            <li>
-                                <a class="dropdown-item" href="#" onclick="downloadReport('pdf')">PDF</a>
-                            </li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-        </header>
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table" id="salesReportTable">
-                    <thead>
-                        <tr>
-                            <th>Order ID</th>
-                            <th>Customer</th>
-                            <th>Date</th>
-                            <th>Total</th>
-                            <th>Discount</th>
-                            <th>Final Amount</th>
-                        </tr>
-                    </thead>
-                    <tbody></tbody>
-                    <tfoot>
-                        <tr>
-                            <td colspan="3"><strong>Summary</strong></td>
-                            <td id="totalAmount">0</td>
-                            <td id="totalDiscount">0</td>
-                            <td id="finalTotal">0</td>
-                        </tr>
-                    </tfoot>
-                </table>
-                <div class="pagination">
-                    <select id="pageSize">
-                        <option value="10">10 per page</option>
-                        <option value="25">25 per page</option>
-                        <option value="50">50 per page</option>
-                    </select>
-                    <button id="prevPage" disabled>Previous</button>
-                    <span class="current-page">Page <span id="currentPage">1</span> of <span id="totalPages">1</span></span>
-                    <button id="nextPage" disabled>Next</button>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
-<script>
-    document.getElementById("reportType").addEventListener("change", function () {
-                        const dateRangeInputs = document.querySelectorAll(".date-range");
-                        if (this.value === "custom") {
-                            dateRangeInputs.forEach((input) => (input.style.display = "block"));
-                        } else {
-                            dateRangeInputs.forEach((input) => (input.style.display = "none"));
-                        }
-                    });
-
-                    let currentPage = 1;
-    let pageSize = 10;
-    let totalPages = 1;
-    let currentData = [];
-
-    function validateDates() {
-        const startDate = document.getElementById("startDate");
-        const endDate = document.getElementById("endDate");
+    
+    const reason = reasonSelect.value === 'Other' 
+        ? document.getElementById('otherReason').value.trim()
+        : reasonSelect.value;
         
-        const today = new Date().toISOString().split('T')[0];
-        startDate.max = today;
-        endDate.max = today;
+    if (reasonSelect.value === 'Other' && !reason) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Required',
+            text: 'Please specify the other reason'
+        });
+        return;
+    }
 
-        startDate.addEventListener('change', (e) => {
-            endDate.min = e.target.value;
-            if (endDate.value && endDate.value < e.target.value) {
-                endDate.value = e.target.value;
+    try {
+       
+        button.classList.add('btn-loading');
+        button.disabled = true;
+
+        const response = await fetch(`/orderDetails/${orderId}/cancel-item`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                productName: productName,
+                reason: reason
+            })
+        });
+
+        const data = await response.json();
+        
+        
+        button.classList.remove('btn-loading');
+        button.disabled = false;
+        
+        if (data.success) {
+            const orderSummaryElement = document.querySelector('.order-detail-summary-text');
+            if (orderSummaryElement && data.updatedTotalPrice !== undefined) {
+                orderSummaryElement.textContent = `Total Amount: ₹${data.updatedTotalPrice.toFixed(2)}`;
+            }
+            
+            Swal.fire({
+                icon: 'success',
+                title: 'Success',
+                text: 'Order item cancelled successfully',
+                showConfirmButton: false,
+                timer: 1500
+            }).then(() => {
+                location.reload();
+            });
+        } else {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: data.message || 'Failed to cancel order item'
+            });
+        }
+    } catch (error) {
+        button.classList.remove('btn-loading');
+        button.disabled = false;
+        
+        console.error('Error cancelling order item:', error);
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'An error occurred while cancelling the order item'
+        });
+    }
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+    if (!document.getElementById('cancelOrderModal')) {
+        console.error('Cancel order modal element not found');
+    }
+});
+
+document.getElementById('returnReason').addEventListener('change', function() {
+    const otherReasonDiv = document.getElementById('otherReasonDiv');
+    if (this.value === 'Other') {
+        otherReasonDiv.classList.remove('d-none');
+    } else {
+        otherReasonDiv.classList.add('d-none');
+    }
+});
+
+function returnOrderItem(orderId, productName) {
+    document.getElementById('returnOrderId').value = orderId;
+    document.getElementById('returnProductName').value = productName;
+    
+    document.getElementById('returnReason').value = '';
+    document.getElementById('otherReason').value = '';
+    document.getElementById('otherReasonDiv').classList.add('d-none');
+
+    const modal = new bootstrap.Modal(document.getElementById('returnOrderModal'));
+    modal.show();
+}
+
+document.getElementById('confirmReturnOrder').addEventListener('click', async function() {
+    const button = this;
+    const orderId = document.getElementById('returnOrderId').value;
+    const productName = document.getElementById('returnProductName').value;
+    const reasonSelect = document.getElementById('returnReason');
+    
+    if (!reasonSelect.value) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Required',
+            text: 'Please select a reason for return'
+        });
+        return;
+    }
+    
+    const reason = reasonSelect.value === 'Other' 
+        ? document.getElementById('otherReason').value.trim()
+        : reasonSelect.value;
+        
+    if (reasonSelect.value === 'Other' && !reason) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Required',
+            text: 'Please specify the other reason'
+        });
+        return;
+    }
+
+    try {
+        button.classList.add('btn-loading');
+        button.disabled = true;
+
+        const response = await fetch(`/orderDetails/${orderId}/return-item`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                productName: productName,
+                reason: reason
+            })
+        });
+
+        const data = await response.json();
+        
+        button.classList.remove('btn-loading');
+        button.disabled = false;
+        
+        if (data.success) {
+            Swal.fire({
+                icon: 'success',
+                title: 'Return Requested',
+                text: 'Your return request has been submitted. Our team will review it soon.',
+                showConfirmButton: false,
+                timer: 2500
+            }).then(() => {
+                location.reload();
+            });
+        } else {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: data.message || 'Failed to submit return request'
+            });
+        }
+    } catch (error) {
+        button.classList.remove('btn-loading');
+        button.disabled = false;
+        
+        console.error('Error submitting return request:', error);
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'An error occurred while submitting the return request'
+        });
+    }
+});
+
+</script>
+
+
+//this is my order controller 
+const mongoose = require('mongoose');
+const User = require("../../models/userModel");
+const Address = require("../../models/addressModel");
+const Cart = require("../../models/cartModel");
+const Order = require("../../models/orderModel");
+const Product = require("../../models/productModel");
+const Offer=require("../../models/offerModel")
+const Category = require("../../models/categoryModel");
+const Coupon=require("../../models/couponModel")
+const Wallet=require("../../models/walletModel")
+const {addToWallet}=require("../../controllers/user/walletController")
+const PDFDocument = require('pdfkit');
+const fs = require('fs');
+const path = require('path');
+
+const Razorpay = require('razorpay');
+const crypto = require('crypto');
+
+
+const razorpay = new Razorpay({
+    key_id: process.env.RAZORPAY_KEY_ID,
+    key_secret: process.env.RAZORPAY_KEY_SECRET
+});
+
+
+const createOrder = async (req, res) => {
+    try {
+        const userId = req.session.user;
+        const { paymentMethod, addressId } = req.body;
+
+        if (!userId) {
+            return res.status(401).json({ success: false, message: "Please login to place an order." });
+        }
+
+        const cart = await Cart.findOne({ userId }).populate({
+            path: 'items.product',
+            populate: {
+                path: 'category',
+                model: 'Category'
             }
         });
 
-        endDate.addEventListener('change', (e) => {
-            startDate.max = e.target.value;
-            if (startDate.value && startDate.value > e.target.value) {
-                startDate.value = e.target.value;
+        if (!cart || cart.items.length === 0) {
+            return res.status(400).json({ success: false, message: "Your cart is empty." });
+        }
+
+        for (const item of cart.items) {
+            const product = await Product.findById(item.product._id);
+            if (product.quantity < item.quantity) {
+                return res.status(400).json({ 
+                    success: false, 
+                    message: `Insufficient stock for ${product.productName}. Only ${product.quantity} available.` 
+                });
+            }
+        }
+
+        const address = await Address.findOne({ userId });
+        if (!address || !address.address[addressId]) {
+            return res.status(404).json({ success: false, message: "Address not found." });
+        }
+
+        const selectedAddress = address.address[addressId];
+
+        const orderItems = [];
+        let subtotal = 0;
+        
+        for (const item of cart.items) {
+            const product = await Product.findById(item.product._id);
+            const originalPrice = product.regularPrice;
+            
+            const currentDate = new Date();
+            const offers = await Offer.find({
+                status: 'Active',
+                expireDate: { $gt: currentDate }
+            });
+            
+            const productOffer = offers.find(offer => 
+                (offer.productIds?.includes(product._id)) ||
+                (offer.categoryIds?.includes(product.category))
+            );
+
+            const priceAfterOffer = productOffer 
+                ? originalPrice * (1 - productOffer.discount / 100)
+                : originalPrice;
+            
+            const itemSubtotal = priceAfterOffer * item.quantity;
+            subtotal += itemSubtotal;
+
+            orderItems.push({
+                productId: product._id,
+                productName: product.productName,
+                quantity: item.quantity,
+                price: originalPrice,
+                finalPrice: itemSubtotal,
+                itemStatus: "Ordered",
+                highestDiscount: productOffer ? productOffer.discount : 0
+            });
+        }
+
+        let finalAmount = subtotal;
+        const appliedCoupon = req.session.appliedCoupon;
+        
+        if (appliedCoupon) {
+            const discountAmount = appliedCoupon.discountAmount;
+            finalAmount = subtotal - discountAmount;
+
+            orderItems.forEach(item => {
+                const proportion = item.finalPrice / subtotal;
+                const itemDiscount = discountAmount * proportion;
+                item.finalPrice -= itemDiscount;
+            });
+        }
+
+        finalAmount+=50;
+        if (paymentMethod === 'COD' && finalAmount > 1000) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Cash on Delivery is not available for orders above ₹1,000' 
+            });
+        }
+
+        switch (paymentMethod) {
+            case 'COD': {
+                const newOrder = new Order({
+                    orderId: `ORD-${Date.now()}`,
+                    userId,
+                    items: orderItems,
+                    totalPrice: finalAmount,
+                    deliveryCharge: 50,
+                    address: {
+                        name: selectedAddress.name,
+                        phone: selectedAddress.phone,
+                        district: selectedAddress.district,
+                        city: selectedAddress.city,
+                        house: selectedAddress.house,
+                        state: selectedAddress.state,
+                        pincode: selectedAddress.pincode,
+                    },
+                    paymentMethod,
+                    paymentStatus: 'Pending',
+                    orderStatus: "Processing"
+                });
+
+                await newOrder.save();
+
+                for (const item of orderItems) {
+                    await Product.findByIdAndUpdate(
+                        item.productId,
+                        { $inc: { quantity: -item.quantity } }
+                    );
+                }
+
+                await Cart.deleteOne({ userId });
+                delete req.session.appliedCoupon;
+
+                return res.status(200).json({ 
+                    success: true, 
+                    orderId: newOrder.orderId 
+                });
+            }
+
+            case 'Wallet': {
+                const wallet = await Wallet.findOne({ userId });
+                
+                if (!wallet || wallet.balance < finalAmount) {
+                    return res.status(400).json({ 
+                        success: false, 
+                        message: 'Insufficient wallet balance' 
+                    });
+                }
+
+                const newOrder = new Order({
+                    orderId: `ORD-${Date.now()}`,
+                    userId,
+                    items: orderItems,
+                    totalPrice: finalAmount,
+                    address: {
+                        name: selectedAddress.name,
+                        phone: selectedAddress.phone,
+                        district: selectedAddress.district,
+                        city: selectedAddress.city,
+                        house: selectedAddress.house,
+                        state: selectedAddress.state,
+                        pincode: selectedAddress.pincode,
+                    },
+                    paymentMethod,
+                    paymentStatus: 'Paid',
+                    orderStatus: "Processing"
+                });
+
+                await newOrder.save();
+
+                for (const item of orderItems) {
+                    await Product.findByIdAndUpdate(
+                        item.productId,
+                        { $inc: { quantity: -item.quantity } }
+                    );
+                }
+
+                wallet.balance -= finalAmount;
+                wallet.transactions.push({
+                    amount: finalAmount,
+                    type: 'debit',
+                    description: `Payment for order ${newOrder.orderId}`,
+                    balance: wallet.balance
+                });
+                await wallet.save();
+
+                await Cart.deleteOne({ userId });
+                delete req.session.appliedCoupon;
+
+                return res.status(200).json({ 
+                    success: true, 
+                    orderId: newOrder.orderId 
+                });
+            }
+
+            case 'Razorpay': {
+                const razorpayOrderOptions = {
+                    amount: Math.round(finalAmount * 100),
+                    currency: 'INR',
+                    receipt: `ORD-${Date.now()}`,
+                    payment_capture: 1
+                };
+
+                const razorpayOrder = await razorpay.orders.create(razorpayOrderOptions);
+
+                const newOrder = new Order({
+                    orderId: `ORD-${Date.now()}`,
+                    userId,
+                    items: orderItems,
+                    totalPrice: finalAmount,
+                    address: {
+                        name: selectedAddress.name,
+                        phone: selectedAddress.phone,
+                        district: selectedAddress.district,
+                        city: selectedAddress.city,
+                        house: selectedAddress.house,
+                        state: selectedAddress.state,
+                        pincode: selectedAddress.pincode,
+                    },
+                    paymentMethod,
+                    paymentStatus: 'Pending',
+                    orderStatus: "Processing",
+                    razorpayOrderId: razorpayOrder.id
+                });
+
+                await newOrder.save();
+
+                for (const item of orderItems) {
+                    await Product.findByIdAndUpdate(
+                        item.productId,
+                        { $inc: { quantity: -item.quantity } }
+                    );
+                }
+
+                await Cart.deleteOne({ userId });
+                delete req.session.appliedCoupon;
+
+                return res.status(200).json({ 
+                    success: true, 
+                    orderId: newOrder.orderId,
+                    razorpayOrder: {
+                        id: razorpayOrder.id,
+                        key: process.env.RAZORPAY_KEY_ID,
+                        amount: razorpayOrder.amount
+                    }
+                });
+            }
+
+            default:
+                return res.status(400).json({ 
+                    success: false, 
+                    message: 'Invalid payment method' 
+                });
+        }
+
+    } catch (error) {
+        console.error("Error placing order:", error);
+        return res.status(500).json({ 
+            success: false, 
+            message: error.message || 'An error occurred while placing the order' 
+        });
+    }
+};
+
+//razorpay
+const verifyRazorpayPayment = async (req, res) => {
+    try {
+        const { 
+            razorpay_order_id, 
+            razorpay_payment_id, 
+            razorpay_signature,
+            status 
+        } = req.body;
+
+        const order = await Order.findOne({ razorpayOrderId: razorpay_order_id });
+        
+        if (!order) {
+            console.error('Order not found for Razorpay order ID:', razorpay_order_id);
+            return res.status(404).json({ success: false, message: 'Order not found' });
+        }
+
+         if (status === 'failed') {
+            order.paymentStatus = 'Failed';
+            order.orderStatus = 'pending';
+            await order.save();
+            return res.status(200).json({ 
+                success: false, 
+                message: 'Payment failed',
+                orderId: order.orderId 
+            });
+        }
+
+        const hmac = crypto.createHmac('sha256', process.env.RAZORPAY_KEY_SECRET);
+        hmac.update(`${razorpay_order_id}|${razorpay_payment_id}`);
+        const generatedSignature = hmac.digest('hex');
+
+        if (generatedSignature !== razorpay_signature) {
+            order.paymentStatus = 'Failed';
+            order.orderStatus = 'pending';
+            await order.save();
+            return res.status(400).json({ success: false, message: 'Invalid payment signature' });
+        }
+
+        order.paymentStatus = 'Paid';
+        order.paymentMethod = 'Razorpay';
+        order.razorpayPaymentId = razorpay_payment_id;
+        
+        await order.save();
+
+        return res.status(200).json({ 
+            success: true, 
+            message: 'Payment verified successfully',
+            orderId: order.orderId
+        });
+
+    } catch (error) {
+        console.error('Razorpay verification error:', error);
+        try {
+            const order = await Order.findOne({ razorpayOrderId: razorpay_order_id });
+            if (order) {
+                order.paymentStatus = 'Failed';
+                order.orderStatus = 'pending';
+                await order.save();
+            }
+        } catch (err) {
+            console.error('Error updating order status:', err);
+        }
+        res.status(500).json({ success: false, message: 'Payment verification failed' });
+    }
+};
+
+const createRazorpayOrder = async (req, res) => {
+    try {
+        const { orderId, amount } = req.body;
+        
+        const order = await Order.findOne({ orderId });
+        if (!order) {
+            return res.status(404).json({ 
+                success: false, 
+                message: 'Order not found' 
+            });
+        }
+
+        const razorpayOrder = await razorpay.orders.create({
+            amount: Math.round(amount * 100), // Convert to paise
+            currency: 'INR',
+            receipt: orderId,
+        });
+
+        // Update the order with new Razorpay order ID
+        order.razorpayOrderId = razorpayOrder.id;
+        await order.save();
+
+        res.json({
+            success: true,
+            key: process.env.RAZORPAY_KEY_ID,
+            amount: razorpayOrder.amount,
+            currency: razorpayOrder.currency,
+            orderId: razorpayOrder.id
+        });
+
+    } catch (error) {
+        console.error('Error creating Razorpay order:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to create payment order'
+        });
+    }
+};
+
+//ordersuccess
+const orderSuccess = async (req,res)=>{
+  try {
+
+    const userData = req.session.user ? await User.findById(req.session.user) : null;
+    
+    const { orderId } = req.params;
+    
+    const order = await Order.findOne({ orderId });
+
+    if (!order) {
+      return res.status(404).json({ success: false, message: 'Order not found' });
+    }
+
+    await order.save();
+
+    const user = await User.findById(order.userId);
+
+    if (!user.orderHistory) {
+      user.orderHistory = [];
+    }
+
+    user.orderHistory.push(order._id);
+    await user.save();
+
+
+    res.render('orderPlaced', {
+      userData,
+      order,
+      user,
+    });
+
+  } catch (error) {
+    console.error('Error in orderSuccess:', error);
+    res.status(500).json({ success: false, message: 'An error occurred while processing the order' });
+    
+  }
+}
+
+
+//get view order page 
+const getViewOrders = async (req, res) => {
+    try {
+        const userData = await User.findById(req.session.user);
+        if (!userData) {
+            return res.redirect('/login');
+        }
+    
+        const page = parseInt(req.query.page) || 1;
+        const limit = 5;
+        const skip = (page - 1) * limit;
+  
+        const totalOrdersCount = await Order.countDocuments({ userId: userData._id });
+        const totalPages = Math.ceil(totalOrdersCount / limit);
+  
+        const orders = await Order.find({ userId: userData._id })
+            .populate({
+                path: 'items.productId',
+                populate: {
+                    path: 'category',
+                    model: 'Category'
+                }
+            })
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(limit)
+            .lean();
+  
+        if (!orders || orders.length === 0) {
+            return res.render("viewOrders", {
+                userData,
+                orders: [],
+                paginatedOrders: [],
+                currentPage: 1,
+                totalPages: 1,
+                helpers: {
+                    getStatusClass: (status) => {
+                        switch (status.toLowerCase()) {
+                            case 'paid': return 'paid';
+                            case 'pending': return 'pending';
+                            case 'failed': return 'failed';
+                            case 'processing': return 'processing';
+                            case 'shipped': return 'shipped';
+                            case 'delivered': return 'delivered';
+                            default: return '';
+                        }
+                    }
+                }
+            });
+        }
+  
+        const formattedOrders = orders.map(order => {
+            // Calculate total price including all items regardless of status
+            const totalWithoutDelivery = order.items.reduce((total, item) => {
+                return total + item.finalPrice;
+            }, 0);
+  
+            // Apply coupon discount if exists
+            let finalTotal = totalWithoutDelivery;
+            if (order.appliedCoupon) {
+                finalTotal = totalWithoutDelivery - order.appliedCoupon.discountAmount;
+            }
+  
+            // Add delivery charge
+            finalTotal += 50;
+  
+            return {
+                orderId: order.orderId,
+                date: new Date(order.createdAt).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit'
+                }),
+                totalPrice: finalTotal.toFixed(2),
+                originalTotal: order.totalPrice,
+                deliveryCharge: 50,
+                paymentStatus: order.paymentStatus,
+                orderStatus: order.orderStatus,
+                items: order.items.map(item => ({
+                    ...item,
+                    originalPrice: item.price,
+                    finalPrice: item.finalPrice
+                })),
+                appliedCoupon: order.appliedCoupon
+            };
+        });
+  
+        res.render("viewOrders", {
+            userData,
+            orders: formattedOrders,
+            paginatedOrders: formattedOrders,
+            currentPage: page,
+            totalPages,
+            helpers: {
+                getStatusClass: (status) => {
+                    switch (status.toLowerCase()) {
+                        case 'paid': return 'paid';
+                        case 'pending': return 'pending';
+                        case 'failed': return 'failed';
+                        case 'processing': return 'processing';
+                        case 'shipped': return 'shipped';
+                        case 'delivered': return 'delivered';
+                        default: return '';
+                    }
+                }
+            }
+        });
+  
+    } catch (error) {
+        console.error('Error in getViewOrders:', error);
+  
+        res.render("viewOrders", {
+            userData: req.session.user ? await User.findById(req.session.user) : null,
+            orders: [],
+            paginatedOrders: [],
+            currentPage: 1,
+            totalPages: 1,
+            error: "An error occurred while fetching your orders. Please try again later.",
+            helpers: {
+                getStatusClass: (status) => {
+                    switch (status.toLowerCase()) {
+                        case 'paid': return 'paid';
+                        case 'pending': return 'pending';
+                        case 'failed': return 'failed';
+                        case 'processing': return 'processing';
+                        case 'shipped': return 'shipped';
+                        case 'delivered': return 'delivered';
+                        default: return '';
+                    }
+                }
+            }
+        });
+    }
+  };
+
+//get order details
+const getOrderDetails = async (req, res) => {
+    try {
+        const userData = await User.findById(req.session.user);
+        const { orderId } = req.params;
+
+        const order = await Order.findOne({ orderId }).populate({
+            path: 'items.productId',
+            model: 'Product',
+            populate: {
+                path: 'category',
+                model: 'Category',
+                select: 'name'
             }
         });
 
-        return startDate.value <= endDate.value;
+        if (!order) {
+            return res.status(404).render('error', {
+                message: 'Order not found',
+                error: { status: 404 }
+            });
+        }
+        const currentDate = new Date();
+        const offers = await Offer.find({
+            status: 'Active',
+            expireDate: { $gt: currentDate }
+        });
+
+        let activeSubtotal = 0;
+        let activeItemsCount = 0;
+
+        const processedItems = order.items.map(item => {
+
+            const productOffer = offers.find(offer => 
+                (offer.productIds?.includes(item.productId._id)) ||
+                (offer.categoryIds?.includes(item.productId.category._id))
+            );
+
+            const highestDiscount = productOffer ? productOffer.discount : 0;
+            const offerPrice = item.offerPrice || (productOffer 
+                ? item.price * (1 - productOffer.discount / 100)
+                : item.price);
+
+            const itemData = {
+                productName: item.productName,
+                productId: item.productId,
+                quantity: item.quantity,
+                price: item.price,
+                highestDiscount: highestDiscount,
+                offerPrice: offerPrice,
+                finalPrice: item.finalPrice,
+                itemStatus: item.itemStatus,
+                returnStatus: item.returnStatus || 'Not Requested',
+                returnReason: item.returnReason || '',
+                category: item.productId.category
+            };
+
+            if (item.itemStatus !== 'Cancelled') {
+                activeSubtotal += item.finalPrice;
+                activeItemsCount++;
+            }
+
+            return itemData;
+        });
+
+        let finalTotal = activeSubtotal;
+        if (order.appliedCoupon && activeItemsCount > 0) {
+            const proportionalDiscount = (activeSubtotal / order.totalPrice) * order.appliedCoupon.discountAmount;
+            finalTotal = activeSubtotal - proportionalDiscount;
+        }
+        finalTotal += 50;
+        const formattedOrder = {
+            orderId: order.orderId,
+            orderDate: new Date(order.createdAt).toLocaleDateString('en-US', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            }),
+            address: order.address,
+            paymentMethod: order.paymentMethod,
+            paymentStatus: order.paymentStatus,
+            orderStatus: order.orderStatus,
+            items: processedItems.map(item => ({
+                productName: item.productName,
+                category: item.category,
+                image: item.productId.productImage[0],
+                quantity: item.quantity,
+                price: item.price,
+                offerPrice: item.offerPrice,
+                highestDiscount: item.highestDiscount,
+                finalPrice: item.finalPrice,
+                itemStatus: item.itemStatus,
+                returnStatus: item.returnStatus
+            })),
+            totalPrice: order.totalPrice,
+            subtotal: activeSubtotal,
+            deliveryCharge: 50,
+            appliedCoupon: order.appliedCoupon ? {
+                code: order.appliedCoupon.code,
+                discountAmount: order.appliedCoupon.discountAmount
+            } : null
+        };
+
+        res.render("orderDetails", {
+            userData,
+            order: formattedOrder
+        });
+
+    } catch (error) {
+        console.error('Error in getOrderDetails:', error);
+        res.status(500).render('error', {
+            message: 'An error occurred while fetching order details',
+            error: process.env.NODE_ENV === 'development' ? error : {}
+        });
     }
+};
 
-    document.getElementById("pageSize").addEventListener("change", function() {
-        pageSize = parseInt(this.value);
-        currentPage = 1;
-        updateTableDisplay();
-    });
 
-    document.getElementById("prevPage").addEventListener("click", function() {
-        if (currentPage > 1) {
-            currentPage--;
-            updateTableDisplay();
-        }
-    });
-
-    document.getElementById("nextPage").addEventListener("click", function() {
-        if (currentPage < totalPages) {
-            currentPage++;
-            updateTableDisplay();
-        }
-    });
-
-                async function generateReport() {
-                    const reportType = document.getElementById("reportType").value;
-                    const startDate = document.getElementById("startDate").value;
-                    const endDate = document.getElementById("endDate").value;
-
-                    if (reportType === "custom" && (!startDate || !endDate || !validateDates())) {
-                       alert("Please select valid date range");
-                       return;
-                    }
-
-                    let url = `/admin/sales-report?reportType=${reportType}`;
-                    if (reportType === "custom") {
-                        url += `&startDate=${startDate}&endDate=${endDate}`;
-                    }
-
-                    try {
-                        const response = await fetch(url);
-                        const data = await response.json();
-
-                        if (data.success) {
-                           currentData = data.report;
-                           updateTableDisplay();
-                           updateSummary(data.summary);
-                        }
-                    } catch (error) {
-                        console.error("Error generating report:", error);
-                    }
-                }
-
-                function updateTableDisplay() {
-                    const startIndex = (currentPage - 1) * pageSize;
-                    const endIndex = startIndex + pageSize;
-                    const paginatedData = currentData.slice(startIndex, endIndex);
+//cancelled order
+const cancelOrderItem = async (req, res) => {
+    try {
+        const { orderId } = req.params;
+        const { productName, reason } = req.body;
         
-                    totalPages = Math.ceil(currentData.length / pageSize);
-        
-                    const tbody = document.querySelector("#salesReportTable tbody");
-                    tbody.innerHTML = "";
+        const order = await Order.findOne({ orderId });
+        if (!order) {
+            return res.status(404).json({ success: false, message: 'Order not found' });
+        }
 
-                    paginatedData.forEach((row) => {
-                        tbody.innerHTML += `
-                        <tr>
-                            <td>${row.orderId}</td>
-                            <td>${row.customerName}</td>
-                            <td>${row.date}</td>
-                            <td>$${row.total.toFixed(2)}</td>
-                            <td>$${row.discount.toFixed(2)}</td>
-                            <td>$${row.finalAmount.toFixed(2)}</td>
-                        </tr>
-                    `;
+        const itemIndex = order.items.findIndex(item => item.productName === productName);
+        if (itemIndex === -1) {
+            return res.status(404).json({ success: false, message: 'Product not found in order' });
+        }
+
+        const item = order.items[itemIndex];
+        if (item.itemStatus !== 'Ordered' && item.itemStatus !== 'Processing') {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'This item cannot be cancelled in its current status' 
+            });
+        }
+
+        let refundAmount = item.finalPrice;
+        if (order.appliedCoupon) {
+            const proportionalDiscount = (item.finalPrice / order.totalPrice) * order.appliedCoupon.discountAmount;
+            refundAmount = item.finalPrice - proportionalDiscount;
+        }
+
+        const activeItems = order.items.filter((i, idx) => idx !== itemIndex && i.itemStatus !== 'Cancelled');
+        if (activeItems.length === 0) {
+            refundAmount += 50; 
+        }
+
+        if ((order.paymentMethod === 'Razorpay' || order.paymentMethod === 'Wallet') && 
+            order.paymentStatus === 'Paid') {
+            let wallet = await Wallet.findOne({ userId: order.userId });
+            
+            if (!wallet) {
+                wallet = new Wallet({
+                    userId: order.userId,
+                    balance: 0,
+                    transactions: []
+                });
+            }
+
+            const newBalance = wallet.balance + refundAmount;
+            wallet.transactions.push({
+                amount: refundAmount,
+                type: 'credit',
+                description: `Refund for cancelled item: ${item.productName}`,
+                orderId: order._id,
+                balance: newBalance
+            });
+
+            wallet.balance = newBalance;
+            await wallet.save();
+        }
+
+        item.itemStatus = 'Cancelled';
+        item.reason = reason;
+
+        const product = await Product.findById(item.productId);
+        if (product) {
+            product.quantity += item.quantity;
+            await product.save();
+        }
+
+        const remainingActiveItems = order.items.filter(item => item.itemStatus !== 'Cancelled');
+        order.totalPrice = remainingActiveItems.reduce((total, item) => total + item.finalPrice, 0);
+
+        if (remainingActiveItems.length > 0) {
+            order.totalPrice += 50;
+        }
+
+        if (remainingActiveItems.length === 0) {
+            order.orderStatus = 'Cancelled';
+        }
+
+        await order.save();
+
+        res.status(200).json({
+            success: true,
+            message: 'Order item cancelled successfully. Refund has been processed to your wallet.',
+            updatedTotalPrice: order.totalPrice,
+            refundAmount: refundAmount
+        });
+
+    } catch (error) {
+        console.error('Error in cancelOrderItem:', error);
+        res.status(500).json({
+            success: false,
+            message: 'An error occurred while cancelling the order item'
+        });
+    }
+};
+
+
+//return order
+const returnOrderItem = async (req, res) => {
+    try {
+        const { orderId } = req.params;
+        const { productName, reason } = req.body;
+
+        const order = await Order.findOne({ orderId });
+        if (!order) {
+            return res.status(404).json({ success: false, message: 'Order not found' });
+        }
+
+        const itemToReturn = order.items.find(item => 
+            item.productName === productName && item.itemStatus === 'Delivered'
+        );
+
+        if (!itemToReturn) {
+            return res.status(400).json({
+                success: false,
+                message: 'Item cannot be returned'
+            });
+        }
+
+        let refundAmount = itemToReturn.finalPrice;
+        if (order.appliedCoupon) {
+            const proportionalDiscount = (itemToReturn.finalPrice / order.totalPrice) * order.appliedCoupon.discountAmount;
+            refundAmount = itemToReturn.finalPrice - proportionalDiscount;
+        }
+
+        const remainingItems = order.items.filter(item => 
+            item.itemStatus !== 'Cancelled' && 
+            item.productName !== productName
+        );
+
+        if (remainingItems.length === 0) {
+            refundAmount += 50;
+        }
+
+
+        if ((order.paymentMethod === 'Razorpay' || order.paymentMethod === 'Wallet') && 
+            order.paymentStatus === 'Paid') {
+            let wallet = await Wallet.findOne({ userId: order.userId });
+            
+            if (!wallet) {
+                wallet = new Wallet({
+                    userId: order.userId,
+                    balance: 0,
+                    transactions: []
+                });
+            }
+
+            const newBalance = wallet.balance + refundAmount;
+            wallet.transactions.push({
+                amount: refundAmount,
+                type: 'credit',
+                description: `Refund for returned item: ${itemToReturn.productName}`,
+                orderId: order._id,
+                balance: newBalance
+            });
+
+            wallet.balance = newBalance;
+            await wallet.save();
+        }
+
+        itemToReturn.returnReason = reason;
+        itemToReturn.returnStatus = 'Return Requested';
+        itemToReturn.returnRequestDate = new Date();
+        itemToReturn.itemStatus = 'Return Processed';
+        itemToReturn.refundAmount = refundAmount;
+
+        const activeItems = order.items.filter(item => item.itemStatus !== 'Cancelled');
+        order.totalPrice = activeItems.reduce((total, item) => total + item.finalPrice, 0);
+        
+        if (activeItems.length > 0) {
+            order.totalPrice += 50;
+        }
+
+        await order.save();
+
+        const product = await Product.findById(itemToReturn.productId);
+        if (product) {
+            product.quantity += itemToReturn.quantity;
+            await product.save();
+        }
+
+        res.json({
+            success: true,
+            message: 'Return request processed successfully. Refund has been added to your wallet.',
+            returnStatus: 'Return Processed',
+            refundAmount: refundAmount.toFixed(2)
+        });
+
+    } catch (error) {
+        console.error('Error in returnOrderItem:', error);
+        res.status(500).json({
+            success: false,
+            message: 'An error occurred while processing the return request'
+        });
+    }
+};
+
+//download order summary
+const generateOrderSummaryPDF = async (req, res) => {
+    try {
+        const { orderId } = req.params;
+        const order = await Order.findOne({ orderId }).populate({
+            path: 'items.productId',
+            model: 'Product',
+            populate: {
+                path: 'category',
+                model: 'Category',
+                select: 'name'
+            }
+        });
+
+        if (!order) {
+            return res.status(404).json({ success: false, message: 'Order not found' });
+        }
+
+        const doc = new PDFDocument({
+            margin: 30,
+            size: 'A4'
+        });
+
+        const filename = `order-summary-${orderId}.pdf`;
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename=${filename}`);
+        doc.pipe(res);
+
+        // Helper function to draw a box
+        const drawBox = (title, startY, height) => {
+            const boxPadding = 5;
+            const pageWidth = doc.page.width - 60; // 30px margin on each side
+            
+            // Draw box
+            doc.rect(30, startY, pageWidth, height)
+               .stroke('#000000');
+            
+            // Draw title background
+            doc.fill('#f0f0f0')
+               .rect(30, startY, pageWidth, 20)
+               .fill();
+            
+            // Draw title
+            doc.fill('#000000')
+               .fontSize(12)
+               .font('Helvetica-Bold')
+               .text(title, 35, startY + 4, {
+                   width: pageWidth - 10,
+                   align: 'left'
+               });
+
+            return startY + 20 + boxPadding;
+        };
+
+        // Store Header
+        doc.fontSize(18)
+           .font('Helvetica-Bold')
+           .text('NESTORIA', { align: 'center' })
+
+        // First row: Payment Details and Order Details side by side
+        let currentY = 50;
+        let leftBoxWidth = (doc.page.width - 70) / 2;
+
+        // Payment Details Box (Left)
+        doc.rect(30, currentY, leftBoxWidth, 70).stroke();
+        doc.fill('#f0f0f0')
+           .rect(30, currentY, leftBoxWidth, 20)
+           .fill();
+        doc.fill('#000000')
+           .fontSize(12)
+           .font('Helvetica-Bold')
+           .text('Payment Details', 35, currentY + 4);
+        
+        doc.font('Helvetica')
+           .fontSize(10)
+           .text(`Payment Method: ${order.paymentMethod}`, 35, currentY + 25)
+           .text(`Payment Status: ${order.paymentStatus}`, 35, currentY + 40);
+
+        // Order Details Box (Right)
+        doc.rect(leftBoxWidth + 40, currentY, leftBoxWidth, 70).stroke();
+        doc.fill('#f0f0f0')
+           .rect(leftBoxWidth + 40, currentY, leftBoxWidth, 20)
+           .fill();
+        doc.fill('#000000')
+           .fontSize(12)
+           .font('Helvetica-Bold')
+           .text('Order Details', leftBoxWidth + 45, currentY + 4);
+        
+        doc.font('Helvetica')
+           .fontSize(10)
+           .text(`Order ID: ${order.orderId}`, leftBoxWidth + 45, currentY + 25)
+           .text(`Order Date: ${new Date(order.createdAt).toLocaleDateString()}`, leftBoxWidth + 45, currentY + 40);
+
+        // Shipping Information Box
+        currentY = 130;
+        contentY = drawBox('Shipping Information', currentY, 85);
+        
+        doc.font('Helvetica')
+           .fontSize(10)
+           .text(`Name: ${order.address.name}`, 35, contentY)
+           .text(`Phone: ${order.address.phone}`, 35, contentY + 15)
+           .text(`Address: ${order.address.house}, ${order.address.district}`, 35, contentY + 30)
+           .text(`${order.address.city}, ${order.address.state} - ${order.address.pincode}`, 35, contentY + 45);
+
+        // Product Details Box
+        currentY = 225;
+        contentY = drawBox('Product Details', currentY, 200);
+
+        // Product table headers
+        doc.font('Helvetica-Bold')
+           .fontSize(10)
+           .text('Image', 35, contentY, { width: 60 })
+           .text('Product', 100, contentY, { width: 180 })
+           .text('Category', 280, contentY, { width: 100 })
+           .text('Qty', 380, contentY, { width: 40 })
+           .text('Price', 420, contentY, { width: 70 });
+
+        let productY = contentY + 15;
+        const imageSize = 40;
+
+        // Process each product
+        for (const item of order.items) {
+            if (productY > 380) { // Check if we need a new page
+                doc.addPage();
+                currentY = 30;
+                contentY = drawBox('Product Details (Continued)', currentY, 200);
+                productY = contentY + 15;
+            }
+
+            try {
+                const imagePath = path.join(__dirname, '..', 'public', 'uploads', 'cropped', item.productId.productImage[0]);
+                if (fs.existsSync(imagePath)) {
+                    doc.image(imagePath, 35, productY, {
+                        fit: [imageSize, imageSize],
+                        align: 'center',
+                        valign: 'center'
                     });
-
-                    document.getElementById("currentPage").textContent = currentPage;
-                    document.getElementById("totalPages").textContent = totalPages;
-                    document.getElementById("prevPage").disabled = currentPage === 1;
-                    document.getElementById("nextPage").disabled = currentPage === totalPages;
                 }
+            } catch (error) {
+                console.error('Error loading product image:', error);
+            }
 
-                    function updateSummary(summary) {
-                         document.getElementById("totalAmount").textContent = `$${summary.totalAmount.toFixed(2)}`;
-                         document.getElementById("totalDiscount").textContent = `$${summary.totalDiscount.toFixed(2)}`;
-                         document.getElementById("finalTotal").textContent = `$${(summary.totalAmount - summary.totalDiscount).toFixed(2)}`;
-                    }
+            doc.font('Helvetica')
+               .fontSize(10)
+               .text(item.productName, 100, productY + 10, { width: 180 })
+               .text(item.productId.category.name, 280, productY + 10, { width: 100 })
+               .text(item.quantity.toString(), 380, productY + 10, { width: 40 })
+               .text(`₹${item.finalPrice.toFixed(2)}`, 420, productY + 10, { width: 70 });
 
-                document.addEventListener('DOMContentLoaded', function() {
-                   validateDates();
-                })
+            productY += 45;
+        }
 
-                function downloadReport(type) {
-                    const reportType = document.getElementById("reportType").value;
-                    const startDate = document.getElementById("startDate").value;
-                    const endDate = document.getElementById("endDate").value;
+        // Order Summary Box
+        currentY = productY + 20;
+        contentY = drawBox('Order Summary', currentY, 100);
 
-                    if (reportType === "custom" && (!startDate || !endDate || !validateDates())) {
-                      alert("Please select valid date range");
-                      return;
-                    }
+        const subtotal = order.items.reduce((sum, item) => sum + item.finalPrice, 0);
+        
+        // Right-aligned summary details
+        doc.font('Helvetica')
+           .fontSize(10);
 
-                    let url = `/admin/sales-report?reportType=${reportType}&download=${type}`;
-                    if (reportType === "custom") {
-                        url += `&startDate=${startDate}&endDate=${endDate}`;
-                    }
+        let summaryY = contentY + 5;
+        doc.text('Subtotal:', 35, summaryY)
+           .text(`₹${subtotal.toFixed(2)}`, 420, summaryY, { width: 70, align: 'right' });
 
-                    window.location.href = url;
-                }
-    </script>
-</section>
-<%- include('../layoutsAdmin/adminfooter') %>
+        summaryY += 15;
+        doc.text('Shipping Charge:', 35, summaryY)
+           .text('₹50.00', 420, summaryY, { width: 70, align: 'right' });
 
-//this is my admin controller 
+        if (order.appliedCoupon) {
+            summaryY += 15;
+            doc.text(`Coupon Discount (${order.appliedCoupon.code}):`, 35, summaryY)
+               .text(`-₹${order.appliedCoupon.discountAmount.toFixed(2)}`, 420, summaryY, { width: 70, align: 'right' });
+        }
+
+        summaryY += 20;
+        doc.font('Helvetica-Bold')
+           .text('Total Amount:', 35, summaryY)
+           .text(`₹${order.totalPrice.toFixed(2)}`, 420, summaryY, { width: 70, align: 'right' });
+
+        // Footer
+        doc.font('Helvetica')
+           .fontSize(9)
+           .text('Thank you for shopping with us!', 0, doc.page.height - 50, {
+               align: 'center',
+               width: doc.page.width
+           });
+
+        doc.end();
+
+    } catch (error) {
+        console.error('Error generating PDF:', error);
+        res.status(500).json({ success: false, message: 'Error generating PDF' });
+    }
+};
+
+module.exports={
+    createOrder,
+    verifyRazorpayPayment,
+    createRazorpayOrder,
+    orderSuccess,
+    getViewOrders,
+    getOrderDetails,
+    cancelOrderItem,
+    returnOrderItem,
+    generateOrderSummaryPDF
+}
+
+
+
+//tis is admin controller
 
 const Admin = require("../../models/adminModel");
 const Order = require('../../models/orderModel');
 const User = require('../../models/userModel');
+const Category= require('../../models/categoryModel');
+const Coupon= require('../../models/couponModel')
 const Product = require("../../models/productModel");
 const Offer = require("../../models/offerModel")
 const ExcelJS = require('exceljs');
@@ -533,8 +1936,6 @@ const loadDashboard = async (req, res) => {
   }
 };
 
-
-
 //page Error
 const pageerror=async(req,res)=>{
     res.render("adminerror")
@@ -611,7 +2012,7 @@ const loadOrdersList = async (req, res) => {
                           : item.price;
 
                       const finalItemPrice = item.finalPrice || priceAfterOffer;
-                      subtotal += finalItemPrice * item.quantity;
+                      subtotal += finalItemPrice;
 
                       return {
                           ...item,
@@ -625,10 +2026,15 @@ const loadOrdersList = async (req, res) => {
 
               let finalTotal = subtotal;
               let couponDiscount = 0;
+              const shippingCharge = 50;
+
               if (order.appliedCoupon && activeItemsCount > 0) {
                   couponDiscount = (subtotal / order.totalPrice) * order.appliedCoupon.discountAmount;
-                  finalTotal = subtotal - couponDiscount;
-              }
+                  finalTotal = subtotal - couponDiscount+shippingCharge
+              } else {
+                finalTotal = subtotal + shippingCharge;
+            }
+            
 
               const highestDiscount = Math.max(
                   ...itemsWithPricing
@@ -648,6 +2054,7 @@ const loadOrdersList = async (req, res) => {
                   orderDate: new Date(order.createdAt).toLocaleDateString('en-GB'),
                   customerName: customerName || "Unknown Customer",
                   subtotal: subtotal.toFixed(2),
+                  shippingCharge: shippingCharge.toFixed(2),
                   couponDiscount: couponDiscount.toFixed(2),
                   totalPrice: finalTotal.toFixed(2),
                   originalPrice: order.totalPrice.toFixed(2),
@@ -669,7 +2076,6 @@ const loadOrdersList = async (req, res) => {
               };
           })
       );
-
       const pagination = {
           totalPages: Math.ceil(totalOrders / limit),
           currentPage: Number(page),
@@ -697,6 +2103,7 @@ const loadOrdersList = async (req, res) => {
   }
 };
 
+//helper function for getcustomer name
 async function getCustomerName(userId) {
   try {
     const user = await User.findById(userId).select('name');
@@ -736,10 +2143,9 @@ const updateReturnStatus = async (req, res) => {
       
       if (returnItem) {
         const newReturnStatus= status === 'Accepted' ? 'Return Accepted' : 'Return Rejected';
-          
-      item.returnStatus = newReturnStatus;
-      item.isApproved = status === 'Accepted';
-    }
+           item.returnStatus = newReturnStatus;
+           item.isApproved = status === 'Accepted';
+      }
       return item;
     });
 
@@ -752,10 +2158,10 @@ const updateReturnStatus = async (req, res) => {
     );
 
     if (allItemsProcessed) {
-      const hasAcceptedReturns = order.items.some(
-        item => item.returnStatus === 'Return Accepted'
-      );
-      order.orderStatus = hasAcceptedReturns ? 'Returned' : 'Delivered';
+       const hasAcceptedReturns = order.items.some(
+         item => item.returnStatus === 'Return Accepted'
+       );
+       order.orderStatus = hasAcceptedReturns ? 'Returned' : 'Delivered';
     }
     await order.save();
     
@@ -826,8 +2232,8 @@ const adminOrderDetails = async (req, res) => {
               : item.finalPrice;
 
           if (item.itemStatus !== 'Cancelled') {
-              activeSubtotal += itemFinalPrice;
-              activeItemsCount++;
+            activeSubtotal += parseFloat(item.finalPrice);
+            activeItemsCount++;
           }
 
           return {
@@ -839,9 +2245,9 @@ const adminOrderDetails = async (req, res) => {
                   : '/placeholder-image.jpg',
               quantity: item.quantity,
               price: item.price.toFixed(2),
-              offerPrice: offerPrice.toFixed(2),
-              highestDiscount,
-              finalPrice: itemFinalPrice.toFixed(2),
+              offerPrice: item.offerPrice ? item.offerPrice.toFixed(2) : item.price.toFixed(2),
+              highestDiscount: item.highestDiscount || 0,
+              finalPrice: item.finalPrice.toFixed(2),
               status: item.itemStatus,
               isAvailable: !item.productId?.isBlocked
           };
@@ -849,6 +2255,7 @@ const adminOrderDetails = async (req, res) => {
 
 
       let finalTotal = activeSubtotal;
+      const shippingCharge = order.deliveryCharge || 50;
       let appliedCouponInfo = null;
 
       if (order.appliedCoupon && activeItemsCount > 0) {
@@ -859,8 +2266,10 @@ const adminOrderDetails = async (req, res) => {
               code: order.appliedCoupon.code,
               originalDiscount: order.appliedCoupon.discountAmount,
               appliedDiscount: proportionalDiscount.toFixed(2)
-          };
-      }
+          }
+        } else {
+            finalTotal = activeSubtotal;
+        }
 
       const formattedOrder = {
           orderId: order.orderId,
@@ -875,8 +2284,9 @@ const adminOrderDetails = async (req, res) => {
           address: order.address,
           items: processedItems,
           subtotal: activeSubtotal.toFixed(2),
+          shippingCharge: shippingCharge.toFixed(2),
           appliedCoupon: appliedCouponInfo,
-          finalTotal: finalTotal.toFixed(2)
+          finalTotal: (finalTotal + shippingCharge).toFixed(2)
       };
 
       res.render('adminOrderDetails', { order: formattedOrder });
@@ -896,23 +2306,23 @@ const updateOrderStatus = async (req, res) => {
       const { orderId, productId, status } = req.body;
 
       const [order, product] = await Promise.all([
-        Order.findOne({ orderId }),
-        Product.findById(productId)
-    ]);
+          Order.findOne({ orderId }),
+          Product.findById(productId)
+      ]);
 
-    if (!order) {
-      return res.status(404).json({
+     if (!order) {
+        return res.status(404).json({
           success: false,
           message: 'Order not found'
-      });
-  }
+        });
+      }
 
-  if (!product) {
-      return res.status(404).json({
+     if (!product) {
+        return res.status(404).json({
           success: false,
           message: 'Product not found'
-      });
-  }
+        });
+      }
 
       const itemIndex = order.items.findIndex(item => 
           item.productId.toString() === productId
@@ -920,8 +2330,8 @@ const updateOrderStatus = async (req, res) => {
 
       if (itemIndex === -1) {
           return res.status(404).json({
-              success: false,
-              message: 'Product not found in order'
+            success: false,
+            message: 'Product not found in order'
           });
       }
 
@@ -958,7 +2368,7 @@ const updateOrderStatus = async (req, res) => {
   }
 };
 
-
+//updateallproductstatus 
 const updateAllProductsStatus = async (req, res) => {
   try {
     const { orderId, status } = req.body;
@@ -1055,62 +2465,273 @@ const cancelAllProducts = async (req, res) => {
   }
 };
 
+//generate sales report 
 const generateSalesReport = async (req, res) => {
   try {
       const { startDate, endDate, reportType } = req.query;
       let dateQuery = {};
+      let previousPeriodQuery = {};
 
       if (reportType === 'daily') {
-          const today = new Date();
+        const today = new Date();
+        const yesterday = new Date(today);
+        yesterday.setDate(yesterday.getDate() - 1);
+
           dateQuery = {
+                createdAt: {
+                    $gte: new Date(today.setHours(0, 0, 0, 0)),
+                    $lt: new Date(today.setHours(23, 59, 59, 999))
+                }
+            };
+            previousPeriodQuery = {
               createdAt: {
-                  $gte: new Date(today.setHours(0, 0, 0, 0)),
-                  $lt: new Date(today.setHours(23, 59, 59, 999))
+                  $gte: new Date(yesterday.setHours(0, 0, 0, 0)),
+                  $lt: new Date(yesterday.setHours(23, 59, 59, 999))
               }
           };
       } else if (reportType === 'weekly') {
-          const lastWeek = new Date(new Date().setDate(new Date().getDate() - 7));
-          dateQuery = { createdAt: { $gte: lastWeek } };
+          const today = new Date();
+          const weekStart = new Date(today);
+          weekStart.setDate(today.getDate() - today.getDay());
+        
+          const previousWeekStart = new Date(weekStart);
+          previousWeekStart.setDate(previousWeekStart.getDate() - 7);
+          const previousWeekEnd = new Date(weekStart);
+          previousWeekEnd.setSeconds(previousWeekEnd.getSeconds() - 1);
+
+          dateQuery = {
+            createdAt: {
+              $gte: new Date(weekStart.setHours(0, 0, 0, 0)),
+              $lt: new Date(today.setHours(23, 59, 59, 999))
+            }
+          };
+          previousPeriodQuery = {
+            createdAt: {
+              $gte: new Date(previousWeekStart.setHours(0, 0, 0, 0)),
+              $lt: new Date(previousWeekEnd)
+            }
+          };
       } else if (reportType === 'monthly') {
-          const lastMonth = new Date(new Date().setMonth(new Date().getMonth() - 1));
-          dateQuery = { createdAt: { $gte: lastMonth } };
-      } else if (reportType === 'custom' && startDate && endDate) {
+          const today = new Date();
+          const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+        
+          const previousMonthStart = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+          const previousMonthEnd = new Date(today.getFullYear(), today.getMonth(), 0);
+
           dateQuery = {
               createdAt: {
-                  $gte: new Date(startDate),
-                  $lte: new Date(endDate)
+                $gte: new Date(monthStart.setHours(0, 0, 0, 0)),
+                $lt: new Date(today.setHours(23, 59, 59, 999))
+              }
+          };
+          previousPeriodQuery = {
+              createdAt: {
+                $gte: new Date(previousMonthStart.setHours(0, 0, 0, 0)),
+                $lt: new Date(previousMonthEnd.setHours(23, 59, 59, 999))
+              }
+          };
+      }else if (reportType === 'yearly') {
+         const today = new Date();
+         const yearStart = new Date(today.getFullYear(), 0, 1);
+        
+         const previousYearStart = new Date(today.getFullYear() - 1, 0, 1);
+         const previousYearEnd = new Date(today.getFullYear(), 0, 0);
+
+         dateQuery = {
+             createdAt: {
+                $gte: new Date(yearStart.setHours(0, 0, 0, 0)),
+                $lt: new Date(today.setHours(23, 59, 59, 999))
+             }
+         };
+         previousPeriodQuery = {
+             createdAt: {
+                $gte: new Date(previousYearStart.setHours(0, 0, 0, 0)),
+                $lt: new Date(previousYearEnd.setHours(23, 59, 59, 999))
+             }
+         };
+      } else if (reportType === 'custom' && startDate && endDate) {
+          const start = new Date(startDate);
+          const end = new Date(endDate);
+          const daysDiff = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
+        
+          const previousStart = new Date(start);
+          previousStart.setDate(previousStart.getDate() - daysDiff);
+          const previousEnd = new Date(start);
+          previousEnd.setSeconds(previousEnd.getSeconds() - 1);
+
+          dateQuery = {
+              createdAt: {
+                $gte: new Date(start.setHours(0, 0, 0, 0)),
+                $lt: new Date(end.setHours(23, 59, 59, 999))
+              }
+          };
+          previousPeriodQuery = {
+              createdAt: {
+                $gte: new Date(previousStart.setHours(0, 0, 0, 0)),
+                $lt: new Date(previousEnd)
               }
           };
       }
 
-      const orders = await Order.find(dateQuery)
-          .populate('userId', 'name')
-          .sort({ createdAt: -1 });
-
-      if (req.query.download === 'excel') {
-          return await downloadExcel(orders, res);
-      } else if (req.query.download === 'pdf') {
-          return await downloadPDF(orders, res);
-      }
-
-      const report = orders.map(order => ({
-          orderId: order.orderId,
-          customerName: order.userId?.name || 'Unknown',
-          date: order.createdAt.toLocaleDateString(),
-          total: order.items.reduce((sum, item) => sum + item.finalPrice, 0),
-          discount: order.discount || 0,
-          finalAmount: order.items.reduce((sum, item) => sum + item.finalPrice, 0) - (order.discount || 0)
-      }));
-
-      res.json({
-          success: true,
-          report,
-          summary: {
-              totalOrders: orders.length,
-              totalAmount: report.reduce((sum, order) => sum + order.finalAmount, 0),
-              totalDiscount: report.reduce((sum, order) => sum + order.discount, 0)
+      const currentOrders = await Order.find(dateQuery)
+      .populate('userId', 'name')
+      .populate({
+          path: 'items.productId',
+          populate: {
+            path: 'category'
           }
+      })
+      const currentCustomers = await User.distinct('_id', { 
+         _id: { $in: currentOrders.map(order => order.userId) } 
       });
+
+      const previousOrders = await Order.find(previousPeriodQuery);
+          const previousCustomers = await User.distinct('_id', { 
+              _id: { $in: previousOrders.map(order => order.userId) } 
+          });
+
+  
+      const currentRevenue = currentOrders.reduce((sum, order) => 
+        sum + order.items.reduce((itemSum, item) => itemSum + item.finalPrice, 0), 0);
+      const previousRevenue = previousOrders.reduce((sum, order) => 
+        sum + order.items.reduce((itemSum, item) => itemSum + item.finalPrice, 0), 0);
+  
+      const currentDiscount = currentOrders.reduce((sum, order) => {
+           let totalDiscount = 0;
+              if (order.discount) {
+                 totalDiscount += order.discount;
+              }
+         order.items.forEach(item => {
+             const originalPrice = item.price * item.quantity;
+             const finalPrice = item.finalPrice; 
+             const itemDiscount = originalPrice - finalPrice;
+                if (itemDiscount > 0) {
+                  totalDiscount += itemDiscount;
+                }
+         });
+         return sum + totalDiscount;
+      }, 0);
+
+      const stats = {
+          revenue: {
+             current: currentOrders.reduce((sum, order) => 
+             sum + order.items.reduce((itemSum, item) => itemSum + item.finalPrice, 0), 0),
+             change: previousRevenue ? ((currentRevenue - previousRevenue) / previousRevenue) * 100 : 0
+          },
+          orders: {
+             current: currentOrders.length,
+             change: previousOrders.length ? ((currentOrders.length - previousOrders.length) / previousOrders.length) * 100 : 0
+          },
+          customers: {
+             current: currentCustomers.length,
+             change: previousCustomers.length ? ((currentCustomers.length - previousCustomers.length) / previousCustomers.length) * 100 : 0
+          },
+          discounts: {
+             current: currentDiscount 
+          }
+      };
+      const orders = await Order.find(dateQuery)
+            .populate('userId', 'name')
+            .populate({
+                path: 'items.productId',
+                populate: {
+                    path: 'category'
+                }
+            })
+            .sort({ createdAt: -1 });
+            const salesData = await generateSalesData(dateQuery);
+
+            const productSales = {};
+            orders.forEach(order => {
+                order.items.forEach(item => {
+                    if (!productSales[item.productId]) {
+                        productSales[item.productId] = {
+                            name: item.productName,
+                            unitsSold: 0,
+                            revenue: 0
+                        };
+                    }
+                    productSales[item.productId].unitsSold += item.quantity;
+                    productSales[item.productId].revenue += item.finalPrice;
+                });
+            });
+    
+            const topProducts = Object.values(productSales)
+                .sort((a, b) => b.unitsSold - a.unitsSold)
+                .slice(0, 10);
+    
+            const categorySales = {};
+            let totalSales = 0;
+    
+            orders.forEach(order => {
+                order.items.forEach(item => {
+                    if (item.productId && item.productId.category) {
+                        const categoryName = item.productId.category.name;
+                        if (!categorySales[categoryName]) {
+                            categorySales[categoryName] = 0;
+                        }
+                        categorySales[categoryName] += item.finalPrice;
+                        totalSales += item.finalPrice;
+                    }
+                });
+            });
+    
+            const topCategories = Object.entries(categorySales)
+                .map(([name, sales]) => ({
+                    name,
+                    sales,
+                    percentage: ((sales / totalSales) * 100).toFixed(1)
+                }))
+                .sort((a, b) => b.sales - a.sales)
+                .slice(0, 9);
+      
+                if (req.query.download === 'excel') {
+                   return await downloadExcel(orders, topProducts, topCategories, res);
+                } else if (req.query.download === 'pdf') {
+                   return await downloadPDF(orders, topProducts, topCategories, res);
+                }
+      
+
+            const report = currentOrders.map(order => {
+              const totalBeforeDiscount = order.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+              const totalAfterDiscount = order.items.reduce((sum, item) => sum + item.finalPrice, 0);
+              const itemLevelDiscount = totalBeforeDiscount - totalAfterDiscount;
+              const totalDiscount = (order.discount || 0) + itemLevelDiscount;
+              const shippingCharge = 50; 
+    
+              return {
+                orderId: order.orderId,
+                customerName: order.userId?.name || 'Unknown',
+                date: order.createdAt.toLocaleDateString(),
+                total: totalBeforeDiscount,
+                discount: totalDiscount,
+                shippingCharge: shippingCharge, 
+                finalAmount: totalAfterDiscount - (order.discount || 0) + shippingCharge
+              };
+            });
+            const summary = {
+              totalOrders: currentOrders.length,
+              totalAmount: report.reduce((sum, order) => sum + order.total, 0),
+              totalDiscount: report.reduce((sum, order) => sum + order.discount, 0),
+              totalShipping: report.reduce((sum, order) => sum + order.shippingCharge, 0), 
+              finalTotal: report.reduce((sum, order) => sum + order.finalAmount, 0)
+            };
+
+           if (req.query.download === 'excel') {
+              return await downloadExcel(currentOrders, topProducts, topCategories, res);
+           } else if (req.query.download === 'pdf') {
+              return await downloadPDF(currentOrders, topProducts, topCategories, res);
+           }
+
+         res.json({
+           success: true,
+           stats,
+           report,
+           topProducts,
+           topCategories,
+           salesData,
+           summary
+         });
 
   } catch (error) {
       console.error('Error generating sales report:', error);
@@ -1118,38 +2739,91 @@ const generateSalesReport = async (req, res) => {
   }
 };
 
-// functions for downloading reports
-async function downloadExcel(orders, res) {
-  const workbook = new ExcelJS.Workbook();
-  const worksheet = workbook.addWorksheet('Sales Report');
+//helper function for generate sales data
+async function generateSalesData(dateQuery) {
+    const orders = await Order.find({
+        ...dateQuery,
+        status: { $ne: 'cancelled' }
+    }).sort('createdAt');
 
-  worksheet.columns = [
-      { header: 'Order ID', key: 'orderId' },
-      { header: 'Customer', key: 'customer' },
-      { header: 'Date', key: 'date' },
-      { header: 'Total', key: 'total' },
-      { header: 'Discount', key: 'discount' },
-      { header: 'Final Amount', key: 'final' }
+    const salesMap = new Map();
+  
+    orders.forEach(order => {
+        const date = order.createdAt.toISOString().split('T')[0];
+          if (!salesMap.has(date)) {
+             salesMap.set(date, {
+                sales: 0,
+                orders: 0
+             });
+          }
+        const dayData = salesMap.get(date);
+        dayData.sales += order.items.reduce((sum, item) => sum + item.finalPrice, 0);
+        dayData.orders += 1;
+    });
+
+   const dates = Array.from(salesMap.keys());
+   const sales = Array.from(salesMap.values()).map(data => data.sales);
+   const orderCounts = Array.from(salesMap.values()).map(data => data.orders);
+
+   return {
+      dates,
+      sales,
+      orders: orderCounts
+   };
+}
+
+// functions for downloading reports excel
+async function downloadExcel(orders, topProducts, topCategories, res) {
+  const workbook = new ExcelJS.Workbook();
+  const salesSheet = workbook.addWorksheet('Sales Report');
+
+  salesSheet.columns = [
+    { header: 'Order ID', key: 'orderId' },
+    { header: 'Customer', key: 'customer' },
+    { header: 'Date', key: 'date' },
+    { header: 'Total', key: 'total' },
+    { header: 'Discount', key: 'discount' },
+    { header: 'Shipping Charge', key: 'shipping' }, 
+    { header: 'Final Amount', key: 'final' }
   ];
 
   orders.forEach(order => {
-      worksheet.addRow({
-          orderId: order.orderId,
-          customer: order.userId?.name || 'Unknown',
-          date: order.createdAt.toLocaleDateString(),
-          total: order.items.reduce((sum, item) => sum + item.finalPrice, 0),
-          discount: order.discount || 0,
-          final: order.items.reduce((sum, item) => sum + item.finalPrice, 0) - (order.discount || 0)
-      });
+    salesSheet.addRow({
+        orderId: order.orderId,
+        customer: order.userId?.name || 'Unknown',
+        date: order.createdAt.toLocaleDateString(),
+        total: order.items.reduce((sum, item) => sum + item.finalPrice, 0),
+        discount: order.discount || 0,
+        shipping: 50, // Fixed shipping charge
+        final: order.items.reduce((sum, item) => sum + item.finalPrice, 0) - (order.discount || 0) + 50
+    });
   });
 
-  res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-  res.setHeader('Content-Disposition', 'attachment; filename=sales-report.xlsx');
 
-  await workbook.xlsx.write(res);
+  const productsSheet = workbook.addWorksheet('Top Products');
+  productsSheet.columns = [
+      { header: 'Product Name', key: 'name' },
+      { header: 'Units Sold', key: 'unitsSold' },
+      { header: 'Revenue', key: 'revenue' }
+  ];
+  topProducts.forEach(product => productsSheet.addRow(product));
+
+  const categoriesSheet = workbook.addWorksheet('Top Categories');
+    categoriesSheet.columns = [
+        { header: 'Category', key: 'name' },
+        { header: 'Sales', key: 'sales' },
+        { header: 'Percentage', key: 'percentage' }
+    ];
+    topCategories.forEach(category => categoriesSheet.addRow(category));
+
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', 'attachment; filename=sales-report.xlsx');
+
+    await workbook.xlsx.write(res);
 }
 
-async function downloadPDF(orders, res) {
+//function for downloading pdf
+async function downloadPDF(orders, topProducts, topCategories, res) {
   const doc = new PDFDocument();
   res.setHeader('Content-Type', 'application/pdf');
   res.setHeader('Content-Disposition', 'attachment; filename=sales-report.pdf');
@@ -1159,17 +2833,41 @@ async function downloadPDF(orders, res) {
   doc.moveDown();
 
   orders.forEach(order => {
-      doc.fontSize(12).text(`Order ID: ${order.orderId}`);
-      doc.fontSize(10).text(`Customer: ${order.userId?.name || 'Unknown'}`);
-      doc.text(`Date: ${order.createdAt.toLocaleDateString()}`);
-      doc.text(`Total: $${order.items.reduce((sum, item) => sum + item.finalPrice, 0)}`);
-      doc.text(`Discount: $${order.discount || 0}`);
-      doc.text(`Final Amount: $${order.items.reduce((sum, item) => sum + item.finalPrice, 0) - (order.discount || 0)}`);
-      doc.moveDown();
-  });
+    const total = order.items.reduce((sum, item) => sum + item.finalPrice, 0);
+    const discount = order.discount || 0;
+    const shipping = 50;
 
-  doc.end();
-}
+    doc.fontSize(12).text(`Order ID: ${order.orderId}`);
+    doc.fontSize(10).text(`Customer: ${order.userId?.name || 'Unknown'}`);
+    doc.text(`Date: ${order.createdAt.toLocaleDateString()}`);
+    doc.text(`Total: $${total}`);
+    doc.text(`Discount: $${discount}`);
+    doc.text(`Shipping Charge: $${shipping}`);
+    doc.text(`Final Amount: $${total - discount + shipping}`);
+    doc.moveDown();
+  });
+  doc.addPage();
+      doc.fontSize(16).text('Top Products', { align: 'center' });
+      doc.moveDown();
+      topProducts.forEach(product => {
+        doc.fontSize(12).text(`${product.name}`);
+        doc.fontSize(10).text(`Units Sold: ${product.unitsSold}`);
+        doc.text(`Revenue: $${product.revenue.toFixed(2)}`);
+        doc.moveDown();
+      });
+
+      doc.addPage();
+      doc.fontSize(16).text('Top Categories', { align: 'center' });
+      doc.moveDown();
+      topCategories.forEach(category => {
+        doc.fontSize(12).text(`${category.name}`);
+        doc.fontSize(10).text(`Sales: $${category.sales.toFixed(2)}`);
+        doc.text(`Percentage: ${category.percentage}%`);
+        doc.moveDown();
+      });
+
+    doc.end();
+  }
 
 module.exports={
     loadLogin,
@@ -1185,3 +2883,161 @@ module.exports={
     cancelAllProducts,
     generateSalesReport
 }
+
+
+//this is view order ejs page 
+<%- include('../layoutsUser/userheader') %>
+<style>
+    .order-history {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 20px;
+        background-color: #f4f4f4;
+    }
+    .order-history .container {
+        max-width: 800px;
+        margin: auto;
+        background: #fff;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+    .order-history h1 {
+        text-align: center;
+        color: #333;
+    }
+    .order-history table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+    }
+    .order-history th, .order-history td {
+        padding: 12px;
+        text-align: left;
+        border-bottom: 1px solid #ddd;
+    }
+    .order-history th {
+        background-color: #f8f8f8;
+        font-weight: bold;
+        color: #555;
+    }
+    .order-history .status {
+        padding: 5px 10px;
+        border-radius: 5px;
+        color: #fff;
+    }
+    .order-history .paid {
+        background-color: #28a745;
+    }
+    .order-history .pending {
+        background-color: #ffc107;
+    }
+    .order-history .failed {
+        background-color: #dc3545; 
+    }
+    .order-history .view-btn {
+        background-color: #007bff;
+        color: white;
+        padding: 8px 12px;
+        text-decoration: none;
+        border-radius: 4px;
+        font-size: 0.9em;
+    }
+    .order-history .view-btn:hover {
+        background-color: #0056b3;
+    }
+    .pagination {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 5px;
+        margin-top: 20px;
+        font-size: 12px;
+    }
+
+   .pagination a, .pagination span {
+        display: inline-block;
+        padding: 5px 8px;
+        text-decoration: none;
+        color: #333;
+        border: 1px solid #ddd;
+        border-radius: 3px;
+        transition: background-color 0.3s, color 0.3s;
+    }
+
+    .pagination a:hover {
+        background-color: #007bff;
+        color: white;
+    }
+
+   .pagination .active {
+        background-color: #007bff;
+        color: white;
+        border: 1px solid #007bff;
+    }
+</style>
+
+<div class="order-history">
+    <div class="container">
+        <h1>Your Order History</h1>
+        <% if (orders && orders.length > 0) { %>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Order Number</th>
+                        <th>Date</th>
+                        <th>Total</th>
+                        <th>Payment Status</th>
+                        <th>Order Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% paginatedOrders.forEach(order => { %>
+                        <tr>
+                            <td><%= order.orderId %></td>
+                            <td><%= order.date %></td>
+                            <td>₹<%= Math.floor(order.totalPrice) %></td>
+                            <td>
+                                <span class="status <%= helpers.getStatusClass(order.paymentStatus) %>">
+                                    <%= order.paymentStatus %>
+                                </span>
+                            </td>
+                            <td>
+                                <%= order.paymentMethod === 'Razorpay' && order.paymentStatus === 'Failed' ? 'pending' : order.orderStatus %>
+                            </td>
+                            <td>
+                                <a href="/orderDetails/<%= order.orderId %>" class="view-btn">View Details</a>
+                            </td>
+                        </tr>
+                    <% }); %>
+                </tbody>
+            </table>
+            
+            <!-- Pagination -->
+            <div class="pagination">
+                <% if (currentPage > 1) { %>
+                    <a href="?page=<%= currentPage - 1 %>">&laquo; Previous</a>
+                <% } else { %>
+                    <a class="disabled">&laquo; Previous</a>
+                <% } %>
+                
+                <% for(let i = 1; i <= totalPages; i++) { %>
+                    <a href="?page=<%= i %>" class="<%= currentPage === i ? 'active' : '' %>"><%= i %></a>
+                <% } %>
+                
+                <% if (currentPage < totalPages) { %>
+                    <a href="?page=<%= currentPage + 1 %>">Next &raquo;</a>
+                <% } else { %>
+                    <a class="disabled">Next &raquo;</a>
+                <% } %>
+            </div>
+        <% } else { %>
+            <div class="no-orders">
+                <p>You haven't placed any orders yet.</p>
+                <a href="/shop" class="view-btn">Continue Shopping</a>
+            </div>
+        <% } %>
+    </div>
+</div>
+<%- include('../layoutsUser/userfooter') %>

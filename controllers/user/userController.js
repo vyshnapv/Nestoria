@@ -386,17 +386,21 @@ const shop = async (req, res) => {
     try {
         const userData = await User.findById(req.session.user);
         
-        const wishlistedProducts = userData 
-        ? (await Wishlist.findOne({ userId: userData._id }))?.items.map(item => item.productId.toString()) 
-        : [];
+        // Fix: Safe handling of wishlist checking
+        let wishlistedProducts = [];
+        if (userData) {
+            const wishlist = await Wishlist.findOne({ userId: userData._id });
+            wishlistedProducts = wishlist ? wishlist.items.map(item => item.productId.toString()) : [];
+        }
 
-        const { 
-            Category: selectedCategory, 
-            q: searchQuery = '', 
-            page = 1, 
-            'price-sort': priceSort, 
-            'name-sort': nameSort 
+        const {
+            Category: selectedCategory,
+            q: searchQuery = '',
+            page = 1,
+            'price-sort': priceSort,
+            'name-sort': nameSort
         } = req.query;
+
         const limit = 9;
         const skip = (parseInt(page) - 1) * limit;
 
@@ -404,10 +408,10 @@ const shop = async (req, res) => {
             { $match: { isListed: true } },
             {
                 $lookup: {
-                    from: "products", 
+                    from: "products",
                     let: { categoryId: "$_id" },
                     pipeline: [
-                        { $match: { $expr: { $eq: ["$category", "$$categoryId"] }, isBlocked: false } } 
+                        { $match: { $expr: { $eq: ["$category", "$$categoryId"] }, isBlocked: false } }
                     ],
                     as: "products"
                 }
@@ -420,16 +424,15 @@ const shop = async (req, res) => {
 
         const filter = {
             isBlocked: false,
-            category: selectedCategory 
+            category: selectedCategory
                 ? await Category.findOne({ name: selectedCategory, isListed: true }).then(cat => cat?._id)
                 : { $in: categoryIds }
         };
 
-
         if (searchQuery) {
-            filter.$or = [{ 
-                productName: { 
-                    $regex: new RegExp(searchQuery.split(/\s+/).map(term => `\\b${term}`).join('|'), 'i') 
+            filter.$or = [{
+                productName: {
+                    $regex: new RegExp(searchQuery.split(/\s+/).map(term => `\\b${term}`).join('|'), 'i')
                 }
             }];
         }
@@ -449,25 +452,21 @@ const shop = async (req, res) => {
             expireDate: { $gt: currentDate }
         });
 
-
         const products = await Product.find(filter)
             .sort(sortOption)
             .skip(skip)
             .limit(limit)
             .populate('category');
 
-
         const productsWithOffers = products.map(product => {
-            const productOffer = offers.find(offer => 
+            const productOffer = offers.find(offer =>
                 (offer.productIds?.includes(product._id)) ||
                 (offer.categoryIds?.includes(product.category._id))
             );
 
-
-            const offerPrice = productOffer 
-            ? product.regularPrice * (1 - productOffer.discount / 100)
-            : product.regularPrice;
-
+            const offerPrice = productOffer
+                ? product.regularPrice * (1 - productOffer.discount / 100)
+                : product.regularPrice;
 
             return {
                 ...product.toObject(),
@@ -494,7 +493,6 @@ const shop = async (req, res) => {
         res.status(500).json({ success: false, message: "An error occurred" });
     }
 };
-  
 //product detailed page
 const productDetails=async(req,res)=>{
   try {

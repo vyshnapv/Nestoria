@@ -265,19 +265,7 @@ del {
                     <td><%= item.category.name %></td>
                     <td><img src="/uploads/cropped/<%= item.image %>"  alt="<%= item.productName %>" class="order-detail-product-image"></td>
                     <td><%= item.quantity %></td>
-                    <td>
-                        <% if (item.offerPrice && item.offerPrice < item.price) { %>
-                            <div>
-                                <del class="text-muted">₹<%= item.price.toFixed(2) %></del>
-                            </div>
-                            <div>
-                                <strong class="text-success">₹<%= Math.round(item.offerPrice).toFixed(2) %></strong>
-                                <small class="badge bg-success ms-1"><%= Math.round(((item.price - item.offerPrice) / item.price) * 100) %>% OFF</small>
-                            </div>
-                        <% } else { %>
-                            <div>₹<%= item.price.toFixed(2) %></div>
-                        <% } %>
-                    </td>
+                    <td>₹<%=item.offerPrice.toFixed(2) %></td>
                     <td>₹<%= Math.round(item.finalPrice.toFixed(2) )%></td>
                     <td><%= item.itemStatus %></td>
                     <td>
