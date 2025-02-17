@@ -232,13 +232,14 @@ del {
         <div class="col-md-4 order-detail-section">
             <h6 class="order-detail-section-title">Payment Status</h6>
             <p class="order-detail-text"><%= order.paymentStatus %></p>
-            <% if (order.paymentStatus === 'Failed' && order.paymentMethod === 'Razorpay') { %>
+            <% const hasActiveItems = order.items.some(item => 
+                 item.itemStatus !== 'Cancelled' && item.itemStatus !== 'Returned');
+             if (order.paymentStatus === 'Failed' && order.paymentMethod === 'Razorpay' && hasActiveItems) { %>
                 <button onclick="retryPayment('<%= order.orderId %>', '<%= order.totalPrice %>')" class="retry-payment-btn">
-                    Try Payment Again
+                  Try Payment Again
                 </button>
             <% } %>
         </div>
-        
     </div>
     
     <div class="order-detail-table-responsive">
@@ -333,7 +334,7 @@ del {
                 <% } %>
                 <div class="summary-item total">
                     <span>Total Amount(include shipping):</span>
-                    <span>₹<%= order.totalPrice.toFixed(2) %></span>
+                    <span>₹<%= Math.round(order.totalPrice).toFixed(2) %></span>
                 </div>
                 <div class="text-center">
                     <% if (order.orderStatus === 'Delivered' && order.paymentStatus === 'Paid') { %>

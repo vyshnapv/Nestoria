@@ -145,16 +145,14 @@
                     
                                                 <div class="product-action">
                                                     <% if (product.quantity > 0) { %>
-                                                        <a href="#" id="addToCart" class="btn-product btn-cart" data-product-id="<%= product._id %>">
+                                                        <a href="#" class="btn-product btn-cart" id="addToCart" data-product-id="<%= product._id %>">
                                                             <span>add to cart</span>
                                                         </a>
                                                     <% } else { %>
-                                                         
-                                                        <a  class="btn-product" >
+                                                        <a class="btn-product btn-cart disabled" style="pointer-events: none; opacity: 0.6; background-color: #ccc;">
                                                             <span>Out of Stock</span>
                                                         </a>
                                                     <% } %>
-                                                    
                                                 </div><!-- End .product-action -->
                                             </figure><!-- End .product-media -->
                     
@@ -343,24 +341,39 @@
     }
 
     document.addEventListener('DOMContentLoaded', () => {
-    function handleAddToCart(button) {
-        const productId = button.getAttribute('data-product-id');
-        const productName = button.closest('.product, .product-details') 
-            ?.querySelector('.product-title a, .product-title')?.textContent;
+        function handleAddToCart(button) {
+    const productId = button.getAttribute('data-product-id');
+    const productName = button.closest('.product, .product-details') 
+        ?.querySelector('.product-title a, .product-title')?.textContent;
 
-        fetch('/addToCart', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ productId })
-        })
-        .then(response => response.json())
-        .then(result => {
-            if (result.success) {
-                const cartCountElement = document.querySelector('.cart-count');
-                if (cartCountElement && result.cartCount) {
-                    cartCountElement.textContent = result.cartCount;
-                }
+    fetch('/addToCart', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ productId })
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (result.success) {
+            const cartCountElement = document.querySelector('.cart-count');
+            if (cartCountElement && result.cartCount) {
+                cartCountElement.textContent = result.cartCount;
+            }
 
+            if (result.message.includes('already added')) {
+                Swal.fire({
+                    title: 'Already in Cart!',
+                    text: 'This product is already in your cart',
+                    icon: 'info',
+                    showConfirmButton: true,
+                    confirmButtonText: 'View Cart',
+                    showCancelButton: true,
+                    cancelButtonText: 'Continue Shopping'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        window.location.href = '/cart';
+                    }
+                });
+            } else {
                 Swal.fire({
                     title: 'Added to Cart!',
                     text: `${productName} was added to your cart successfully!`,
@@ -374,34 +387,51 @@
                         window.location.href = '/cart';
                     }
                 });
-            } else {
-                throw new Error(result.message || 'Failed to add product');
             }
-        })
-        .catch(error => {
-            if (error.message.includes('login')) {
-                Swal.fire({
-                    title: 'Login Required!',
-                    text: 'Please login to add items to your cart',
-                    icon: 'info',
-                    showCancelButton: true,
-                    confirmButtonText: 'Login Now',
-                    cancelButtonText: 'Continue Shopping'
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        window.location.href = '/login';  
-                    }
-                });
-            } else {
-                Swal.fire({
-                    title: 'Error!',
-                    text: error.message,
-                    icon: 'error'
-                });
-            }
-        });
-    }
+        } else {
+            throw new Error(result.message);
+        }
+    })
+    .catch(error => {
+        if (error.message.includes('login') || error.requireLogin) {
+            Swal.fire({
+                title: 'Login Required!',
+                text: 'Please login to add items to your cart',
+                icon: 'info',
+                showCancelButton: true,
+                confirmButtonText: 'Login Now',
+                cancelButtonText: 'Continue Shopping'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    window.location.href = '/login';
+                }
+            });
+        } else if (error.message.includes('out of stock')) {
+            Swal.fire({
+                title: 'Out of Stock!',
+                text: 'Sorry, this product is currently out of stock',
+                icon: 'error',
+                confirmButtonText: 'OK'
+            });
+        } else {
+            Swal.fire({
+                title: 'Error!',
+                text: error.message || 'Failed to add product to cart',
+                icon: 'error',
+                confirmButtonText: 'OK'
+            });
+        }
+    });
+}
 
+document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('#addToCart, .addToCart').forEach(button => {
+        button.addEventListener('click', (e) => {
+            e.preventDefault();
+            handleAddToCart(button);
+        });
+    });
+});
     function handleWishlist(button) {
         const productId = button.getAttribute('data-product-id');
         const productName = button.closest('.product, .product-details')

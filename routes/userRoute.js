@@ -11,6 +11,7 @@ const orderController = require('../controllers/user/orderController');
 const profileController = require("../controllers/user/profileController");
 const wishlistController = require("../controllers/user/wishlistController");
 const walletController = require("../controllers/user/walletController")
+const referralController = require('../controllers/user/referralController')
 
 const passport = require("passport");
 const { userAuth, userNotAuth, userAuth1 } = require("../middleware/userAuth");
@@ -96,5 +97,10 @@ user_route.post('/remove-coupon', cartController.removeCoupon);
 
 //wallet
 user_route.get('/wallet',userAuth,walletController.loadWallet);
+
+//referral offer
+user_route.get('/referralOffer',userAuth,referralController.getReferalOffer);
+user_route.post('/applyReferral',userAuth, referralController.applyReferralCode);
+user_route.post('/generate-new-referral-code',userAuth,referralController.generateNewReferralCode);
 
 module.exports=user_route;

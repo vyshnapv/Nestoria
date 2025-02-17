@@ -630,106 +630,121 @@ const generateSalesReport = async (req, res) => {
       let dateQuery = {};
       let previousPeriodQuery = {};
 
+      const statusFilter = {
+        orderStatus: { 
+            $nin: ['Cancelled', 'Returned'] 
+        }
+      };
       if (reportType === 'daily') {
         const today = new Date();
         const yesterday = new Date(today);
         yesterday.setDate(yesterday.getDate() - 1);
 
-          dateQuery = {
-                createdAt: {
-                    $gte: new Date(today.setHours(0, 0, 0, 0)),
-                    $lt: new Date(today.setHours(23, 59, 59, 999))
-                }
-            };
-            previousPeriodQuery = {
-              createdAt: {
-                  $gte: new Date(yesterday.setHours(0, 0, 0, 0)),
-                  $lt: new Date(yesterday.setHours(23, 59, 59, 999))
-              }
-          };
-      } else if (reportType === 'weekly') {
-          const today = new Date();
-          const weekStart = new Date(today);
-          weekStart.setDate(today.getDate() - today.getDay());
-        
-          const previousWeekStart = new Date(weekStart);
-          previousWeekStart.setDate(previousWeekStart.getDate() - 7);
-          const previousWeekEnd = new Date(weekStart);
-          previousWeekEnd.setSeconds(previousWeekEnd.getSeconds() - 1);
-
-          dateQuery = {
+        dateQuery = {
             createdAt: {
-              $gte: new Date(weekStart.setHours(0, 0, 0, 0)),
-              $lt: new Date(today.setHours(23, 59, 59, 999))
-            }
-          };
-          previousPeriodQuery = {
+                $gte: new Date(today.setHours(0, 0, 0, 0)),
+                $lt: new Date(today.setHours(23, 59, 59, 999))
+            },
+            ...statusFilter
+        };
+        previousPeriodQuery = {
             createdAt: {
-              $gte: new Date(previousWeekStart.setHours(0, 0, 0, 0)),
-              $lt: new Date(previousWeekEnd)
-            }
-          };
-      } else if (reportType === 'monthly') {
-          const today = new Date();
-          const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+                $gte: new Date(yesterday.setHours(0, 0, 0, 0)),
+                $lt: new Date(yesterday.setHours(23, 59, 59, 999))
+            },
+            ...statusFilter
+        };
+    } else if (reportType === 'weekly') {
+        const today = new Date();
+        const weekStart = new Date(today);
+        weekStart.setDate(today.getDate() - today.getDay());
         
-          const previousMonthStart = new Date(today.getFullYear(), today.getMonth() - 1, 1);
-          const previousMonthEnd = new Date(today.getFullYear(), today.getMonth(), 0);
+        const previousWeekStart = new Date(weekStart);
+        previousWeekStart.setDate(previousWeekStart.getDate() - 7);
+        const previousWeekEnd = new Date(weekStart);
+        previousWeekEnd.setSeconds(previousWeekEnd.getSeconds() - 1);
 
-          dateQuery = {
-              createdAt: {
+        dateQuery = {
+            createdAt: {
+                $gte: new Date(weekStart.setHours(0, 0, 0, 0)),
+                $lt: new Date(today.setHours(23, 59, 59, 999))
+            },
+            ...statusFilter
+        };
+        previousPeriodQuery = {
+            createdAt: {
+                $gte: new Date(previousWeekStart.setHours(0, 0, 0, 0)),
+                $lt: new Date(previousWeekEnd)
+            },
+            ...statusFilter
+        };
+    } else if (reportType === 'monthly') {
+        const today = new Date();
+        const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+        
+        const previousMonthStart = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+        const previousMonthEnd = new Date(today.getFullYear(), today.getMonth(), 0);
+
+        dateQuery = {
+            createdAt: {
                 $gte: new Date(monthStart.setHours(0, 0, 0, 0)),
                 $lt: new Date(today.setHours(23, 59, 59, 999))
-              }
-          };
-          previousPeriodQuery = {
-              createdAt: {
+            },
+            ...statusFilter
+        };
+        previousPeriodQuery = {
+            createdAt: {
                 $gte: new Date(previousMonthStart.setHours(0, 0, 0, 0)),
                 $lt: new Date(previousMonthEnd.setHours(23, 59, 59, 999))
-              }
-          };
-      }else if (reportType === 'yearly') {
-         const today = new Date();
-         const yearStart = new Date(today.getFullYear(), 0, 1);
+            },
+            ...statusFilter
+        };
+    } else if (reportType === 'yearly') {
+        const today = new Date();
+        const yearStart = new Date(today.getFullYear(), 0, 1);
         
-         const previousYearStart = new Date(today.getFullYear() - 1, 0, 1);
-         const previousYearEnd = new Date(today.getFullYear(), 0, 0);
+        const previousYearStart = new Date(today.getFullYear() - 1, 0, 1);
+        const previousYearEnd = new Date(today.getFullYear(), 0, 0);
 
-         dateQuery = {
-             createdAt: {
+        dateQuery = {
+            createdAt: {
                 $gte: new Date(yearStart.setHours(0, 0, 0, 0)),
                 $lt: new Date(today.setHours(23, 59, 59, 999))
-             }
-         };
-         previousPeriodQuery = {
-             createdAt: {
+            },
+            ...statusFilter
+        };
+        previousPeriodQuery = {
+            createdAt: {
                 $gte: new Date(previousYearStart.setHours(0, 0, 0, 0)),
                 $lt: new Date(previousYearEnd.setHours(23, 59, 59, 999))
-             }
-         };
-      } else if (reportType === 'custom' && startDate && endDate) {
-          const start = new Date(startDate);
-          const end = new Date(endDate);
-          const daysDiff = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
+            },
+            ...statusFilter
+        };
+    } else if (reportType === 'custom' && startDate && endDate) {
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+        const daysDiff = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
         
-          const previousStart = new Date(start);
-          previousStart.setDate(previousStart.getDate() - daysDiff);
-          const previousEnd = new Date(start);
-          previousEnd.setSeconds(previousEnd.getSeconds() - 1);
+        const previousStart = new Date(start);
+        previousStart.setDate(previousStart.getDate() - daysDiff);
+        const previousEnd = new Date(start);
+        previousEnd.setSeconds(previousEnd.getSeconds() - 1);
 
-          dateQuery = {
-              createdAt: {
+        dateQuery = {
+            createdAt: {
                 $gte: new Date(start.setHours(0, 0, 0, 0)),
                 $lt: new Date(end.setHours(23, 59, 59, 999))
-              }
-          };
-          previousPeriodQuery = {
-              createdAt: {
+            },
+            ...statusFilter
+        };
+        previousPeriodQuery = {
+            createdAt: {
                 $gte: new Date(previousStart.setHours(0, 0, 0, 0)),
                 $lt: new Date(previousEnd)
-              }
-          };
-      }
+            },
+            ...statusFilter
+        };
+    }
 
       const currentOrders = await Order.find(dateQuery)
       .populate('userId', 'name')
@@ -739,55 +754,71 @@ const generateSalesReport = async (req, res) => {
             path: 'category'
           }
       })
+
+      const calculateValidOrderAmount = (order) => {
+        return order.items.reduce((sum, item) => {
+            if (item.itemStatus !== 'Cancelled' && item.itemStatus !== 'Returned') {
+                return sum + item.finalPrice;
+            }
+            return sum;
+        }, 0);
+    };
+
       const currentCustomers = await User.distinct('_id', { 
-         _id: { $in: currentOrders.map(order => order.userId) } 
-      });
+        _id: { $in: currentOrders.map(order => order.userId) } 
+    });
 
-      const previousOrders = await Order.find(previousPeriodQuery);
-          const previousCustomers = await User.distinct('_id', { 
-              _id: { $in: previousOrders.map(order => order.userId) } 
-          });
+    const previousOrders = await Order.find(previousPeriodQuery);
+    const previousCustomers = await User.distinct('_id', { 
+        _id: { $in: previousOrders.map(order => order.userId) } 
+    });
 
   
-      const currentRevenue = currentOrders.reduce((sum, order) => 
-        sum + order.items.reduce((itemSum, item) => itemSum + item.finalPrice, 0), 0);
-      const previousRevenue = previousOrders.reduce((sum, order) => 
-        sum + order.items.reduce((itemSum, item) => itemSum + item.finalPrice, 0), 0);
-  
-      const currentDiscount = currentOrders.reduce((sum, order) => {
-           let totalDiscount = 0;
-              if (order.discount) {
-                 totalDiscount += order.discount;
-              }
-         order.items.forEach(item => {
-             const originalPrice = item.price * item.quantity;
-             const finalPrice = item.finalPrice; 
-             const itemDiscount = originalPrice - finalPrice;
-                if (itemDiscount > 0) {
-                  totalDiscount += itemDiscount;
-                }
-         });
-         return sum + totalDiscount;
-      }, 0);
+     const currentRevenue = currentOrders.reduce((sum, order) => 
+            sum + calculateValidOrderAmount(order), 0);
 
-      const stats = {
-          revenue: {
-             current: currentOrders.reduce((sum, order) => 
-             sum + order.items.reduce((itemSum, item) => itemSum + item.finalPrice, 0), 0),
-             change: previousRevenue ? ((currentRevenue - previousRevenue) / previousRevenue) * 100 : 0
-          },
-          orders: {
-             current: currentOrders.length,
-             change: previousOrders.length ? ((currentOrders.length - previousOrders.length) / previousOrders.length) * 100 : 0
-          },
-          customers: {
-             current: currentCustomers.length,
-             change: previousCustomers.length ? ((currentCustomers.length - previousCustomers.length) / previousCustomers.length) * 100 : 0
-          },
-          discounts: {
-             current: currentDiscount 
-          }
-      };
+     const previousRevenue = previousOrders.reduce((sum, order) => 
+      sum + calculateValidOrderAmount(order), 0);
+  
+     const currentDiscount = currentOrders.reduce((sum, order) => {
+      let totalDiscount = 0;
+      order.items.forEach(item => {
+        if (item.itemStatus !== 'Cancelled' && item.itemStatus !== 'Returned') {
+            const originalPrice = item.price * item.quantity;
+            const finalPrice = item.finalPrice;
+            const itemDiscount = originalPrice - finalPrice;
+            
+            if (itemDiscount > 0) {
+                totalDiscount += itemDiscount;
+            }
+        }
+    }); 
+    if (order.discount && order.items.some(item => 
+      item.itemStatus !== 'Cancelled' && item.itemStatus !== 'Returned')) {
+         totalDiscount += order.discount;
+       }
+      return sum + totalDiscount;
+    }, 0);
+     
+   const stats = {
+       revenue: {
+          current: currentRevenue,
+          change: previousRevenue ? ((currentRevenue - previousRevenue) / previousRevenue) * 100 : 0
+       },
+       orders: {
+          current: currentOrders.length,
+          change: previousOrders.length ? 
+              ((currentOrders.length - previousOrders.length) / previousOrders.length) * 100 : 0
+       },
+       customers: {
+          current: currentCustomers.length,
+          change: previousCustomers.length ? 
+              ((currentCustomers.length - previousCustomers.length) / previousCustomers.length) * 100 : 0
+       },
+       discounts: {
+          current: currentDiscount
+       }
+    };
       const orders = await Order.find(dateQuery)
             .populate('userId', 'name')
             .populate({
@@ -800,17 +831,19 @@ const generateSalesReport = async (req, res) => {
             const salesData = await generateSalesData(dateQuery);
 
             const productSales = {};
-            orders.forEach(order => {
+            currentOrders.forEach(order => {
                 order.items.forEach(item => {
-                    if (!productSales[item.productId]) {
-                        productSales[item.productId] = {
-                            name: item.productName,
-                            unitsSold: 0,
-                            revenue: 0
-                        };
+                    if (item.itemStatus !== 'Cancelled' && item.itemStatus !== 'Returned') {
+                        if (!productSales[item.productId]) {
+                            productSales[item.productId] = {
+                                name: item.productName,
+                                unitsSold: 0,
+                                revenue: 0
+                            };
+                        }
+                        productSales[item.productId].unitsSold += item.quantity;
+                        productSales[item.productId].revenue += item.finalPrice;
                     }
-                    productSales[item.productId].unitsSold += item.quantity;
-                    productSales[item.productId].revenue += item.finalPrice;
                 });
             });
     
@@ -821,18 +854,19 @@ const generateSalesReport = async (req, res) => {
             const categorySales = {};
             let totalSales = 0;
     
-            orders.forEach(order => {
-                order.items.forEach(item => {
-                    if (item.productId && item.productId.category) {
-                        const categoryName = item.productId.category.name;
-                        if (!categorySales[categoryName]) {
-                            categorySales[categoryName] = 0;
-                        }
-                        categorySales[categoryName] += item.finalPrice;
-                        totalSales += item.finalPrice;
-                    }
-                });
-            });
+            currentOrders.forEach(order => {
+              order.items.forEach(item => {
+                  if (item.itemStatus !== 'Cancelled' && item.itemStatus !== 'Returned' && 
+                      item.productId && item.productId.category) {
+                      const categoryName = item.productId.category.name;
+                      if (!categorySales[categoryName]) {
+                          categorySales[categoryName] = 0;
+                      }
+                      categorySales[categoryName] += item.finalPrice;
+                      totalSales += item.finalPrice;
+                  }
+              });
+          });
     
             const topCategories = Object.entries(categorySales)
                 .map(([name, sales]) => ({
@@ -850,36 +884,44 @@ const generateSalesReport = async (req, res) => {
                 }
       
 
-            const report = currentOrders.map(order => {
-              const totalBeforeDiscount = order.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-              const totalAfterDiscount = order.items.reduce((sum, item) => sum + item.finalPrice, 0);
-              const itemLevelDiscount = totalBeforeDiscount - totalAfterDiscount;
-              const totalDiscount = (order.discount || 0) + itemLevelDiscount;
-              const shippingCharge = 50; 
-    
-              return {
-                orderId: order.orderId,
-                customerName: order.userId?.name || 'Unknown',
-                date: order.createdAt.toLocaleDateString(),
-                total: totalBeforeDiscount,
-                discount: totalDiscount,
-                shippingCharge: shippingCharge, 
-                finalAmount: totalAfterDiscount - (order.discount || 0) + shippingCharge
-              };
-            });
-            const summary = {
-              totalOrders: currentOrders.length,
-              totalAmount: report.reduce((sum, order) => sum + order.total, 0),
-              totalDiscount: report.reduce((sum, order) => sum + order.discount, 0),
-              totalShipping: report.reduce((sum, order) => sum + order.shippingCharge, 0), 
-              finalTotal: report.reduce((sum, order) => sum + order.finalAmount, 0)
+                const report = currentOrders.map(order => {
+                  const validItems = order.items.filter(item => 
+                      item.itemStatus !== 'Cancelled' && item.itemStatus !== 'Returned'
+                  );
+      
+                  const totalBeforeDiscount = validItems.reduce((sum, item) => 
+                      sum + (item.price * item.quantity), 0);
+                  const totalAfterDiscount = validItems.reduce((sum, item) => 
+                      sum + item.finalPrice, 0);
+                  const itemLevelDiscount = totalBeforeDiscount - totalAfterDiscount;
+      
+                  const orderDiscount = validItems.length > 0 ? (order.discount || 0) : 0;
+                  const totalDiscount = orderDiscount + itemLevelDiscount;
+                  const shippingCharge = validItems.length > 0 ? 50 : 0;
+      
+                  return {
+                      orderId: order.orderId,
+                      customerName: order.userId?.name || 'Unknown',
+                      date: order.createdAt.toLocaleDateString(),
+                      total: totalBeforeDiscount,
+                      discount: totalDiscount,
+                      shippingCharge: shippingCharge,
+                      finalAmount: totalAfterDiscount - orderDiscount + shippingCharge
+                  };
+              });
+              const summary = {
+                totalOrders: currentOrders.length,
+                totalAmount: report.reduce((sum, order) => sum + order.total, 0),
+                totalDiscount: report.reduce((sum, order) => sum + order.discount, 0),
+                totalShipping: report.reduce((sum, order) => sum + order.shippingCharge, 0),
+                finalTotal: report.reduce((sum, order) => sum + order.finalAmount, 0)
             };
 
-           if (req.query.download === 'excel') {
+            if (req.query.download === 'excel') {
               return await downloadExcel(currentOrders, topProducts, topCategories, res);
-           } else if (req.query.download === 'pdf') {
+          } else if (req.query.download === 'pdf') {
               return await downloadPDF(currentOrders, topProducts, topCategories, res);
-           }
+          }
 
          res.json({
            success: true,
@@ -899,35 +941,36 @@ const generateSalesReport = async (req, res) => {
 
 //helper function for generate sales data
 async function generateSalesData(dateQuery) {
-    const orders = await Order.find({
-        ...dateQuery,
-        status: { $ne: 'cancelled' }
-    }).sort('createdAt');
-
+    const orders = await Order.find(dateQuery).sort('createdAt');
     const salesMap = new Map();
   
     orders.forEach(order => {
-        const date = order.createdAt.toISOString().split('T')[0];
-          if (!salesMap.has(date)) {
-             salesMap.set(date, {
-                sales: 0,
-                orders: 0
-             });
-          }
-        const dayData = salesMap.get(date);
-        dayData.sales += order.items.reduce((sum, item) => sum + item.finalPrice, 0);
-        dayData.orders += 1;
-    });
+      const date = order.createdAt.toISOString().split('T')[0];
+      if (!salesMap.has(date)) {
+          salesMap.set(date, {
+              sales: 0,
+              orders: 0
+          });
+      }
+      const dayData = salesMap.get(date);
+      const validSales = order.items.reduce((sum, item) => {
+        if (item.itemStatus !== 'Cancelled' && item.itemStatus !== 'Returned') {
+            return sum + item.finalPrice;
+        }
+        return sum;
+      }, 0);
 
-   const dates = Array.from(salesMap.keys());
-   const sales = Array.from(salesMap.values()).map(data => data.sales);
-   const orderCounts = Array.from(salesMap.values()).map(data => data.orders);
+      dayData.sales += validSales;
+        if (validSales > 0) {
+          dayData.orders += 1;
+        }
+   });
 
-   return {
-      dates,
-      sales,
-      orders: orderCounts
-   };
+  return {
+    dates: Array.from(salesMap.keys()),
+    sales: Array.from(salesMap.values()).map(data => data.sales),
+    orders: Array.from(salesMap.values()).map(data => data.orders)
+  };
 }
 
 // functions for downloading reports excel
@@ -952,7 +995,7 @@ async function downloadExcel(orders, topProducts, topCategories, res) {
         date: order.createdAt.toLocaleDateString(),
         total: order.items.reduce((sum, item) => sum + item.finalPrice, 0),
         discount: order.discount || 0,
-        shipping: 50, // Fixed shipping charge
+        shipping: 50,
         final: order.items.reduce((sum, item) => sum + item.finalPrice, 0) - (order.discount || 0) + 50
     });
   });

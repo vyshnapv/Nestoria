@@ -5,6 +5,8 @@ const User = require("../../models/userModel");
 const Address = require("../../models/addressModel")
 const Wishlist = require("../../models/wishlistModel");
 const Offer = require("../../models/offerModel")
+const Referral = require("../../models/referralModel");
+const Wallet = require("../../models/walletModel");
 const bcrypt = require('bcrypt');
 const nodemailer=require("nodemailer")
 const session=require("express-session")
@@ -77,16 +79,15 @@ const loadHome = async (req, res) => {
 
 
 //load register page
-const loadRegister=async(req,res)=>
-{
-    try{
-        res.render("register")
+const loadRegister = async (req, res) => {
+    try {
+        const referralCode = req.query.ref;
+        res.render("register", { referralCode });
+    } catch (error) {
+        console.error("error in loadregister:", error);
+        res.redirect("/pageNotFound");
     }
-    catch(error)
-    {
-        console.error("error in loadregister:",error)
-    }
-}
+};
 
 
 //load login page
@@ -106,7 +107,7 @@ const loadLogin=async(req,res)=>
 const insertUser=async(req,res)=>
     {
         try {
-            const { name, email, mobile, pass, re_pass } = req.body;
+            const { name, email, mobile, pass, re_pass, referralCode } = req.body;
             
             if(pass !== re_pass)
             {
@@ -119,6 +120,17 @@ const insertUser=async(req,res)=>
             {
                 return res.json({success:false,message:"user with this email already exist"})
             }
+            let referralData = null;
+            if (referralCode) {
+                referralData = await Referral.findOne({ referralCode });
+                if (!referralData) {
+                    return res.json({ success: false, message: "Invalid referral code" });
+                }
+    
+                if (referralData.status !== 'Active') {
+                    return res.json({ success: false, message: "This referral code has expired" });
+                }
+            }
     
             const otp=generateOTP();
 
@@ -130,7 +142,13 @@ const insertUser=async(req,res)=>
             }
 
         req.session.userOtp=otp;
-        req.session.userData={name,mobile,email,pass};
+        req.session.userData = { 
+            name, 
+            mobile, 
+            email, 
+            pass,
+            referralCode: referralData ? referralCode : null 
+        };
         
         res.json({success:true,message: "Registered successfully" });
         console.log("OTP send",otp);
@@ -140,6 +158,61 @@ const insertUser=async(req,res)=>
             res.redirect("/pageNotFound")
         }
     }
+
+    const handleReferralRewards = async (newUserId, referralCode) => {
+        try {
+            if (!referralCode) return;
+    
+            const referral = await Referral.findOne({ referralCode });
+            if (!referral) return;
+
+            const refereeWallet = await Wallet.findOneAndUpdate(
+                { userId: newUserId },
+                {
+                    $inc: { balance: 25 },
+                    $push: {
+                        transactions: {
+                            amount: 25,
+                            type: 'credit',
+                            description: 'Welcome Bonus - Referral reward',
+                            balance: 25
+                        }
+                    }
+                },
+                { upsert: true, new: true }
+            );
+
+            const referrerWallet = await Wallet.findOne({ userId: referral.referrer });
+            const newReferrerBalance = (referrerWallet?.balance || 0) + 50;
+    
+            await Wallet.findOneAndUpdate(
+                { userId: referral.referrer },
+                {
+                    $inc: { balance: 50 },
+                    $push: {
+                        transactions: {
+                            amount: 50,
+                            type: 'credit',
+                            description: 'Referral Reward - New user signup',
+                            balance: newReferrerBalance
+                        }
+                    }
+                },
+                { upsert: true }
+            );
+
+            referral.referees.push({
+                user: newUserId,
+                rewardStatus: 'Completed',
+                rewardAmount: 25
+            });
+            referral.totalRewards += 75;
+            await referral.save();
+    
+        } catch (error) {
+            console.error('Error handling referral rewards:', error);
+        }
+    };
 
 //otp page loading
     const otpPage=async(req,res)=>{
@@ -172,22 +245,78 @@ const insertUser=async(req,res)=>
                })
    
                await saveUserData.save();
-   
-               req.session.user=saveUserData._id;
-               req.session.userOtp = null; 
-               req.session.userData = null; 
-               res.json({success:true,message:"Registration successful!",redirect:"/login"})
-           }
-           else
-           {
-               res.status(400).json({success:false,message:"Invalid otp,please try again"})
-           }
-           
-       } catch (error) {
-           console.error("Error verifying otp",error);
-           res.status(500).json({success:false,message:"An error occure"})
-       }
+               if (user.referralCode) {
+                try {
+                    const referral = await Referral.findOne({ referralCode: user.referralCode });
+                    if (referral && referral.status === 'Active') {
+                        await Wallet.findOneAndUpdate(
+                            { userId: saveUserData._id },
+                            {
+                                $inc: { balance: 25 },
+                                $push: {
+                                    transactions: {
+                                        amount: 25,
+                                        type: 'credit',
+                                        description: 'Welcome Bonus - Referral reward',
+                                        balance: 25
+                                    }
+                                }
+                            },
+                            { upsert: true, new: true }
+                        );
+                        const referrerWallet = await Wallet.findOne({ userId: referral.referrer });
+                        const newReferrerBalance = (referrerWallet?.balance || 0) + 50;
+
+                        await Wallet.findOneAndUpdate(
+                            { userId: referral.referrer },
+                            {
+                                $inc: { balance: 50 },
+                                $push: {
+                                    transactions: {
+                                        amount: 50,
+                                        type: 'credit',
+                                        description: 'Referral Reward - New user signup',
+                                        balance: newReferrerBalance
+                                    }
+                                }
+                            },
+                            { upsert: true }
+                        );
+                        referral.referees.push({
+                            user: saveUserData._id,
+                            rewardStatus: 'Completed',
+                            rewardAmount: 25
+                        });
+                        referral.totalRewards += 75;
+                        await referral.save();
+                    }
+                } catch (referralError) {
+                    console.error("Error processing referral rewards:", referralError);
+                }
+            }
+
+              req.session.user = saveUserData._id;
+            req.session.userOtp = null;
+            req.session.userData = null;
+            res.json({
+                success: true,
+                message: "Registration successful!",
+                redirect: "/login"
+            });
+        } else {
+            res.status(400).json({
+                success: false,
+                message: "Invalid otp, please try again"
+            });
+        }
+    } catch (error) {
+        console.error("Error verifying otp", error);
+        res.status(500).json({
+            success: false,
+            message: "An error occurred"
+        });
     }
+};
       
 //Resend OTP
 const resendOtp=async(req,res)=>
@@ -385,8 +514,6 @@ const changePassword = async (req,res) =>{
 const shop = async (req, res) => {
     try {
         const userData = await User.findById(req.session.user);
-        
-        // Fix: Safe handling of wishlist checking
         let wishlistedProducts = [];
         if (userData) {
             const wishlist = await Wishlist.findOne({ userId: userData._id });
@@ -493,6 +620,7 @@ const shop = async (req, res) => {
         res.status(500).json({ success: false, message: "An error occurred" });
     }
 };
+
 //product detailed page
 const productDetails=async(req,res)=>{
   try {
@@ -721,8 +849,6 @@ const deleteAddress = async (req, res) => {
         res.json({ success: false, message: "Failed to delete address" });
     }
 };
-  
-
 
 module.exports = {
     loadHome,
@@ -745,5 +871,5 @@ module.exports = {
     addAddress,
     loadEditAddress,
     editAddress,
-    deleteAddress 
+    deleteAddress,
 }

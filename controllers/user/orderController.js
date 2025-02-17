@@ -364,12 +364,10 @@ const createRazorpayOrder = async (req, res) => {
         }
 
         const razorpayOrder = await razorpay.orders.create({
-            amount: Math.round(amount * 100), // Convert to paise
+            amount: Math.round(amount * 100),
             currency: 'INR',
             receipt: orderId,
         });
-
-        // Update the order with new Razorpay order ID
         order.razorpayOrderId = razorpayOrder.id;
         await order.save();
 
@@ -441,11 +439,22 @@ const getViewOrders = async (req, res) => {
         const page = parseInt(req.query.page) || 1;
         const limit = 5;
         const skip = (page - 1) * limit;
-  
-        const totalOrdersCount = await Order.countDocuments({ userId: userData._id });
-        const totalPages = Math.ceil(totalOrdersCount / limit);
-  
-        const orders = await Order.find({ userId: userData._id })
+        const searchQuery = req.query.search ? req.query.search.trim() : '';
+        
+        let searchConditions = { userId: userData._id };
+    
+        if (searchQuery) {
+            searchConditions = {
+                userId: userData._id,
+                $or: [
+                    { orderId: { $regex: new RegExp(searchQuery, 'i') } },
+                    { orderStatus: { $regex: new RegExp(searchQuery, 'i') } },
+                    { paymentStatus: { $regex: new RegExp(searchQuery, 'i') } }
+                ]
+            };
+        }
+
+        const orders = await Order.find(searchConditions)
             .populate({
                 path: 'items.productId',
                 populate: {
@@ -454,17 +463,20 @@ const getViewOrders = async (req, res) => {
                 }
             })
             .sort({ createdAt: -1 })
-            .skip(skip)
-            .limit(limit)
             .lean();
-  
-        if (!orders || orders.length === 0) {
+
+        const totalOrdersCount = orders.length;
+        const totalPages = Math.ceil(totalOrdersCount / limit);
+        const paginatedOrders = orders.slice(skip, skip + limit);
+
+        if (!paginatedOrders || paginatedOrders.length === 0) {
             return res.render("viewOrders", {
                 userData,
                 orders: [],
                 paginatedOrders: [],
                 currentPage: 1,
                 totalPages: 1,
+                searchQuery,
                 helpers: {
                     getStatusClass: (status) => {
                         switch (status.toLowerCase()) {
@@ -480,20 +492,17 @@ const getViewOrders = async (req, res) => {
                 }
             });
         }
-  
-        const formattedOrders = orders.map(order => {
-            // Calculate total price including all items regardless of status
+
+        const formattedOrders = paginatedOrders.map(order => {
             const totalWithoutDelivery = order.items.reduce((total, item) => {
                 return total + item.finalPrice;
             }, 0);
   
-            // Apply coupon discount if exists
             let finalTotal = totalWithoutDelivery;
             if (order.appliedCoupon) {
                 finalTotal = totalWithoutDelivery - order.appliedCoupon.discountAmount;
             }
   
-            // Add delivery charge
             finalTotal += 50;
   
             return {
@@ -508,6 +517,7 @@ const getViewOrders = async (req, res) => {
                 deliveryCharge: 50,
                 paymentStatus: order.paymentStatus,
                 orderStatus: order.orderStatus,
+                paymentMethod: order.paymentMethod,
                 items: order.items.map(item => ({
                     ...item,
                     originalPrice: item.price,
@@ -523,6 +533,7 @@ const getViewOrders = async (req, res) => {
             paginatedOrders: formattedOrders,
             currentPage: page,
             totalPages,
+            searchQuery,
             helpers: {
                 getStatusClass: (status) => {
                     switch (status.toLowerCase()) {
@@ -540,13 +551,13 @@ const getViewOrders = async (req, res) => {
   
     } catch (error) {
         console.error('Error in getViewOrders:', error);
-  
         res.render("viewOrders", {
             userData: req.session.user ? await User.findById(req.session.user) : null,
             orders: [],
             paginatedOrders: [],
             currentPage: 1,
             totalPages: 1,
+            searchQuery: '',
             error: "An error occurred while fetching your orders. Please try again later.",
             helpers: {
                 getStatusClass: (status) => {
@@ -563,7 +574,7 @@ const getViewOrders = async (req, res) => {
             }
         });
     }
-  };
+};
 
 //get order details
 const getOrderDetails = async (req, res) => {
@@ -911,21 +922,17 @@ const generateOrderSummaryPDF = async (req, res) => {
         res.setHeader('Content-Disposition', `attachment; filename=${filename}`);
         doc.pipe(res);
 
-        // Helper function to draw a box
         const drawBox = (title, startY, height) => {
             const boxPadding = 5;
-            const pageWidth = doc.page.width - 60; // 30px margin on each side
-            
-            // Draw box
+            const pageWidth = doc.page.width - 60;
+
             doc.rect(30, startY, pageWidth, height)
                .stroke('#000000');
             
-            // Draw title background
             doc.fill('#f0f0f0')
                .rect(30, startY, pageWidth, 20)
                .fill();
             
-            // Draw title
             doc.fill('#000000')
                .fontSize(12)
                .font('Helvetica-Bold')
@@ -937,16 +944,13 @@ const generateOrderSummaryPDF = async (req, res) => {
             return startY + 20 + boxPadding;
         };
 
-        // Store Header
         doc.fontSize(18)
            .font('Helvetica-Bold')
            .text('NESTORIA', { align: 'center' })
 
-        // First row: Payment Details and Order Details side by side
         let currentY = 50;
         let leftBoxWidth = (doc.page.width - 70) / 2;
 
-        // Payment Details Box (Left)
         doc.rect(30, currentY, leftBoxWidth, 70).stroke();
         doc.fill('#f0f0f0')
            .rect(30, currentY, leftBoxWidth, 20)
@@ -961,7 +965,6 @@ const generateOrderSummaryPDF = async (req, res) => {
            .text(`Payment Method: ${order.paymentMethod}`, 35, currentY + 25)
            .text(`Payment Status: ${order.paymentStatus}`, 35, currentY + 40);
 
-        // Order Details Box (Right)
         doc.rect(leftBoxWidth + 40, currentY, leftBoxWidth, 70).stroke();
         doc.fill('#f0f0f0')
            .rect(leftBoxWidth + 40, currentY, leftBoxWidth, 20)
@@ -976,7 +979,6 @@ const generateOrderSummaryPDF = async (req, res) => {
            .text(`Order ID: ${order.orderId}`, leftBoxWidth + 45, currentY + 25)
            .text(`Order Date: ${new Date(order.createdAt).toLocaleDateString()}`, leftBoxWidth + 45, currentY + 40);
 
-        // Shipping Information Box
         currentY = 130;
         contentY = drawBox('Shipping Information', currentY, 85);
         
@@ -987,11 +989,9 @@ const generateOrderSummaryPDF = async (req, res) => {
            .text(`Address: ${order.address.house}, ${order.address.district}`, 35, contentY + 30)
            .text(`${order.address.city}, ${order.address.state} - ${order.address.pincode}`, 35, contentY + 45);
 
-        // Product Details Box
         currentY = 225;
         contentY = drawBox('Product Details', currentY, 200);
 
-        // Product table headers
         doc.font('Helvetica-Bold')
            .fontSize(10)
            .text('Image', 35, contentY, { width: 60 })
@@ -1003,9 +1003,8 @@ const generateOrderSummaryPDF = async (req, res) => {
         let productY = contentY + 15;
         const imageSize = 40;
 
-        // Process each product
         for (const item of order.items) {
-            if (productY > 380) { // Check if we need a new page
+            if (productY > 380) { 
                 doc.addPage();
                 currentY = 30;
                 contentY = drawBox('Product Details (Continued)', currentY, 200);
@@ -1035,13 +1034,11 @@ const generateOrderSummaryPDF = async (req, res) => {
             productY += 45;
         }
 
-        // Order Summary Box
         currentY = productY + 20;
         contentY = drawBox('Order Summary', currentY, 100);
 
         const subtotal = order.items.reduce((sum, item) => sum + item.finalPrice, 0);
-        
-        // Right-aligned summary details
+    
         doc.font('Helvetica')
            .fontSize(10);
 
@@ -1064,7 +1061,6 @@ const generateOrderSummaryPDF = async (req, res) => {
            .text('Total Amount:', 35, summaryY)
            .text(`₹${order.totalPrice.toFixed(2)}`, 420, summaryY, { width: 70, align: 'right' });
 
-        // Footer
         doc.font('Helvetica')
            .fontSize(9)
            .text('Thank you for shopping with us!', 0, doc.page.height - 50, {

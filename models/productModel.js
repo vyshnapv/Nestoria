@@ -22,9 +22,6 @@ const productSchema = new Schema({
         type: Number,
         default: 0,  
     },
-    color: {
-        type: String,
-    },
     productImage: {
         type: [String],
     },

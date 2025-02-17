@@ -1,0 +1,293 @@
+<%- include('../layoutsUser/userheader') %>
+<style>
+    .referral-box {
+        background: #f8f9fa;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    .stats-cards {
+        display: flex;
+        justify-content: space-between;
+        gap: 15px;
+        margin-bottom: 20px;
+    }
+    .stat-card {
+        background: white;
+        padding: 15px;
+        border-radius: 8px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        text-align: center;
+        flex: 1;
+    }
+    .stat-card h4 {
+        color: #6c757d;
+        margin-bottom: 5px;
+        font-size: 14px;
+    }
+    .stat-card .value {
+        font-size: 18px;
+        font-weight: 600;
+        color: #007bff;
+    }
+    .referral-code {
+        background: #fff;
+        font-size: small;
+        padding: 15px;
+        border-radius: 5px;
+        border: 2px dashed #28a745;
+        text-align: center;
+        margin: 15px 0;
+    }
+    .code-actions {
+        display: flex;
+        gap: 10px;
+        justify-content: center;
+        margin-top: 10px;
+    }
+    .copy-btn, .generate-btn {
+        background: #28a745;
+        color: white;
+        border: none;
+        padding: 8px 20px;
+        border-radius: 5px;
+        cursor: pointer;
+    }
+    .generate-btn {
+        background: #007bff;
+    }
+    .status-badge {
+        padding: 4px 8px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 500;
+    }
+    .status-pending { background: #fff3cd; color: #856404; }
+    .status-completed { background: #d4edda; color: #0b972c; }
+    .status-failed { background: #f8d7da; color: #721c24; }
+    .referral-code-used {
+        background: #e9ecef;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+        color: #495057;
+    }
+    .rewards-info {
+        background: #e9ecef;
+        padding: 15px;
+        border-radius: 5px;
+        margin-top: 15px;
+        color: rgb(199, 199, 59);
+    }
+    .referral-history {
+        margin-top: 20px;
+    }
+    .referral-history table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0 8px;
+    }
+    .empty-state {
+        text-align: center;
+        padding: 30px 20px;
+        color: #6c757d;
+    }
+    #referralCode{
+        font-size:large;
+    }
+</style>
+
+<main class="main">
+    <div class="page-header text-center" style="background-image: url('assets/images/page-header-bg.jpg')">
+        <div class="container">
+            <h1 class="page-title">My Referral offer<span>Earn Rewards</span></h1>
+        </div>
+    </div>
+
+    <nav aria-label="breadcrumb" class="breadcrumb-nav mb-3">
+        <div class="container">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/">Home</a></li>
+                <li class="breadcrumb-item"><a href="/shop">Shop</a></li>
+                <li class="breadcrumb-item active" aria-current="page">My Referrals</li>
+            </ol>
+        </div>
+    </nav>
+
+    <div class="page-content">
+        <div class="dashboard">
+            <div class="container">
+                <div class="row">
+                    <aside class="col-md-4 col-lg-3">
+                        <ul class="nav nav-dashboard flex-column mb-3 mb-md-0" role="tablist">
+                            <li class="nav-item">
+                                <a class="nav-link" id="tab-profile-link" href="/profile" role="tab" aria-controls="tab-profile" aria-selected="true">My Profile</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" id="tab-address-link"  href="/address" role="tab" aria-controls="tab-address" aria-selected="false">Manage Address</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" id="tab-orders-link" href="/viewOrders" role="tab" aria-controls="tab-orders" aria-selected="false">My Orders</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link active" id="tab-orders-link " href="/referralOffer" role="tab" aria-controls="tab-orders" aria-selected="false">My Refferal Offer</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" id="tab-orders-link" href="/wallet" role="tab" aria-controls="tab-orders" aria-selected="false">My Wallet</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="/logout">Sign Out</a>
+                            </li>
+                        </ul>
+                    </aside>
+
+                    <div class="col-md-8 col-lg-9">
+                        <div class="referral-box">
+                            <h3>Share & Earn</h3>
+                            <p>Share your referral code with friends and earn rewards!</p>
+                            
+                            <div class="rewards-info">
+                                <h4>Rewards Structure:</h4>
+                                <ul>
+                                    <li>You get ₹25 when your friend joins using your code</li>
+                                    <li>Your friend gets ₹50 welcome bonus</li>
+                                </ul>
+                            </div>
+                            <div class="referral-code">
+                                <h4>Your Referral Code:</h4>
+                                <h2 id="referralCode"><%= referral.referralCode %></h2>
+                                <div class="code-actions">
+                                    <button class="copy-btn" onclick="copyReferralCode()">Copy Code</button>
+                                    <button class="generate-btn" onclick="generateNewCode()">Generate New Code</button>
+                                </div>
+                            </div>
+
+                            <div class="stats-cards">
+                                <div class="stat-card">
+                                    <h4>Total Referrals</h4>
+                                    <div class="value"><%= referral.referees.length %></div>
+                                </div>
+                                <div class="stat-card">
+                                    <h4>Pending Rewards</h4>
+                                    <div class="value">₹<%= referral.referees.reduce((sum, ref) => 
+                                        ref.rewardStatus === 'Pending' ? sum + 25 : sum, 0) %></div>
+                                </div>
+                                <div class="stat-card">
+                                    <h4>Total Earned</h4>
+                                    <div class="value">₹<%= referral.referees.length * 50 %></div>
+                                </div>
+                            </div>
+
+                            <div class="referral-history">
+                                <h4>Referral History</h4>
+                                <% if (referral.referees && referral.referees.length > 0) { %>
+                                    <table class="table">
+                                        <thead>
+                                            <tr>
+                                                <th>Friend's Name</th>
+                                                <th>Joined Date</th>
+                                                <th>Code Used</th>
+                                                <th>Status</th>
+                                                <th>Reward</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <% referral.referees.forEach(referee => { %>
+                                                <tr>
+                                                    <td><%= referee.user.name %></td>
+                                                    <td><%= new Date(referee.joinedAt).toLocaleDateString() %></td>
+                                                    <td><span class="referral-code-used"><%= referral.referralCode %></span></td>
+                                                    <td>
+                                                        <span class="status-badge status-<%= referee.rewardStatus.toLowerCase() %>">
+                                                            <%= referee.rewardStatus %>
+                                                        </span>
+                                                    </td>
+                                                    <td>₹<%= referee.rewardAmount %></td>
+                                                </tr>
+                                            <% }); %>
+                                        </tbody>
+                                    </table>
+                                    <% } else { %>
+                                        <div class="empty-state">
+                                            <p>No referrals yet. Share your code to start earning!</p>
+                                        </div>
+                                    <% } %>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+        <script>
+            function copyReferralCode() {
+                const referralCode = document.getElementById('referralCode').innerText;
+                navigator.clipboard.writeText(referralCode)
+                    .then(() => {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Copied!',
+                            text: 'Referral code copied to clipboard!',
+                            timer: 1500,
+                            showConfirmButton: false
+                        });
+                    })
+                    .catch(err => {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Oops...',
+                            text: 'Failed to copy referral code!'
+                        });
+                    });
+            }
+        
+            function generateNewCode() {
+                Swal.fire({
+                    title: 'Are you sure?',
+                    text: "You want to generate a new referral code? The old code will no longer work.",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#3085d6',
+                    cancelButtonColor: '#d33',
+                    confirmButtonText: 'Yes, generate new code!'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        fetch('/generate-new-referral-code', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            }
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                document.getElementById('referralCode').innerText = data.newCode;
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'Success!',
+                                    text: 'New referral code generated successfully!',
+                                    timer: 1500,
+                                    showConfirmButton: false
+                                });
+                            } else {
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Failed',
+                                    text: 'Failed to generate new code. Please try again.'
+                                });
+                            }
+                        })
+                        .catch(error => {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error',
+                                text: 'An error occurred. Please try again.'
+                            });
+                        });
+                    }
+                });
+            }
+        </script>
+<%- include('../layoutsUser/userfooter') %>

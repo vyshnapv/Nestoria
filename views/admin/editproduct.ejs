@@ -66,7 +66,7 @@
         </div>
             <div class="card mb-4">
                 <div class="card-body">
-                    <form method="post" action="/admin/editproduct/<%= product._id %>" enctype="multipart/form-data" onsubmit="return validateForm()">
+                    <form method="post" action="/admin/editProduct/<%= product._id %>" enctype="multipart/form-data" onsubmit="return validateForm()">
                         <div class="mb-4">
                             <label for="product_name" class="form-label">Product Name</label>
                             <input type="text" placeholder="Type here" name="productName" class="form-control border" id="product_name" value="<%= product.productName %>">
@@ -203,7 +203,13 @@ function handleMultipleImages(event) {
         const reader = new FileReader();
         reader.onload = function(e) {
             const index = processedImages.size;
-            addNewThumbnail(e.target.result, index, file);
+            const newFile = new File([file], file.name, { type: file.type });
+            processedImages.set(index, {
+                type: 'new',
+                file: newFile,
+                src: e.target.result
+            });
+            addNewThumbnail(e.target.result, index);
         };
         reader.readAsDataURL(file);
     });
@@ -332,7 +338,7 @@ document.querySelector('form').onsubmit = function(e) {
 
     const formData = new FormData(this);
     
-    formData.append('deletedImages', JSON.stringify(deletedImages));
+    formData.set('deletedImages', JSON.stringify(deletedImages));
     
     processedImages.forEach((imageData, index) => {
         if (imageData.type === 'new' && imageData.file) {

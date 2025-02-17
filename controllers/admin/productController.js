@@ -33,41 +33,28 @@ const addProducts = async (req, res) => {
                 const uploadsDir = path.join(__dirname, '..', '..', 'public', 'uploads');
                 const croppedDir = path.join(__dirname, '..', '..', 'public', 'uploads', 'cropped');
                 
-                if (!fs.existsSync(uploadsDir)) {
-                    fs.mkdirSync(uploadsDir, { recursive: true });
-                }
-                if (!fs.existsSync(croppedDir)) {
-                    fs.mkdirSync(croppedDir, { recursive: true });
-                }
+                fs.mkdirSync(uploadsDir, { recursive: true });
+                fs.mkdirSync(croppedDir, { recursive: true });
 
-                for (const file of req.files) {
+                await Promise.all(req.files.map(async (file) => {
                     try {
-                        
-                        const originalImagePath = path.join(uploadsDir, file.filename);
                         const resizedImagePath = path.join(croppedDir, file.filename);
                         
-                        if (!fs.existsSync(originalImagePath)) {
-                            console.error('Original image not found:', originalImagePath);
-                            continue;
-                        }
-
                         await sharp(file.path)
                             .resize(440, 440, {
                                 fit: 'cover',
                                 position: 'center'
                             })
+                            .jpeg({ quality: 90 })
                             .toFile(resizedImagePath);
 
                         images.push(file.filename);
-                        
-                        fs.unlink(file.path, (err) => {
-                            if (err) console.error('Error deleting original file:', err);
-                        });
+            
+                        await fs.promises.unlink(file.path);
                     } catch (err) {
-                        console.error('Error processing image:', err);
-                        continue;
+                        console.error('Error processing image:', file.filename, err);
                     }
-                }
+                }));
             }
 
             const categoryId = await Category.findOne({_id: products.category});
@@ -76,25 +63,35 @@ const addProducts = async (req, res) => {
                 return res.status(400).json({ message: "Invalid category name" });
             }
 
-            const newProduct = new Product({
-                productName: products.productName,
-                description: products.description,
-                category: categoryId._id,
-                regularPrice: products.regularPrice,
-                createdOn: new Date(),
-                quantity: products.quantity,
-                productImage: images,
-                status: 'Available',
-            });
+            if (images.length === req.files.length) {
+                const newProduct = new Product({
+                    productName: products.productName,
+                    description: products.description,
+                    category: categoryId._id,
+                    regularPrice: products.regularPrice,
+                    quantity: products.quantity,
+                    productImage: images,
+                    status: 'Available',
+                });
 
             await newProduct.save();
             return res.redirect("/admin/Products");
-        } else {
-            return res.status(400).json({ message: "Product already exists, please try with another name" });
+        }  else {
+            return res.status(400).json({ 
+                message: "Some images failed to process. Please try again." 
+            });
         }
-    } catch (error) {
+    } else {
+        return res.status(400).json({ 
+            message: "Product already exists, please try with another name" 
+        });
+    }
+  } catch (error) {
         console.error("Error saving product:", error);
-        return res.redirect("/admin/pageerror");
+        return res.status(500).json({ 
+            message: "An error occurred while saving the product",
+            error: error.message 
+        });
     }
 };
 

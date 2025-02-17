@@ -23,11 +23,13 @@
     transform: translateY(-50%);
     font-size: 1.5em;
     }
+    .form-group input[name="referralCode"] {
+    text-transform: uppercase;
+    }
 </style>
 
 <body>
    
-  
     <div class="main">
         <!-- Sign up form or register form  -->
         <section class="signup">
@@ -68,10 +70,11 @@
                                 </span>
                                 <div class="error-message" id="repass-error" style="color: red;"></div>
                             </div>
-                            <!-- <div class="form-group">
-                                <input type="checkbox" name="agree-term" id="agree-term" class="agree-term" />
-                                <label for="agree-term" class="label-agree-term"><span><span></span></span>I agree all statements in  <a href="#" class="term-service">Terms of service</a></label>
-                            </div> -->
+                            <div class="form-group">
+                                <label for="referralCode"><i class="zmdi zmdi-code"></i></label>
+                                <input type="text" name="referralCode" id="referralCode" placeholder="Enter Referral Code (Optional)"/>
+                                <div class="error-message" id="referralCode-error" style="color: red;"></div>
+                            </div>
                             <div id="errMsg" style="color: red;"></div>
                             <div class="form-group form-button">
                                 <input type="submit" name="signup" id="signup" class="form-submit" value="Register"/>
@@ -111,12 +114,14 @@
       const mobile = document.getElementById("mobile");
       const pass = document.getElementById("pass");
       const re_pass = document.getElementById("re_pass");
+      const referralCode = document.getElementById("referralCode");
   
       const nameError = document.getElementById("name-error");
       const emailError = document.getElementById("email-error");
       const mobileError = document.getElementById("mobile-error");
       const passError = document.getElementById("pass-error");
       const repassError = document.getElementById("repass-error");
+      const referralCodeError = document.getElementById("referralCode-error");
   
       form.addEventListener("submit", (e) => {
           e.preventDefault(); 
@@ -128,7 +133,10 @@
       const isValidEmail = (email) => /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/.test(email);
       const isValidMobile = (mobile) => /^(4|6|9)[0-9]{9}$/.test(mobile);
       const isValidPassword = (pass) => pass.length >= 6;
-  
+      const isValidReferralCode = (code) => { 
+        if (!code) return true;
+        return /^[A-Z0-9]{8}$/.test(code);
+      };
      
       const validateRegister = () => {
           const nameValue = name.value.trim();
@@ -136,6 +144,7 @@
           const mobileValue = mobile.value.trim();
           const passValue = pass.value.trim();
           const rePassValue = re_pass.value.trim();
+          const referralCodeValue = referralCode.value.trim();
         
           let valid = true;
   
@@ -190,6 +199,13 @@
           } else {
               repassError.innerText = "";
           }
+
+          if (referralCodeValue && !isValidReferralCode(referralCodeValue)) {
+              referralCodeError.innerText = "Invalid referral code format";
+              valid = false;
+          } else {
+              referralCodeError.innerText = "";
+          }
   
           if (valid) {
               const formData = new FormData(form); 
@@ -205,8 +221,10 @@
               .then(data => {
                   if (data.success) {
                     window.location.href="/verify-otp"
+                  }else if (data.referralError) {
+                    referralCodeError.innerText = data.message;
                   } else {
-                      emailError.innerText = data.message; 
+                    emailError.innerText = data.message; 
                   }
               })
               .catch(error => {

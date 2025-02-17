@@ -71,6 +71,7 @@ const loadCart = async (req, res) => {
         res.redirect("/pageNotFound");
     }
 };
+
 //add to cart
 const addToCart = async (req, res) => {
     try {

@@ -13,10 +13,6 @@ const UserSchema=new mongoose.Schema({
     },
     mobile:{
         type:String,
-        // required:false,
-        // unique:true,
-        // sparse:true,
-        // default:null,
     },
     password:{
         type:String,

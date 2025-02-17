@@ -51,7 +51,7 @@ const createCoupon=async(req,res)=>{
             percentage:discountPercentage,
             minPrice:minPurchase,
             maxRedeemAmount:maxDiscount,
-            validFrom:new Date(validFrom),
+            addedDate:new Date(validFrom),
             expiryDate:new Date(expiryDate),
             status:"Active"
         });

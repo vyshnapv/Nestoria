@@ -223,11 +223,9 @@
                             <th>Order ID</th>
                             <th>Customer</th>
                             <th>Date</th>
-                            <th>Total</th>
-                            <th>Discount</th>
-                            <th>Final Amount <br>
-                                +shiping charge
-                            </th>
+                            <th>Total (After offer)</th>
+                            <th>Coupon Discount</th>
+                            <th>Final Amount <br>+shiping charge</th>
                         </tr>
                     </thead>
                     <tbody></tbody>
@@ -496,7 +494,8 @@ function updateTableDisplay() {
 function updateSummary(summary) {
     document.getElementById("totalAmount").textContent = `₹${Math.round(summary.totalAmount).toFixed(2)}`;
     document.getElementById("totalDiscount").textContent = `₹${Math.round(summary.totalDiscount).toFixed(2)}`;
-    document.getElementById("finalTotal").textContent = `₹${Math.round((summary.totalAmount - summary.totalDiscount)).toFixed(2)}`;
+    const finalTotalWithShipping = summary.totalAmount - summary.totalDiscount + (summary.totalOrders * 50);
+    document.getElementById("finalTotal").textContent = `₹${Math.round(finalTotalWithShipping).toFixed(2)}`;
 }
 
 function downloadReport(type) {

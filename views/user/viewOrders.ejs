@@ -1,10 +1,37 @@
 <%- include('../layoutsUser/userheader') %>
 <style>
+    .search-section {
+        margin: 20px auto;
+        max-width: 800px;
+        display: flex;
+        gap: 10px;
+        justify-content: flex-end;
+    }
+    .search-input {
+        padding: 8px 12px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        width: 250px;
+        font-size: 14px;
+    }
+    .search-btn {
+        background-color: #007bff;
+        color: white;
+        padding: 8px 16px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background-color 0.3s;
+    }
+    .search-btn:hover {
+        background-color: #0056b3;
+    }
     .order-history {
         font-family: Arial, sans-serif;
         margin: 0;
         padding: 20px;
         background-color: #f4f4f4;
+        margin-top: -30px;
     }
     .order-history .container {
         max-width: 800px;
@@ -65,6 +92,7 @@
         gap: 5px;
         margin-top: 20px;
         font-size: 12px;
+        margin-left: 515px;
     }
 
    .pagination a, .pagination span {
@@ -88,68 +116,140 @@
         border: 1px solid #007bff;
     }
 </style>
-
-<div class="order-history">
-    <div class="container">
-        <h1>Your Order History</h1>
-        <% if (orders && orders.length > 0) { %>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Order Number</th>
-                        <th>Date</th>
-                        <th>Total</th>
-                        <th>Payment Status</th>
-                        <th>Order Status</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <% paginatedOrders.forEach(order => { %>
-                        <tr>
-                            <td><%= order.orderId %></td>
-                            <td><%= order.date %></td>
-                            <td>₹<%= Math.floor(order.totalPrice) %></td>
-                            <td>
-                                <span class="status <%= helpers.getStatusClass(order.paymentStatus) %>">
-                                    <%= order.paymentStatus %>
-                                </span>
-                            </td>
-                            <td>
-                                <%= order.paymentMethod === 'Razorpay' && order.paymentStatus === 'Failed' ? 'pending' : order.orderStatus %>
-                            </td>
-                            <td>
-                                <a href="/orderDetails/<%= order.orderId %>" class="view-btn">View Details</a>
-                            </td>
-                        </tr>
-                    <% }); %>
-                </tbody>
-            </table>
-            
-            <!-- Pagination -->
-            <div class="pagination">
-                <% if (currentPage > 1) { %>
-                    <a href="?page=<%= currentPage - 1 %>">&laquo; Previous</a>
-                <% } else { %>
-                    <a class="disabled">&laquo; Previous</a>
-                <% } %>
-                
-                <% for(let i = 1; i <= totalPages; i++) { %>
-                    <a href="?page=<%= i %>" class="<%= currentPage === i ? 'active' : '' %>"><%= i %></a>
-                <% } %>
-                
-                <% if (currentPage < totalPages) { %>
-                    <a href="?page=<%= currentPage + 1 %>">Next &raquo;</a>
-                <% } else { %>
-                    <a class="disabled">Next &raquo;</a>
-                <% } %>
-            </div>
-        <% } else { %>
-            <div class="no-orders">
-                <p>You haven't placed any orders yet.</p>
-                <a href="/shop" class="view-btn">Continue Shopping</a>
-            </div>
-        <% } %>
+<main class="main">
+    <div class="page-header text-center" style="background-image: url('assets/images/page-header-bg.jpg')">
+        <div class="container">
+            <h1 class="page-title">My Order<span>History</span></h1>
+        </div>
     </div>
-</div>
+
+    <nav aria-label="breadcrumb" class="breadcrumb-nav mb-3">
+        <div class="container">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/">Home</a></li>
+                <li class="breadcrumb-item"><a href="/shop">Shop</a></li>
+                <li class="breadcrumb-item active" aria-current="page">My Order</li>
+            </ol>
+        </div>
+    </nav>
+
+    <div class="page-content">
+        <div class="dashboard">
+           <div class="container">
+              <div class="row">
+                 <aside class="col-md-4 col-lg-3">
+                    <ul class="nav nav-dashboard flex-column mb-3 mb-md-0" role="tablist">
+                        <li class="nav-item">
+                            <a class="nav-link" id="tab-profile-link" href="/profile" role="tab" aria-controls="tab-profile" aria-selected="true">My Profile</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" id="tab-address-link"  href="/address" role="tab" aria-controls="tab-address" aria-selected="false">Manage Address</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link active" id="tab-orders-link" href="/viewOrders" role="tab" aria-controls="tab-orders" aria-selected="false">My Orders</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" id="tab-orders-link " href="/referralOffer" role="tab" aria-controls="tab-orders" aria-selected="false">My Refferal Offer</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" id="tab-orders-link" href="/wallet" role="tab" aria-controls="tab-orders" aria-selected="false">My Wallet</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/logout">Sign Out</a>
+                        </li>
+                    </ul>
+                  </aside>
+
+                  <div class="order-history">
+                    <h1> Order History</h1>
+                    <div class="search-section">
+                        <input 
+                            type="text" 
+                            class="search-input" 
+                            placeholder="Search by Order ID or Status"
+                            value="<%= searchQuery || '' %>"
+                            id="searchInput"
+                        >
+                        <button class="search-btn" onclick="handleSearch()">Search</button>
+                    </div>
+                     <% if (orders && orders.length > 0) { %>
+                      <table>
+                        <thead>
+                          <tr>
+                              <th>Order Number</th>
+                              <th>Date</th>
+                              <th>Total</th>
+                              <th>Payment Status</th>
+                              <th>Order Status</th>
+                              <th>Action</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <% paginatedOrders.forEach(order => { %>
+                            <tr>
+                               <td><%= order.orderId %></td>
+                               <td><%= order.date %></td>
+                               <td>₹<%= Math.floor(order.totalPrice) %></td>
+                               <td>
+                                  <span class="status <%= helpers.getStatusClass(order.paymentStatus) %>">
+                                      <%= order.paymentStatus %>
+                                  </span>
+                               </td>
+                               <td>
+                                  <%= order.paymentMethod === 'Razorpay' && order.paymentStatus === 'Failed' ? 'pending' : order.orderStatus %>
+                               </td>
+                               <td>
+                                  <a href="/orderDetails/<%= order.orderId %>" class="view-btn">View Details</a>
+                               </td>
+                            </tr>
+                          <% }); %>
+                        </tbody>
+                      </table>
+                    <% } else { %>
+                        <div class="no-orders">
+                          <p>You haven't placed any orders yet.</p>
+                          <a href="/shop" class="view-btn">Continue Shopping</a>
+                         </div>
+                    <% } %>
+                  </div>
+
+                  <div class="pagination">
+                     <% if (currentPage > 1) { %>
+                        <a href="?page=<%= currentPage - 1 %>">&laquo; Previous</a>
+                     <% } else { %>
+                       <a class="disabled">&laquo; Previous</a>
+                     <% } %>
+                
+                     <% for(let i = 1; i <= totalPages; i++) { %>
+                        <a href="?page=<%= i %>" class="<%= currentPage === i ? 'active' : '' %>"><%= i %></a>
+                     <% } %>
+                
+                     <% if (currentPage < totalPages) { %>
+                        <a href="?page=<%= currentPage + 1 %>">Next &raquo;</a>
+                     <% } else { %>
+                        <a class="disabled">Next &raquo;</a>
+                     <% } %>
+                  </div>
+              </div>
+            </div>
+        </div>
+    </div>
+</main>
+<script>
+    function handleSearch() {
+    const searchValue = document.getElementById('searchInput').value.trim();
+    if (searchValue !== '') {
+        window.location.href = `/viewOrders?search=${encodeURIComponent(searchValue)}&page=1`;
+    } else {
+        window.location.href = '/viewOrders';
+    }
+}
+    
+    // Add event listener for Enter key
+    document.getElementById('searchInput').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            handleSearch();
+        }
+    });
+    </script>
 <%- include('../layoutsUser/userfooter') %>
