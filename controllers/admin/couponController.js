@@ -102,6 +102,13 @@ const toggleCouponStatus = async (req, res) => {
             return res.status(404).json({ message: "Coupon not found" });
         }
 
+        if (coupon.status === 'Inactive' && new Date(coupon.expiryDate) < new Date()) {
+            return res.status(400).json({ 
+                message: "Coupon date is expired. Please change the date.",
+                isExpired: true
+            });
+        }
+
         coupon.status = coupon.status === 'Active' ? 'Inactive' : 'Active';
         await coupon.save();
 

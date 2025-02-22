@@ -1,8 +1,8 @@
 <%- include('../layoutsUser/userheader') %>
 <style>
-    .small-title {
-    font-size: 3rem;
-    color: black;
+.small-title {
+font-size: 3rem;
+color: black;
 }
 .welcome{
    padding-left: 420px;
@@ -30,8 +30,8 @@
                                     <div class="intro-slide">
                                         <figure class="slide-image">
                                             <picture>
-                                                <source media="(max-width: 480px)" srcset="/uploads/cropped/<%= product.productImage[0] %>">
-                                                <img src="/uploads/cropped/<%= product.productImage[0] %>" alt="<%= product.productName %>">
+                                                <source media="(max-width: 480px)" srcset="/uploads/<%= product.productImage[0] %>">
+                                                <img src="/uploads/<%= product.productImage[0] %>" alt="<%= product.productName %>">
                                             </picture>
                                         </figure>
 
@@ -56,7 +56,7 @@
                                     <div class="col-md-6 col-lg-12">
                                         <div class="banner banner-display">
                                             <a href="#">
-                                                <img src="/uploads/cropped/<%= product.productImage[0] %>" alt="<%= product.productName %>">
+                                                <img src="/uploads/<%= product.productImage[0] %>" alt="<%= product.productName %>">
                                             </a>
 
                                             <div class="banner-content">
@@ -121,9 +121,9 @@
                             <div class="product product-11 text-center">
                                 <figure class="product-media">
                                     <a href="/product/<%= product._id %>">
-                                        <img src="/uploads/cropped/<%= product.productImage[0] %>" alt="<%= product.productName %>" class="product-image">
+                                        <img src="/uploads/<%= product.productImage[0] %>" alt="<%= product.productName %>" class="product-image">
                                         <% if (product.productImage[1]) { %>
-                                            <img src="/uploads/cropped/<%= product.productImage[1] %>" alt="<%= product.productName %>" class="product-image-hover">
+                                            <img src="/uploads/<%= product.productImage[1] %>" alt="<%= product.productName %>" class="product-image-hover">
                                         <% } %>
                                     </a>
                                     <div class="product-action-vertical">
@@ -166,9 +166,9 @@
                             <div class="product product-11 text-center">
                                 <figure class="product-media">
                                     <a href="/product/<%= product._id %>">
-                                        <img src="/uploads/cropped/<%= product.productImage[0] %>" alt="<%= product.productName %>" class="product-image">
+                                        <img src="/uploads/<%= product.productImage[0] %>" alt="<%= product.productName %>" class="product-image">
                                         <% if (product.productImage[1]) { %>
-                                            <img src="/uploads/cropped/<%= product.productImage[1] %>" alt="<%= product.productName %>" class="product-image-hover">
+                                            <img src="/uploads/<%= product.productImage[1] %>" alt="<%= product.productName %>" class="product-image-hover">
                                         <% } %>
                                     </a>
                                     <div class="product-action-vertical">

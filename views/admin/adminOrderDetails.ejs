@@ -209,7 +209,6 @@
               <p><strong>Category:</strong> <%= item.category %></p>
               <p><strong>Quantity:</strong> <%= item.quantity %></p>
               <p>
-                <strong>Price:</strong> 
                 <% if (item.highestDiscount > 0) { %>
                   Original Price: <span style="text-decoration: line-through;">₹<%= item.price %></span><br>
                   Offer Price: <span style="color: green;">₹<%= item.offerPrice %> (<%= item.highestDiscount %>% off)</span><br>

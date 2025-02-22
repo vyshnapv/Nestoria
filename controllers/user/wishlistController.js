@@ -1,7 +1,10 @@
 const User = require("../../models/userModel");
 const Wishlist = require("../../models/wishlistModel");
 const Product = require("../../models/productModel");
+const Offer = require("../../models/offerModel")
+const Cart = require("../../models/cartModel"); 
 
+//get the wishlist
 const wishlist = async (req, res) => {
   try {
     const userData = await User.findOne({ _id: req.session.user });
@@ -10,9 +13,43 @@ const wishlist = async (req, res) => {
     }).populate({
       path: "items.productId",
       model: "Product",
+      populate: {
+        path: "category",
+        model: "Category"
+      }
     });
 
-    res.render("wishlist", { userData, wishlist:wishlist || { items: [] } });
+    if (wishlist) {
+      wishlist.items = wishlist.items.filter(item => item.productId !== null);
+      await wishlist.save();
+    }
+
+    const currentDate = new Date();
+    const offers = await Offer.find({
+      status: 'Active',
+      expireDate: { $gt: currentDate }
+    });
+
+    const itemsWithOfferPrice = wishlist.items.map(item => {
+      const product = item.productId;
+      const productOffer = offers.find(offer =>
+        (offer.productIds?.includes(product._id)) || (offer.categoryIds?.includes(product.category._id))
+      );
+
+      const offerPrice = productOffer
+        ? product.regularPrice * (1 - productOffer.discount / 100)
+        : product.regularPrice;
+
+      return {
+        ...item.toObject(),
+        productId: {
+          ...product.toObject(),
+          offerPrice
+        }
+      };
+    });
+
+    res.render("wishlist", { userData, wishlist: { items: itemsWithOfferPrice } });
   } catch (error) {
     console.log(error);
     res.status(500).json({ success: false, message: "Error fetching wishlist" });

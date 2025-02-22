@@ -73,7 +73,49 @@
     border-color: #007bff;
     background-color: #e6f0ff;
 }
+.radio-button {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    width: 20px;
+    height: 20px;
+    border: 2px solid #ccc;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+}
+.radio-button::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background-color: transparent;
+    transition: all 0.3s ease;
+}
+.address-item.selected .radio-button {
+    border-color: #007bff;
+}
 
+.address-item.selected .radio-button::after {
+    background-color: #007bff;
+}
+.address-content {
+    display: block;
+    padding-right: 40px;
+}
+
+.address-content h5 {
+    margin-bottom: 10px;
+    color: #333;
+}
+
+.address-content p {
+    margin: 5px 0;
+    color: #666;
+}
 .select-icon {
     width: 20px;
     height: 20px;
@@ -88,13 +130,10 @@
     cursor: pointer;
     transition: background-color 0.3s, border-color 0.3s;
 }
-
 .select-icon.selected {
     background-color: #007bff;
     border-color: #007bff;
 }
-
-
 .address-buttons {
     display: flex;
     justify-content: space-between;
@@ -407,7 +446,6 @@
     padding: 20px;
 }
 
-/* Applied Coupon Display */
 .applied-coupon {
     background-color: #e8f4ff;
     padding: 10px;
@@ -449,7 +487,6 @@
     border-top: 2px solid #dee2e6;
 }
 
-/* Loading State */
 .loading {
     position: relative;
     opacity: 0.7;
@@ -627,8 +664,6 @@
                         </div>
                         <% } %>
                     </div>
-                    
-                    
                         <div class="cart-summary-box mb-4">
                             <h2 class="checkout-title">Order Summary</h2>
                             <div class="cart-items-list">
@@ -638,7 +673,7 @@
                                     <% const itemTotal = price * item.quantity %>
                                     <div class="cart-item-card">
                                         <div class="product-media">
-                                            <img src="/uploads/cropped/<%= product.productImage[0] %>" alt="<%= product.productName %>">
+                                            <img src="/uploads/<%= product.productImage[0] %>" alt="<%= product.productName %>">
                                         </div>
                                         <div class="product-details">
                                             <p class="price">Product Name: <%= product.productName %></p>
@@ -655,8 +690,7 @@
                             </div>
                         </div>
 
-                        <div class="address-buttons">
-                            
+                        <div class="address-buttons"> 
                             <button id="show-addresses-btn" class="btn btn-primary">view Addresses</button>
                             <button id="add-address-btn" class="btn btn-secondary" onclick="toggleForm()">Add Address</button>
                         </div>
@@ -665,16 +699,20 @@
                             <h4>Your Addresses</h4>
                             <% if (addresses && addresses.address && addresses.address.length > 0) { %>
                                 <% addresses.address.forEach((address, index) => { %>
-                                    <div class="address-item" onclick="selectAddress('<%= index %>')" data-index="<%= index %>">
-                                        <h5>Address <%= index + 1 %></h5>
-                                        <p>Name: <%= address.name %></p>
-                                        <p>Phone: <%= address.phone %></p>
-                                        <p>District: <%= address.district %></p>
-                                        <p>City: <%= address.city %></p>
-                                        <p>House: <%= address.house %></p>
-                                        <p>State: <%= address.state %></p>
-                                        <p>Pincode: <%= address.pincode %></p>
-                                        <div class="select-icon" id="select-icon-<%= index %>"></div>
+                                    <div class="address-item <%= index === 0 ? 'selected' : '' %>" 
+                                         onclick="selectAddress('<%= index %>')" 
+                                         data-index="<%= index %>">
+                                        <div class="address-content">
+                                            <h5>Address <%= index + 1 %></h5>
+                                            <p>Name: <%= address.name %></p>
+                                            <p>Phone: <%= address.phone %></p>
+                                            <p>District: <%= address.district %></p>
+                                            <p>City: <%= address.city %></p>
+                                            <p>House: <%= address.house %></p>
+                                            <p>State: <%= address.state %></p>
+                                            <p>Pincode: <%= address.pincode %></p>
+                                            <div class="radio-button"></div>
+                                        </div>
                                     </div>
                                 <% }) %>
                             <% } else { %>
@@ -682,7 +720,6 @@
                             <% } %>
                         </div>
                         
-
                     <div id="addAddressForm" >
                         <form id="actualAddAddressForm" method="POST" action="/addAddress">
                             <div class="form-group">
@@ -692,7 +729,7 @@
                             </div>
                             <div class="form-group">
                                 <label for="phone">Phone</label>
-                                <input type="text" class="form-control" id="phone" name="phone">
+                                <input type="number" class="form-control" id="phone" name="phone">
                                 <span class="error-message" id="phoneError"></span>
                             </div>
                             <div class="form-group">
@@ -717,7 +754,7 @@
                             </div>
                             <div class="form-group">
                                 <label for="pincode">Pincode</label>
-                                <input type="text" class="form-control" id="pincode" name="pincode">
+                                <input type="number" class="form-control" id="pincode" name="pincode">
                                 <span class="error-message" id="pincodeError"></span>
                             </div>
                             <button type="submit" class="btn btn-primary">Save Address</button>
@@ -758,7 +795,7 @@
                                                                 ₹<%= Math.round(item.couponDiscount.finalPrice) %>
                                                             </span>
                                                             <div class="discount-info" style="font-size: 0.85em; color: #28a745;">
-                                                                You Saved: ₹<%= Math.round(item.couponDiscount.amount) %>
+                                                                Coupon savings: ₹<%= Math.round(item.couponDiscount.amount) %>
                                                             </div>
                                                         </div>
                                                     <% } %>
@@ -787,7 +824,7 @@
                                 <h4 class="payment-method-title">Payment Method</h4>
                                 
                                 <div class="wallet-info mb-3">
-                                    <p class="font-medium">Wallet Balance: ₹<span id="walletBalance"><%= walletBalance.toFixed(2) %></span></p>
+                                    <p class="font-medium">Wallet Balance: ₹<span id="walletBalance"><%= Math.round(walletBalance).toFixed(2) %></span></p>
                                 </div>
                                 
                                 <div class="payment-option">
@@ -829,28 +866,58 @@
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
-    
-    document.getElementById('show-addresses-btn').addEventListener('click', function() {
-        const addressList = document.getElementById('address-list');
-        addressList.style.display = addressList.style.display === 'none' ? 'block' : 'none';
+ document.addEventListener('DOMContentLoaded', function() {
+    const showAddressesBtn = document.getElementById('show-addresses-btn');
+    const addressList = document.getElementById('address-list');
+    const addAddressBtn = document.getElementById('add-address-btn');
+
+    showAddressesBtn.addEventListener('click', function() {
+        if (addressList.style.display === 'none' || !addressList.style.display) {
+            addressList.style.display = 'block';
+            if (!sessionStorage.getItem('selectedAddress')) {
+                const firstAddress = document.querySelector('.address-item');
+                if (firstAddress) {
+                    selectAddress('0');
+                }
+            }
+        } else {
+            addressList.style.display = 'none';
+        }
     });
 
-    
-    function selectAddress(index) {
+    window.selectAddress = function(index) {
         document.querySelectorAll('.address-item').forEach(item => {
             item.classList.remove('selected');
-            const icon = item.querySelector('.select-icon');
-            if (icon) icon.classList.remove('selected');
         });
-
         const selectedItem = document.querySelector(`.address-item[data-index="${index}"]`);
+        if (selectedItem) {
+            selectedItem.classList.add('selected');
+            sessionStorage.setItem('selectedAddress', index);
+        }
+    };
+    const firstAddress = document.querySelector('.address-item');
+    if (firstAddress) {
+        selectAddress('0');
+    }
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+    const firstAddress = document.querySelector('.address-item');
+    if (firstAddress) {
+        selectAddress('0');
+    }
+});
+    
+function selectAddress(index) {
+    document.querySelectorAll('.address-item').forEach(item => {
+        item.classList.remove('selected');
+    });
+    const selectedItem = document.querySelector(`.address-item[data-index="${index}"]`);
+    if (selectedItem) {
         selectedItem.classList.add('selected');
-
-        const selectIcon = document.getElementById(`select-icon-${index}`);
-        selectIcon.classList.add('selected');
-
         sessionStorage.setItem('selectedAddress', index);
     }
+}
 
     function toggleForm() {
     var form = document.getElementById("addAddressForm");
@@ -921,7 +988,6 @@ document.getElementById("actualAddAddressForm").addEventListener("submit", async
         showError("name", "Name should be 3-50 characters long");
         isValid = false;
     }
-
     
     const phone = document.getElementById("phone").value;
     if (isEmptyOrWhitespace(phone)) {
@@ -931,8 +997,7 @@ document.getElementById("actualAddAddressForm").addEventListener("submit", async
         showError("phone", "Please enter a valid 10-digit phone number starting with 6-9");
         isValid = false;
     }
-
-    
+ 
     const district = document.getElementById("district").value;
     if (isEmptyOrWhitespace(district)) {
         showError("district", "District cannot be empty");
@@ -944,7 +1009,6 @@ document.getElementById("actualAddAddressForm").addEventListener("submit", async
         showError("district", "District should be 3-30 characters long");
         isValid = false;
     }
-
    
     const city = document.getElementById("city").value;
     if (isEmptyOrWhitespace(city)) {
@@ -1230,10 +1294,24 @@ document.addEventListener('DOMContentLoaded', () => {
                     showConfirmButton: true,
                     confirmButtonText: 'View Order',
                     confirmButtonColor: '#28a745',
-                    timer: 3000,
-                    timerProgressBar: true
+                    timer:3000,
+                    timerProgressBar:true
+                }).then(() => {
+                    window.location.href = `/ordersuccess/${result.orderId}`;
                 });
-                window.location.href = `/ordersuccess/${result.orderId}`;
+            } else if (paymentMethod === 'COD') {
+                await Swal.fire({
+                    icon: 'success',
+                    title: 'Cash on Delivery',
+                    text: 'Your order has been placed successfully. Please pay in cash upon delivery.',
+                    showConfirmButton: true,
+                    confirmButtonText: 'View Order',
+                    confirmButtonColor: '#007bff',
+                    timer:3000,
+                    timerProgressBar:true
+                }).then(() => {
+                    window.location.href = `/ordersuccess/${result.orderId}`;
+                });
             } else {
                 window.location.href = `/ordersuccess/${result.orderId}`;
             }
@@ -1373,7 +1451,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
-
 </script>
 
 <%- include('../layoutsUser/userfooter') %>  

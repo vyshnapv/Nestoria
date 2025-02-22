@@ -167,7 +167,7 @@
                                                     <td class="<%= transaction.type === 'credit' ? 'text-success' : 'text-danger' %>">
                                                         <%= transaction.type === 'credit' ? '+' : '-' %>₹<%= Math.round(transaction.amount).toFixed(2) %>
                                                     </td>
-                                                    <td>₹<%= transaction.balance.toFixed(2) %></td>
+                                                    <td>₹<%= Math.round(transaction.balance).toFixed(2) %></td>
                                                 </tr>
                                             <% }); %>
                                         </tbody>

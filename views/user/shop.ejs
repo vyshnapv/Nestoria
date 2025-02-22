@@ -70,7 +70,12 @@
 .product-price > .product-price {
     flex: none;
 }
-
+.product-image {
+    width: 100%;
+    height: 280px;
+    object-fit: cover;
+    object-position: center;
+}
 </style>
 
 <main class="main">
@@ -129,7 +134,7 @@
                                                     <% } %>
                                                 </span>
                                                 <a href="/product/<%= product._id %>">
-                                                    <img src="/uploads/cropped/<%= product.productImage[0] %>" alt="Product image" class="product-image">
+                                                    <img src="/uploads/<%= product.productImage[0] %>" alt="Product image" class="product-image">
                                                 </a>
                                                 <div class="product-action-vertical">
                                                     <% if (product.quantity > 0) { %>
@@ -181,12 +186,6 @@
                                                         </div>
                                                     <% } %>
                                                 </div>
-                                                <div class="ratings-container">
-                                                    <div class="ratings">
-                                                        <div class="ratings-val" style="width: 20%;"></div><!-- End .ratings-val -->
-                                                    </div><!-- End .ratings -->
-                                                    <span class="ratings-text">( 2 Reviews )</span>
-                                                </div><!-- End .rating-container -->
                                             </div><!-- End .product-body -->
                                         </div><!-- End .product -->
                                     </div><!-- End .col -->
@@ -257,7 +256,7 @@
                                 <div class="widget-body">
                                     <div class="filter-items filter-items-count">
                                         <% if (category && category.length > 0) { %>
-                                            <% category.forEach((cat, i) => { %>
+                                            <% category.filter(cat => cat.count > 0).forEach((cat, i) => { %>
                                                 <div class="filter-item">
                                                     <div class="custom-control custom-checkbox">
                                                         <input type="checkbox" class="custom-control-input" id="cat-<%= i %>" 
@@ -319,7 +318,6 @@
         </div><!-- End .container -->
     </div><!-- End .page-content -->
 </main><!-- End .main -->
-
 
 <script>
     function sortNames(order) {

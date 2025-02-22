@@ -115,10 +115,12 @@
            margin-bottom: 10px;
         }
         .badge {
-            font-size: 14px;
-            padding: 5px 10px;
+            font-size: 18px;
+            padding: 3px;
+            color: red;
         }
         .regular-price {
+            font-size: 20px;
             text-decoration: line-through;
             color: #6c757d;
             margin-right: 10px;
@@ -144,6 +146,12 @@
         .btn-wishlist:hover {
             color: #ff0000;
         }
+        .product-gallery-vertical 
+        .product-gallery-item:before, 
+        .product-gallery-vertical
+        .product-gallery-item:after {
+            bottom: 128px;
+        }
 </style>
 
 <main class="main">
@@ -166,14 +174,14 @@
                                 <div class="row">
                                     <figure class="product-main-image">
                                        
-                                        <img id="product-zoom" src="/uploads/cropped/<%= product.productImage[0] %>" data-zoom-image="/uploads/cropped/<%= product.productImage[0] %>" alt="product image">
+                                        <img id="product-zoom" src="/uploads/<%= product.productImage[0] %>" data-zoom-image="/uploads/<%= product.productImage[0] %>" alt="product image">
 
                                     </figure>
 
                                     <div id="product-zoom-gallery" class="product-image-gallery">
                                         <% for(let i=0;i<product.productImage.length;i++){ %>
-                                            <a class="product-gallery-item <%= i === 0 ? 'active' : '' %>" href="#" data-image="/uploads/cropped/<%= product.productImage[i] %>" data-zoom-image="/uploads/cropped/<%= product.productImage[i] %>">
-                                                <img src="/uploads/cropped/<%= product.productImage[i] %>" alt="product side">
+                                            <a class="product-gallery-item <%= i === 0 ? 'active' : '' %>" href="#" data-image="/uploads/<%= product.productImage[i] %>" data-zoom-image="/uploads/<%= product.productImage[i] %>">
+                                                <img src="/uploads/<%= product.productImage[i] %>" alt="product side">
                                             </a>
                                         <% } %>
                                     </div><!-- End .product-image-gallery -->
@@ -183,21 +191,10 @@
 
                 <div class="product-details">
                     <h1 class="product-title" style="font-size: xx-large;"><%= product.productName %></h1>
-
-                    <div class="ratings-container">
-                        <div class="ratings">
-                            <div class="ratings-val" style="width: 80%;"></div><!-- End .ratings-val -->
-                        </div><!-- End .ratings -->
-                        <a class="ratings-text" href="#product-review-link" id="review-link">( 2 Reviews )</a>
-                    </div><!-- End .rating-container -->
-
-                    
                     <div class="price">
                         <% if (product.offer) { %>
-                            <div class="offer-badge">
-                                <span class="badge bg-danger">-<%= product.offer.discount %>%</span>
-                            </div>
                             <p class="regular-price text-muted" style="text-decoration: line-through;">₹<%= product.regularPrice %></p>
+                            <span class="badge">-<%= product.offer.discount %>% OFF</span>
                             <p class="offer-price">₹<%= (product.regularPrice * (1 - product.offer.discount / 100)).toFixed(2) %></p>
                         <% } else { %>
                             <p class="price">₹<%= product.regularPrice %></p>
@@ -243,58 +240,12 @@
                     <li class="nav-item">
                         <a class="nav-link active" id="product-desc-link" data-toggle="tab" href="#product-desc-tab" role="tab" aria-controls="product-desc-tab" aria-selected="true">Description</a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link" id="product-info-link" data-toggle="tab" href="#product-info-tab" role="tab" aria-controls="product-info-tab" aria-selected="false">Additional Information</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" id="product-review-link" data-toggle="tab" href="#product-review-tab" role="tab" aria-controls="product-review-tab" aria-selected="false">Reviews (2)</a>
-                    </li>
                 </ul>
                 <div class="tab-content">
                     <div class="tab-pane fade show active" id="product-desc-tab" role="tabpanel" aria-labelledby="product-desc-link">
                         <div class="product-desc-content">
                             <p><%= product.description %></p>
                         </div><!-- End .product-desc-content -->
-                    </div><!-- .End .tab-pane -->
-                    <div class="tab-pane fade" id="product-info-tab" role="tabpanel" aria-labelledby="product-info-link">
-                        <div class="product-desc-content">
-                            <h3>Information</h3>
-                            <p>Lorem ipsum dolor sit amet, consectetuer adipiscing elit...</p>
-
-                            <h3>Fabric & Care</h3>
-                            <p>Lorem ipsum dolor sit amet...</p>
-
-                            <h3>Size</h3>
-                            <p>One Size</p>
-                        </div><!-- End .product-desc-content -->
-                    </div><!-- .End .tab-pane -->
-                    <div class="tab-pane fade" id="product-review-tab" role="tabpanel" aria-labelledby="product-review-link">
-                        <div class="reviews">
-                            <h3>Reviews (2)</h3>
-                            <div class="review">
-                                <div class="row no-gutters">
-                                    <div class="col-auto">
-                                        <h4><a href="#">Samanta J.</a></h4>
-                                        <div class="ratings-container">
-                                            <div class="ratings">
-                                                <div class="ratings-val" style="width: 80%;"></div><!-- End .ratings-val -->
-                                            </div><!-- End .ratings -->
-                                        </div><!-- End .rating-container -->
-                                        <span class="review-date">6 days ago</span>
-                                    </div><!-- End .col -->
-                                    <div class="col">
-                                        <h4>Good, perfect size</h4>
-                                        <div class="review-content">
-                                            <p>Lorem ipsum dolor sit amet...</p>
-                                        </div><!-- End .review-content -->
-                                        <div class="review-action">
-                                            <a href="#"><i class="icon-thumbs-up"></i>Helpful (2)</a>
-                                            <a href="#"><i class="icon-thumbs-down"></i>Unhelpful (0)</a>
-                                        </div><!-- End .review-action -->
-                                    </div><!-- End .col-auto -->
-                                </div><!-- End .row -->
-                            </div><!-- End .review -->
-                        </div><!-- End .reviews -->
                     </div><!-- .End .tab-pane -->
                 </div><!-- End .tab-content -->
             </div><!-- End .product-details-tab -->

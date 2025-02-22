@@ -399,7 +399,7 @@ const adminOrderDetails = async (req, res) => {
               productName: item.productId?.productName || 'Product Unavailable',
               category: item.productId?.category?.name || 'Uncategorized',
               image: item.productId?.productImage?.[0] 
-                  ? `/uploads/cropped/${item.productId.productImage[0]}` 
+                  ? `/uploads/${item.productId.productImage[0]}` 
                   : '/placeholder-image.jpg',
               quantity: item.quantity,
               price: item.price.toFixed(2),

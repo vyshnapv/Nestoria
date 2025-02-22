@@ -66,7 +66,7 @@
         </div>
             <div class="card mb-4">
                 <div class="card-body">
-                    <form method="post" action="/admin/editProduct/<%= product._id %>" enctype="multipart/form-data" onsubmit="return validateForm()">
+                    <form method="post" id="editForm" action="/admin/editProduct/<%= product._id %>" enctype="multipart/form-data">
                         <div class="mb-4">
                             <label for="product_name" class="form-label">Product Name</label>
                             <input type="text" placeholder="Type here" name="productName" class="form-control border" id="product_name" value="<%= product.productName %>">
@@ -88,7 +88,7 @@
                             <div class="col-lg-4">
                                 <div class="mb-4">
                                     <label class="form-label">Quantity</label>
-                                    <input placeholder="" name="quantity" type="text" class="form-control border" value="<%= product.quantity %>">
+                                    <input placeholder="" name="quantity" type="number" class="form-control border" value="<%= product.quantity %>">
                                     <div id="quantity-error" class="error-message"></div>
                                 </div>
                             </div>
@@ -99,11 +99,12 @@
                                     <div class="col-sm-6 mb-3">
                                         <label class="form-label">Category</label>
                                         <select class="form-select border" style="width: 150px;" name="category">
-                                            <% for (let i = 0; i < cat.length; i++) { %>
-                                                <option value="<%= cat[i]._id %>" <%= cat[i]._id === product.category ? 'selected' : '' %> >
-                                                    <%= cat[i].name %>
+                                            <% cat.forEach(function(category) { %>
+                                                <option value="<%= category._id %>" 
+                                                        <%= product.category.toString() === category._id.toString() ? 'selected' : '' %>>
+                                                    <%= category.name %>
                                                 </option>
-                                            <% } %>
+                                            <% }); %>
                                         </select>
                                         <div id="category-error" class="error-message"></div>
                                     </div>
@@ -118,14 +119,14 @@
                                 <div id="thumbnailsContainer" class="thumbnails-container">
                                     <% for (let i = 0; i < product.productImage.length; i++) { %>
                                         <div class="thumbnail" data-index="<%= i %>">
-                                            <img src="/uploads/cropped/<%= product.productImage[i] %>" onclick="startCropping('<%=product.productImage[i] %>', '<%= i %>')" />
+                                            <img src="/uploads/<%= product.productImage[i] %>" onclick="startCropping('<%=product.productImage[i] %>', '<%= i %>')" />
                                             <span class="remove-icon" onclick="removeThumbnail(this.parentElement)">x</span>
                                         </div>
                                     <% } %>
                                 </div>
                                 <input class="form-control" type="file" name="images" id="multipleImages" 
-                                       accept="image/png, image/jpeg, image/jpg" multiple 
-                                       onchange="handleMultipleImages(event)">
+                                    accept="image/png, image/jpeg, image/jpg" multiple 
+                                    onchange="handleMultipleImages(event)">
                                 <div id="images-error" class="error-message"></div>
                             </div>
                         </div>
@@ -185,37 +186,6 @@ function initializeExistingImages() {
             removeThumbnail(thumbnail);
         };
     });
-}
-
-
-function handleMultipleImages(event) {
-    const files = Array.from(event.target.files);
-    const container = document.getElementById('thumbnailsContainer');
-    const currentCount = container.querySelectorAll('.thumbnail').length;
-
-    if (currentCount + files.length > maxImages) {
-        displayErrorMessage('images-error', `You can only have ${maxImages} images in total.`);
-        event.target.value = '';
-        return;
-    }
-
-    files.forEach((file) => {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            const index = processedImages.size;
-            const newFile = new File([file], file.name, { type: file.type });
-            processedImages.set(index, {
-                type: 'new',
-                file: newFile,
-                src: e.target.result
-            });
-            addNewThumbnail(e.target.result, index);
-        };
-        reader.readAsDataURL(file);
-    });
-
-    event.target.value = '';
-    clearErrorMessages();
 }
 
 function addNewThumbnail(src, index, file) {
@@ -299,28 +269,36 @@ function startCropping(src, index) {
 }
 
 function saveCroppedImage() {
-    if (!cropper) return;
+    if (!cropper) {
+        debugLog('save-cropped-image', 'No cropper instance found');
+        return;
+    }
     
     cropper.getCroppedCanvas().toBlob((blob) => {
-        const file = new File([blob], `cropped-image-${currentImageIndex}.jpg`, {
+        const fileName = `cropped-image-${currentImageIndex}.jpg`;
+        const file = new File([blob], fileName, {
             type: 'image/jpeg'
         });
-        
-        const imageData = processedImages.get(currentImageIndex);
+
+        const currentImage = processedImages.get(currentImageIndex);
+        if (currentImage && currentImage.type === 'existing') {
+            deletedImages.push(currentImage.name);
+        }
+
         processedImages.set(currentImageIndex, {
-            type: imageData.type,
+            type: 'new',
             file: file,
             src: URL.createObjectURL(blob)
         });
-        
+
         const thumbnail = document.querySelector(`.thumbnail[data-index="${currentImageIndex}"] img`);
         if (thumbnail) {
             thumbnail.src = URL.createObjectURL(blob);
         }
-        
         cancelCrop();
     }, 'image/jpeg');
 }
+
 
 function cancelCrop() {
     if (cropper) {
@@ -330,13 +308,46 @@ function cancelCrop() {
     document.querySelector('.image-cropper').style.display = 'none';
 }
 
-document.querySelector('form').onsubmit = function(e) {
+function debugLog(stage, data) {
+    console.log(`[${stage}]`, data);
+}
+
+function handleMultipleImages(event) {
+    debugLog('handleMultipleImages-start', 'Processing new files');
+    const files = Array.from(event.target.files);
+    debugLog('files-received', files);
+
+    const container = document.getElementById('thumbnailsContainer');
+    const currentCount = container.querySelectorAll('.thumbnail').length;
+
+    if (currentCount + files.length > maxImages) {
+        displayErrorMessage('images-error', `You can only have ${maxImages} images in total.`);
+        return;
+    }
+
+    files.forEach((file) => {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const index = processedImages.size;
+            addNewThumbnail(e.target.result, index, file);
+        };
+        reader.readAsDataURL(file);
+    });
+    clearErrorMessages();
+}
+
+document.getElementById('editForm').onsubmit = function(e) {
+    e.preventDefault();
+    
     if (!validateForm()) {
-        e.preventDefault();
         return false;
     }
 
-    const formData = new FormData(this);
+    const form = document.getElementById('editForm');
+    
+    const formData = new FormData(form);
+
+    formData.delete('images');
     
     formData.set('deletedImages', JSON.stringify(deletedImages));
     
@@ -345,15 +356,44 @@ document.querySelector('form').onsubmit = function(e) {
             formData.append('images', imageData.file);
         }
     });
+
+    for (let pair of formData.entries()) {
+        console.log(pair[0] + ': ' + (pair[1] instanceof File ? pair[1].name : pair[1]));
+    }
     
-    return true;
-};
+    fetch(form.action, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok: ' + response.statusText);
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log("Server response:", data);
+        if (data.success) {
+            window.location.href = data.redirectUrl;
+        } else if (data.error) {
+            displayErrorMessage('productName-error', data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error during form submission:', error);
+        displayErrorMessage('productName-error', 'An error occurred: ' + error.message);
+    });
+
+    return false;
+}
 
 function validateForm() {
     clearErrorMessages();
     let isValid = true;
 
-    const productName = document.getElementById('product_name').value;
+    const productName = document.getElementById('product_name').value.trim();
+    document.getElementById('product_name').value = productName;
+
     const productNameRegex = /^[a-zA-Z0-9\s]{3,}$/;
     if (!productNameRegex.test(productName)) {
         displayErrorMessage('productName-error', 'Product name must be at least 3 characters long and contain only letters and numbers.');
@@ -361,26 +401,30 @@ function validateForm() {
     }
     
 
-    const description = document.getElementById('descriptionid').value;
-    if (description.trim() === "") {
+    const description = document.getElementById('descriptionid').value.trim();
+    document.getElementById('descriptionid').value = description;
+
+    if (description === "") {
         displayErrorMessage('description-error', 'Please enter a product description.');
         isValid = false;
     }
 
-      const regularPrice = document.getElementsByName('regularPrice')[0].value;
+      const regularPrice = document.getElementsByName('regularPrice')[0].value.trim();
+      document.getElementsByName('regularPrice')[0].value = regularPrice;
+      
       const priceRegex = /^-?\d+(\.\d{1,2})?$/;  
 
       if (!priceRegex.test(regularPrice)) {
-          displayErrorMessage('regularPrice-error', 'Please enter a valid price (use a valid number format).');
-          isValid = false;
-        } else if (parseFloat(regularPrice) < 0) {
-          displayErrorMessage('regularPrice-error', 'Please enter a valid price (negative numbers are not allowed).');
-          isValid = false;
-        } else if (parseFloat(regularPrice) <= 0) {
-          displayErrorMessage('regularPrice-error', 'Please enter a price greater than zero.');
-          isValid = false;
-        }
-    const quantity = document.getElementsByName('quantity')[0].value;
+       displayErrorMessage('regularPrice-error', 'Please enter a valid price.');
+       isValid = false;
+    } else if (parseFloat(regularPrice) <= 0) {
+       displayErrorMessage('regularPrice-error', 'Please enter a price greater than zero.');
+       isValid = false;
+    }
+
+    const quantity = document.getElementsByName('quantity')[0].value.trim();
+    document.getElementsByName('quantity')[0].value = quantity;
+    
     const quantityRegex = /^[1-9][0-9]*$/; 
     if (!quantityRegex.test(quantity)) {
         displayErrorMessage('quantity-error', 'Please enter a valid quantity .');
@@ -394,8 +438,9 @@ function validateForm() {
     }
 
     const totalImages = processedImages.size;
-    if (totalImages === 0) {
-        displayErrorMessage('images-error', 'Please upload at least one image.');
+
+    if (totalImages !== 3) {
+        displayErrorMessage('images-error', 'Please upload exactly 3 image.');
         isValid = false;
     } else if (totalImages > maxImages) {
         displayErrorMessage('images-error', `Maximum ${maxImages} images allowed.`);

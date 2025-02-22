@@ -13,7 +13,7 @@ const offerController = require('../controllers/admin/offerController');
 const couponController = require('../controllers/admin/couponController')
 
 const { adminAuth ,adminAuth1} = require('../middleware/userAuth');
-const multer=require("../middleware/multer");
+const multer =require("../middleware/multer");
  
 
 //login management
@@ -43,7 +43,7 @@ admin_route.get("/products",adminAuth,productController.getAllProducts)
 admin_route.patch("/blockProduct",adminAuth,productController.blockProduct)
 admin_route.patch("/unblockProduct",adminAuth,productController.unblockProduct)
 admin_route.get("/editProduct",adminAuth,productController.getEditProduct)
-admin_route.post("/editProduct/:id",adminAuth,multer.array("images",3),productController.editProduct)
+admin_route.post("/editProduct/:id", adminAuth, multer.array("images", 3), productController.editProduct)
 
 //order management
 admin_route.get('/orderList',adminAuth,adminController.loadOrdersList);

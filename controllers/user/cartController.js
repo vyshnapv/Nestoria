@@ -33,6 +33,25 @@ const loadCart = async (req, res) => {
         });
 
         const processedItems = cart.items.map(item => {
+            if (!item.product) {
+                return null; 
+            }
+            
+            const productWithDefaults = {
+                ...item.product.toObject(),
+                productImage: item.product.productImage || ['default-product.jpg']
+            };
+            
+            if (!item.product.category) {
+                return {
+                    ...item.toObject(),
+                    product: {
+                        ...productWithDefaults,
+                        highestDiscount: 0,
+                        offerPrice: item.product.regularPrice || 0
+                    }
+                };
+            }
             const productOffer = offers.find(offer => 
                 (offer.productIds?.includes(item.product._id)) ||
                 (offer.categoryIds?.includes(item.product.category._id))
@@ -51,7 +70,7 @@ const loadCart = async (req, res) => {
                     offerPrice
                 }
             };
-        });
+        }).filter(item => item !== null);
 
         let subtotal = 0;
         if (processedItems) {
@@ -113,7 +132,6 @@ const addToCart = async (req, res) => {
     }
 };
 
-
 //updatecartquantity
 const updateCartQuantity = async (req, res) => {
     try {
@@ -156,7 +174,6 @@ const updateCartQuantity = async (req, res) => {
     }
 };
 
-
 //remove cart items
 const removeCartItem = async (req, res) => {
     try {
@@ -180,11 +197,18 @@ const removeCartItem = async (req, res) => {
     }
 };
 
-
 //checkout page 
 const loadCheckout = async (req, res) => {
     try {
+        if (!req.session.user) {
+            return res.redirect('/login');
+        }
+
         const userData = await User.findById(req.session.user);
+        if (!userData) {
+            return res.redirect('/login');
+        }
+
         const cart = await Cart.findOne({ userId: req.session.user })
             .populate({
                 path: 'items.product',
@@ -194,9 +218,10 @@ const loadCheckout = async (req, res) => {
                 }
             });
 
-        if (!cart || cart.items.length === 0) {
-            delete req.session.appliedCoupon;
-        }
+            if (!cart || !cart.items || cart.items.length === 0) {
+                delete req.session.appliedCoupon;
+                return res.redirect('/cart');
+            }
 
         const currentDate = new Date();
         const offers = await Offer.find({
@@ -204,83 +229,88 @@ const loadCheckout = async (req, res) => {
             expireDate: { $gt: currentDate }
         });
 
-        const processedItems = cart ? cart.items.map(item => {
-            const productOffer = offers.find(offer => 
-                (offer.productIds?.includes(item.product._id)) ||
-                (offer.categoryIds?.includes(item.product.category._id))
-            );
+        const processedItems = cart.items
+            .filter(item => item.product && item.product.category) 
+            .map(item => {
+                const productOffer = offers.find(offer => 
+                    (offer.productIds && offer.productIds.includes(item.product._id)) ||
+                    (offer.categoryIds && offer.categoryIds.includes(item.product.category._id))
+                );
 
-            const highestDiscount = productOffer ? productOffer.discount : 0;
-            const offerPrice = productOffer 
-                ? item.product.regularPrice * (1 - productOffer.discount / 100)
-                : item.product.regularPrice;
+                const highestDiscount = productOffer ? productOffer.discount : 0;
+                const regularPrice = item.product.regularPrice || 0;
+                const offerPrice = productOffer 
+                    ? regularPrice * (1 - productOffer.discount / 100)
+                    : regularPrice;
 
-            return {
-                ...item.toObject(),
-                product: {
-                    ...item.product.toObject(),
-                    highestDiscount,
-                    offerPrice
-                }
-            };
-        }) : [];
-
-        let subtotal = roundToTwo(processedItems.reduce((total, item) => {
-            return total + (item.product.offerPrice * item.quantity);
-        }, 0));
-
-        const appliedCoupon = req.session.appliedCoupon;
-        let finalAmount = subtotal;
-        let itemsWithDiscount = processedItems;
-
-        if (appliedCoupon) {
-            const totalDiscount = roundToTwo(appliedCoupon.discountAmount);
-            itemsWithDiscount = processedItems.map(item => {
-                const itemTotal = roundToTwo(item.product.offerPrice * item.quantity);
-                const itemProportion = itemTotal / subtotal;
-                const itemDiscount = roundToTwo(totalDiscount * itemProportion);
-                const finalItemPrice = roundToTwo(itemTotal - itemDiscount);
-                
                 return {
-                    ...item,
-                    couponDiscount: {
-                        amount: itemDiscount,
-                        priceBeforeDiscount: itemTotal,
-                        finalPrice: finalItemPrice,
-                        perUnitDiscount: roundToTwo(itemDiscount / item.quantity)
+                    ...item.toObject(),
+                    product: {
+                        ...item.product.toObject(),
+                        highestDiscount,
+                        offerPrice: roundToTwo(offerPrice)
                     }
                 };
             });
 
-            finalAmount = roundToTwo(subtotal - appliedCoupon.discountAmount);
-        }
+            let subtotal = roundToTwo(processedItems.reduce((total, item) => {
+                const price = item.product.offerPrice || item.product.regularPrice || 0;
+                return total + (price * (item.quantity || 1));
+            }, 0));
 
-        const addresses = await Address.findOne({ userId: req.session.user }) || { address: [] };
-        const coupons = await Coupon.find({ 
-            status: 'Active', 
-            expiryDate: { $gt: currentDate } 
-        });
+            const appliedCoupon = req.session.appliedCoupon;
+            let finalAmount = subtotal;
+            let itemsWithDiscount = processedItems;
+    
+            if (appliedCoupon) {
+                const totalDiscount = roundToTwo(appliedCoupon.discountAmount || 0);
+                itemsWithDiscount = processedItems.map(item => {
+                    const itemTotal = roundToTwo((item.product.offerPrice || 0) * (item.quantity || 1));
+                    const itemProportion = subtotal > 0 ? itemTotal / subtotal : 0;
+                    const itemDiscount = roundToTwo(totalDiscount * itemProportion);
+                    const finalItemPrice = roundToTwo(itemTotal - itemDiscount);
+                    
+                    return {
+                        ...item,
+                        couponDiscount: {
+                            amount: itemDiscount,
+                            priceBeforeDiscount: itemTotal,
+                            finalPrice: finalItemPrice,
+                            perUnitDiscount: item.quantity > 0 ? roundToTwo(itemDiscount / item.quantity) : 0
+                        }
+                    };
+                });
+                finalAmount = roundToTwo(subtotal - (appliedCoupon.discountAmount || 0));
+            }
 
-        const wallet = await Wallet.findOne({ userId: req.session.user });
-        const walletBalance = wallet ? wallet.balance : 0;
+            const addresses = await Address.findOne({ userId: req.session.user }) || { address: [] };
+        
+            const coupons = await Coupon.find({ 
+                status: 'Active', 
+                expiryDate: { $gt: currentDate },
+                usedBy: { $ne: req.session.user } 
+            });
+    
+            const wallet = await Wallet.findOne({ userId: req.session.user });
+            const walletBalance = wallet ? wallet.balance : 0;
 
-        res.render("checkout", {
-            userData,
-            cart: { items: itemsWithDiscount },
-            subtotal,
-            finalAmount,
-            appliedCoupon,
-            addresses,
-            coupons,
-            walletBalance
-        });
-
+            res.render("checkout", {
+                userData,
+                cart: { items: itemsWithDiscount },
+                subtotal,
+                finalAmount,
+                appliedCoupon,
+                addresses,
+                coupons,
+                walletBalance
+            });
+    
     } catch (error) {
         console.error("Error loading checkout page:", error);
-        res.redirect("/cart");
+        res.status(500).redirect("/cart");
     }
 };
-
+    
 //addcheck address
   const addCheckAddress = async (req, res) => {
     try {
@@ -292,7 +322,6 @@ const loadCheckout = async (req, res) => {
             });
         }
 
-       
         const { name, phone, district, city, house, state, pincode } = req.body;
         
         let userAddress = await Address.findOne({ userId });
@@ -303,7 +332,6 @@ const loadCheckout = async (req, res) => {
                 address: []
             });
         }
-
         
         userAddress.address.push({
             name,
@@ -316,10 +344,7 @@ const loadCheckout = async (req, res) => {
         });
 
         await userAddress.save();
-
-       
         return res.json({success: true, message: 'Address added successfully',addresses: userAddress});
-
     } catch (error) {
         console.error("Error adding address:", error);
         return res.status(500).json({ success: false, message: 'Failed to add address'});
@@ -342,16 +367,22 @@ const applyCoupon = async (req, res) => {
         const coupon = await Coupon.findOne({ 
             couponCode, 
             status: 'Active',
-            expiryDate: { $gt: new Date() }
+            expiryDate: { $gt: new Date() },
+            usedBy: { $ne: userId } 
         });
 
         if (!coupon) {
             return res.status(400).json({
                 success: false,
-                message: 'Invalid or expired coupon'
+                message: 'Invalid or expired coupon, or already used coupon'
             });
         }
 
+        await Coupon.findByIdAndUpdate(
+            coupon._id,
+            { $addToSet: { usedBy: userId } }
+        );
+        
         const cart = await Cart.findOne({ userId })
             .populate({
                 path: 'items.product',
@@ -361,6 +392,13 @@ const applyCoupon = async (req, res) => {
                 }
             });
 
+            if (!cart || !cart.items || cart.items.length === 0) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Cart is empty'
+                });
+            }
+
         const currentDate = new Date();
         const offers = await Offer.find({
             status: 'Active',
@@ -368,10 +406,13 @@ const applyCoupon = async (req, res) => {
         });
 
         let subtotal = cart.items.reduce((total, item) => {
-            const productOffer = offers.find(offer => 
-                (offer.productIds?.includes(item.product._id)) ||
-                (offer.categoryIds?.includes(item.product.category._id))
-            );
+            if (!item.product || !item.quantity) {
+                return total;
+            }
+            const productOffer = offers.find(offer => {
+                return (offer.productIds?.includes(item.product._id)) ||
+                    (item.product.category && offer.categoryIds?.includes(item.product.category._id));
+            });
             
             const price = productOffer 
                 ? item.product.regularPrice * (1 - productOffer.discount / 100)
@@ -380,7 +421,8 @@ const applyCoupon = async (req, res) => {
             return total + (price * item.quantity);
         }, 0);
 
-    
+        subtotal = Math.round(subtotal * 100) / 100;
+
         if (subtotal < coupon.minPrice) {
             return res.status(400).json({
                 success: false,
@@ -397,6 +439,8 @@ const applyCoupon = async (req, res) => {
             finalDiscountAmount = percentageDiscount;
         }
 
+        finalDiscountAmount = Math.round(finalDiscountAmount * 100) / 100;
+        
         req.session.appliedCoupon = {
             code: couponCode,
             discountAmount: finalDiscountAmount,

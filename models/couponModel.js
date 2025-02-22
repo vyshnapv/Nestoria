@@ -33,13 +33,16 @@ const couponSchema = mongoose.Schema({
     expiryDate: {
         type: Date,
         required: true,
-        index: {expires: 0}
     },
     status: {
         type: String,
         enum: ['Active', 'Inactive'],
         default: 'Active'
-    }
+    },
+    usedBy: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
+    }]
 });
 
 module.exports = mongoose.model("Coupon",couponSchema);

@@ -39,6 +39,7 @@
 
 									<tbody>
                                         <% cart.items.forEach(item => { %>
+                                          <% if (item && item.product) { %>
                                             <% const product = item.product %>
                                             <% const price = product.highestDiscount > 0 ? product.offerPrice : product.regularPrice %>
                                             <% const itemTotal = price * item.quantity %>
@@ -47,7 +48,7 @@
                                                     <div class="product">
                                                         <figure class="product-media">
                                                             <a href="/product/<%= product._id %>">
-                                                                <img src="/uploads/cropped/<%= product.productImage[0] %>" alt="<%= product.productName %>">
+                                                                <img src="/uploads/<%= product.productImage && product.productImage[0] ? product.productImage[0] : 'default-image.jpg' %>" alt="<%= product.productName %>">
                                                             </a>
                                                         </figure>
                                     
@@ -58,35 +59,23 @@
                                                 </td>
                                                 <% if (product.highestDiscount > 0) { %>
                                                     <td class="price-col">
-                                                        ₹<%= product.offerPrice.toFixed(2) %>
+                                                        ₹<%= Math.round(product.offerPrice).toFixed(2) %>
                                                     </td>
                                                 <% } else { %>
-                                                    <td class="price-col">₹<%= product.regularPrice %></td>
+                                                    <td class="price-col">₹<%= Math.round(product.regularPrice) %></td>
                                                 <% } %>
                                                 <td class="quantity-col">
                                                     <div class="cart-product-quantity">
                                                         <input type="number" class="form-control quantity-input" value="<%= item.quantity %>" min="1" max="5" step="1" data-decimals="0" data-product-id="<%= product._id %>" required oninput="validity.valid||(value='1');">
                                                     </div>
                                                 </td>
-                                                <td class="total-col" id="total-<%= product._id %>">₹<%= itemTotal.toFixed(2) %></td>
+                                                <td class="total-col" id="total-<%= product._id %>">₹<%= Math.round(itemTotal).toFixed(2) %></td>
                                                 <td class="remove-col"><button class="btn-remove"><i class="icon-close"></i></button></td>
                                             </tr>
+                                        <% } %>
                                         <% }) %>
                                     </tbody>
-								</table><!-- End .table table-wishlist -->
-
-	                			<div class="cart-bottom">
-			            			<!-- <div class="cart-discount">
-			            				<form action="#">
-			            					<div class="input-group">
-				        						<input type="text" class="form-control" required placeholder="coupon code">
-				        						<div class="input-group-append">
-													<button class="btn btn-outline-primary-2" type="submit"><i class="icon-long-arrow-right"></i></button>
-												</div>
-			        						</div>
-			            				</form>
-			            			</div> -->
-		            			</div><!-- End .cart-bottom -->
+								</table>
 								<% } %>
 	                		</div><!-- End .col-lg-9 -->
 	                		<aside class="col-lg-3">
@@ -109,14 +98,14 @@
                                                 <tr>
                                                     <td><%= product.productName %></td>
                                                     <td><%= item.quantity %></td>
-                                                    <td>₹<%= itemTotal.toFixed(2) %></td>
+                                                    <td>₹<%= Math.round(itemTotal).toFixed(2) %></td>
                                                 </tr>
                                             <% }) %>
                                         </tbody>
                                         <tfoot>
                                             <tr>
                                                 <td colspan="2"><strong>Subtotal:</strong></td>
-                                                <td id="subtotal"><strong>₹<%= subtotal.toFixed(2) %></strong></td>
+                                                <td id="subtotal"><strong>₹<%= Math.round(subtotal).toFixed(2) %></strong></td>
                                             </tr>
                                         </tfoot>
                                     </table>

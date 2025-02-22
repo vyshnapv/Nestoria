@@ -5,8 +5,7 @@ const fs=require("fs")
 const path=require("path")
 const sharp=require("sharp")
 
-
-
+//get the product add page 
 const getProductAddPage=async(req,res)=>{
     try {
         const category=await Category.find({isListed:true})
@@ -30,33 +29,11 @@ const addProducts = async (req, res) => {
         if (!productExists) {
             const images = [];
             if (req.files && req.files.length > 0) {
-                const uploadsDir = path.join(__dirname, '..', '..', 'public', 'uploads');
-                const croppedDir = path.join(__dirname, '..', '..', 'public', 'uploads', 'cropped');
-                
-                fs.mkdirSync(uploadsDir, { recursive: true });
-                fs.mkdirSync(croppedDir, { recursive: true });
-
-                await Promise.all(req.files.map(async (file) => {
-                    try {
-                        const resizedImagePath = path.join(croppedDir, file.filename);
-                        
-                        await sharp(file.path)
-                            .resize(440, 440, {
-                                fit: 'cover',
-                                position: 'center'
-                            })
-                            .jpeg({ quality: 90 })
-                            .toFile(resizedImagePath);
-
-                        images.push(file.filename);
-            
-                        await fs.promises.unlink(file.path);
-                    } catch (err) {
-                        console.error('Error processing image:', file.filename, err);
-                    }
-                }));
+                req.files.map(file => {
+                    images.push(file.filename)
+                })
             }
-
+ 
             const categoryId = await Category.findOne({_id: products.category});
             
             if (!categoryId) {
@@ -138,7 +115,6 @@ const getAllProducts=async(req,res)=>{
     }
 }
 
-
 //block properties
 const blockProduct=async(req,res)=>{
     try {
@@ -173,7 +149,7 @@ const unblockProduct = async (req, res) => {
     }
 }
 
-//edit product
+//get edit product page 
 const getEditProduct=async(req,res)=>{
     try {
         const id=req.query.id;
@@ -198,6 +174,8 @@ const editProduct = async (req, res) => {
         const product = await Product.findById(id);
         const data = req.body;
 
+        const { deletedImages } = req.body;
+
         if (!product) {
             return res.status(404).json({ error: "Product not found" });
         }
@@ -211,45 +189,26 @@ const editProduct = async (req, res) => {
             return res.status(400).json({ error: "Product name already exists" });
         }
 
-        const deletedImages = JSON.parse(data.deletedImages || '[]');
-        let currentImages = product.productImage.filter(img => !deletedImages.includes(img));
+        let updatedImages = [...product.productImage]; 
 
-        for (const filename of deletedImages) {
-            const imagePath = path.join(__dirname, '..', '..', 'public', 'uploads', 'cropped', filename);
-            try {
+        if (deletedImages) {
+            const imagesToDelete = JSON.parse(deletedImages);
+
+            imagesToDelete.forEach((image) => {
+                const imagePath = path.join(__dirname, '../public/uploads/', image);
                 if (fs.existsSync(imagePath)) {
-                    fs.unlinkSync(imagePath);
+                    fs.unlinkSync(imagePath); 
                 }
-            } catch (err) {
-                console.error('Error deleting image file:', err);
-            }
+
+
+                updatedImages = updatedImages.filter(img => img !== image);
+            });
         }
 
         if (req.files && req.files.length > 0) {
-            const uploadsDir = path.join(__dirname, '..', '..', 'public', 'uploads');
-            const croppedDir = path.join(__dirname, '..', '..', 'public', 'uploads', 'cropped');
-            
-            fs.mkdirSync(uploadsDir, { recursive: true });
-            fs.mkdirSync(croppedDir, { recursive: true });
-
-            for (const file of req.files) {
-                try {
-                    const resizedImagePath = path.join(croppedDir, file.filename);
-                    
-                    await sharp(file.path)
-                        .resize(440, 440, {
-                            fit: 'cover',
-                            position: 'center'
-                        })
-                        .toFile(resizedImagePath);
-
-                    currentImages.push(file.filename);
-                    
-                    fs.unlinkSync(file.path);
-                } catch (err) {
-                    console.error('Error processing new image:', err);
-                }
-            }
+            req.files.forEach(file => {
+                updatedImages.push(file.filename); 
+            });
         }
 
         const updatedProduct = await Product.findByIdAndUpdate(
@@ -260,7 +219,7 @@ const editProduct = async (req, res) => {
                 regularPrice: data.regularPrice,
                 quantity: data.quantity,
                 category: data.category,
-                productImage: currentImages,
+                productImage: updatedImages,
                 updatedAt: new Date()
             },
             { new: true }
@@ -270,7 +229,10 @@ const editProduct = async (req, res) => {
             return res.status(404).json({ error: "Failed to update product" });
         }
 
-        res.redirect("/admin/products");
+        res.status(200).json(({
+            success: true,
+            redirectUrl: "/admin/products"
+        }))
 
     } catch (error) {
         console.error('Error in editProduct:', error);

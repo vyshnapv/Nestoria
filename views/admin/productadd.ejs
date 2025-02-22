@@ -88,7 +88,7 @@
                            <div class="col-lg-4">
                                <div class="mb-4">
                                    <label class="form-label">Quantity</label>
-                                   <input placeholder="" name="quantity" type="text" class="form-control border">
+                                   <input placeholder="Quantity" name="quantity" type="number" class="form-control border">
                                    <div id="quantity-error" class="error-message"></div>
                                </div>
                            </div>
@@ -292,38 +292,43 @@ function validateForm() {
     let isValid = true;
 
     const productName = document.getElementById('product_name').value.trim();
+    document.getElementById('product_name').value = productName;
+    
     const productNameRegex = /^[a-zA-Z0-9\s]{3,}$/;
     if (!productNameRegex.test(productName)) {
         displayErrorMessage('productName-error', 'Product name must be at least 3 characters long and contain only letters and numbers.');
         isValid = false;
     }
     
+    const description = document.getElementById('descriptionid').value.trim();
+    document.getElementById('descriptionid').value = description;
 
-    const description = document.getElementById('descriptionid').value;
-    if (description.trim() === "") {
+    if (description === "") {
         displayErrorMessage('description-error', 'Please enter a product description.');
         isValid = false;
     }
 
-      const regularPrice = document.getElementsByName('regularPrice')[0].value;
-      const priceRegex = /^-?\d+(\.\d{1,2})?$/;
+    const regularPrice = document.getElementsByName('regularPrice')[0].value.trim();
+    document.getElementsByName('regularPrice')[0].value = regularPrice;
+      
+    const priceRegex = /^\d+(\.\d{1,2})?$/;
+    if (!priceRegex.test(regularPrice)) {
+       displayErrorMessage('regularPrice-error', 'Please enter a valid price.');
+       isValid = false;
+    } else if (parseFloat(regularPrice) <= 0) {
+       displayErrorMessage('regularPrice-error', 'Please enter a price greater than zero.');
+       isValid = false;
+    }
 
-      if (!priceRegex.test(regularPrice)) {
-          displayErrorMessage('regularPrice-error', 'Please enter a valid price (use a valid number format).');
-          isValid = false;
-        } else if (parseFloat(regularPrice) < 0) {
-          displayErrorMessage('regularPrice-error', 'Please enter a valid price (negative numbers are not allowed).');
-          isValid = false;
-        } else if (parseFloat(regularPrice) <= 0) {
-          displayErrorMessage('regularPrice-error', 'Please enter a price greater than zero.');
-          isValid = false;
-        }
-    const quantity = document.getElementsByName('quantity')[0].value;
+    const quantity = document.getElementsByName('quantity')[0].value.trim();
+    document.getElementsByName('quantity')[0].value = quantity;
     const quantityRegex = /^[1-9][0-9]*$/; 
+
     if (!quantityRegex.test(quantity)) {
         displayErrorMessage('quantity-error', 'Please enter a valid quantity .');
         isValid = false;
     }
+
     const category = document.getElementsByName('category')[0].value;
     if (!category) {
         displayErrorMessage('category-error', 'Please select a category.');
@@ -349,9 +354,9 @@ function validateForm() {
             }
        }
     }
+   updateFileInput();
    return isValid;
 }
-
 
 function clearErrorMessages() {
        const errorElements = document.getElementsByClassName("error-message");

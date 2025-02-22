@@ -337,12 +337,14 @@ const toggleOfferStatus = async(req, res) => {
             return res.status(404).json({success: false, message: "Offer not found"});
         }
 
-        if (offer.status === "Inactive" && offer.expireDate < new Date()) {
+        const currentDate = new Date();
+
+        if (offer.status === "Inactive" && offer.expireDate < currentDate) {
             return res.status(200).json({
                 success: false,
                 isExpired: true,
                 offerType: offer.offerType,
-                message: "Offer has expired"
+                message: "Cannot activate expired offer"
             });
         }
 
@@ -359,6 +361,7 @@ const toggleOfferStatus = async(req, res) => {
         res.status(500).json({ success: false, message: "Failed to update offer status" });
     }
 }
+
 //delete offer
 const deleteOffer = async (req, res) => {
     try {

@@ -16,13 +16,12 @@ const path = require('path');
 const Razorpay = require('razorpay');
 const crypto = require('crypto');
 
-
 const razorpay = new Razorpay({
     key_id: process.env.RAZORPAY_KEY_ID,
     key_secret: process.env.RAZORPAY_KEY_SECRET
 });
 
-
+//get create order 
 const createOrder = async (req, res) => {
     try {
         const userId = req.session.user;
@@ -45,7 +44,24 @@ const createOrder = async (req, res) => {
         }
 
         for (const item of cart.items) {
+            if (!item.product || !item.product._id) {
+                cart.items = cart.items.filter(cartItem => cartItem.product && cartItem.product._id);
+                await cart.save();
+                return res.status(400).json({ 
+                    success: false, 
+                    message: "Some products in your cart are no longer available. Cart has been updated." 
+                });
+            }
             const product = await Product.findById(item.product._id);
+            if (!product) {
+                cart.items = cart.items.filter(cartItem => cartItem.product._id.toString() !== item.product._id.toString());
+                await cart.save();
+                return res.status(400).json({ 
+                    success: false, 
+                    message: "Some products in your cart are no longer available. Cart has been updated." 
+                });
+            }
+
             if (product.quantity < item.quantity) {
                 return res.status(400).json({ 
                     success: false, 
@@ -426,7 +442,6 @@ const orderSuccess = async (req,res)=>{
     
   }
 }
-
 
 //get view order page 
 const getViewOrders = async (req, res) => {
@@ -1012,7 +1027,7 @@ const generateOrderSummaryPDF = async (req, res) => {
             }
 
             try {
-                const imagePath = path.join(__dirname, '..', 'public', 'uploads', 'cropped', item.productId.productImage[0]);
+                const imagePath = path.join(__dirname, '..', 'public', 'uploads', item.productId.productImage[0]);
                 if (fs.existsSync(imagePath)) {
                     doc.image(imagePath, 35, productY, {
                         fit: [imageSize, imageSize],

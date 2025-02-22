@@ -7,10 +7,10 @@
         box-sizing: border-box;
     }
     .banner-area h1 {
-    font-size: 24px;
-    color: rgb(39, 37, 37);
-    text-align: center;
-}
+       font-size: 24px;
+       color: rgb(39, 37, 37);
+       text-align: center;
+    }
 
     body {
         font-family: Arial, sans-serif;
@@ -23,8 +23,6 @@
         margin: auto;
         padding: 20px;
     }
-
-    /* Banner Section */
     .banner-area {
         background: #ebebeb;
         color: white;
@@ -49,7 +47,6 @@
         font-size: 14px;
     }
 
-    /* Address Section */
     .address-container h4 {
         font-size: 22px;
         margin: 20px 0;
@@ -128,8 +125,6 @@
         font-size: 50px;
         color: #007bff;
     }
-
-    /* Form Styling */
     #addAddressForm {
         display: none;
         margin-top: 20px;
@@ -203,7 +198,53 @@
         }
     }
     
+    .modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 1000;
+    }
 
+    .modal-content {
+        position: relative;
+        background-color: white;
+        margin: 20px auto;
+        padding: 20px;
+        border-radius: 8px;
+        max-width: 830px;
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+
+    .modal-title {
+        font-size: 20px;
+        font-weight: bold;
+    }
+
+    .close-modal {
+        font-size: 24px;
+        cursor: pointer;
+        color: #666;
+    }
+
+    .close-modal:hover {
+        color: #333;
+    }
+
+    #addAddressForm {
+        display: block;
+    }
 </style>
 <section class="banner-area">
     <div class="container text-center">
@@ -226,7 +267,7 @@
         <div class="col-md-4 add-card">
             <div class="card h-100 d-flex align-items-center justify-content-center border-dashed">
                 <div class="card-body text-center">
-                    <a href="#" onclick="toggleForm()" id="toggleFormButton">
+                    <a href="#" onclick="openModal()" id="toggleFormButton">
                         <span class="plus-icon">+</span>
                         <h5>Add new address</h5>
                     </a>
@@ -259,58 +300,68 @@
         <% }) %>
     </div>
 
-    <div id="addAddressForm" class="mt-4">
-        <form id="actualAddAddressForm" method="POST" action="/addAddress">
-            <div class="form-group">
-                <label for="name">Name</label>
-                <input type="text" class="form-control" id="name" name="name">
-                <span class="error-message" id="nameError"></span>
+    <div id="addressModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add New Address</h5>
+                <span class="close-modal" onclick="closeModal()">&times;</span>
             </div>
-            <div class="form-group">
-                <label for="phone">Phone</label>
-                <input type="text" class="form-control" id="phone" name="phone">
-                <span class="error-message" id="phoneError"></span>
+            <div id="addAddressForm">
+                <form id="actualAddAddressForm" method="POST" action="/addAddress">
+                    <!-- Form fields remain unchanged -->
+                    <div class="form-group">
+                        <label for="name">Name</label>
+                        <input type="text" class="form-control" id="name" name="name">
+                        <span class="error-message" id="nameError"></span>
+                    </div>
+                    <div class="form-group">
+                        <label for="phone">Phone</label>
+                        <input type="number" class="form-control" id="phone" name="phone">
+                        <span class="error-message" id="phoneError"></span>
+                    </div>
+                    <div class="form-group">
+                        <label for="district">District</label>
+                        <input type="text" class="form-control" id="district" name="district">
+                        <span class="error-message" id="districtError"></span>
+                    </div>
+                    <div class="form-group">
+                        <label for="city">City</label>
+                        <input type="text" class="form-control" id="city" name="city">
+                        <span class="error-message" id="cityError"></span>
+                    </div>
+                    <div class="form-group">
+                        <label for="house">House</label>
+                        <input type="text" class="form-control" id="house" name="house">
+                        <span class="error-message" id="houseError"></span>
+                    </div>
+                    <div class="form-group">
+                        <label for="state">State</label>
+                        <input type="text" class="form-control" id="state" name="state">
+                        <span class="error-message" id="stateError"></span>
+                    </div>
+                    <div class="form-group">
+                        <label for="pincode">Pincode</label>
+                        <input type="number" class="form-control" id="pincode" name="pincode">
+                        <span class="error-message" id="pincodeError"></span>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Save Address</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+                </form>
             </div>
-            <div class="form-group">
-                <label for="district">District</label>
-                <input type="text" class="form-control" id="district" name="district">
-                <span class="error-message" id="districtError"></span>
-            </div>
-            <div class="form-group">
-                <label for="city">City</label>
-                <input type="text" class="form-control" id="city" name="city">
-                <span class="error-message" id="cityError"></span>
-            </div>
-            <div class="form-group">
-                <label for="house">House</label>
-                <input type="text" class="form-control" id="house" name="house">
-                <span class="error-message" id="houseError"></span>
-            </div>
-            <div class="form-group">
-                <label for="state">State</label>
-                <input type="text" class="form-control" id="state" name="state">
-                <span class="error-message" id="stateError"></span>
-            </div>
-            <div class="form-group">
-                <label for="pincode">Pincode</label>
-                <input type="text" class="form-control" id="pincode" name="pincode">
-                <span class="error-message" id="pincodeError"></span>
-            </div>
-            <button type="submit" class="btn btn-primary">Save Address</button>
-            <button type="button" class="btn btn-secondary" onclick="cancelForm()">Cancel</button>
-        </form>
+        </div>
     </div>
+</div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <script>
-     function toggleForm() {
-        var form = document.getElementById("addAddressForm");
-        form.style.display = form.style.display === "none" ? "block" : "none";
+    function openModal() {
+        document.getElementById("addressModal").style.display = "block";
+        document.body.style.overflow = "hidden"; // Prevent background scrolling
     }
 
-    function cancelForm() {
+    function closeModal() {
         Swal.fire({
             title: 'Are you sure?',
             text: "Your entered data will be discarded!",
@@ -321,8 +372,9 @@
             confirmButtonText: 'Yes, cancel it!'
         }).then((result) => {
             if (result.isConfirmed) {
-                document.getElementById("addAddressForm").style.display = "none";
+                document.getElementById("addressModal").style.display = "none";
                 document.getElementById("actualAddAddressForm").reset();
+                document.body.style.overflow = "auto"; // Restore background scrolling
                 clearErrors();
                 Swal.fire(
                     'Cancelled!',
@@ -333,6 +385,11 @@
         })
     }
 
+    window.onclick = function(event) {
+        if (event.target == document.getElementById("addressModal")) {
+            closeModal();
+        }
+    }
     function showError(elementId, message) {
         const element = document.getElementById(elementId);
         const errorElement = document.getElementById(elementId + 'Error');
@@ -380,8 +437,6 @@
            showError("phone", "Please enter a valid 10-digit phone number starting with 6-9");
            isValid = false;
         }
-
-        
 
         const district = document.getElementById("district").value;
         if (isEmptyOrWhitespace(district)) {
@@ -456,7 +511,6 @@
             });
         }
     });
-
 
     function confirmDelete(addressId, index) {
     Swal.fire({

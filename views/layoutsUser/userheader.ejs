@@ -1,7 +1,5 @@
 <!DOCTYPE html>
 <html lang="en">
-
-
 <!-- molla/product.html  22 Nov 2019 09:54:50 GMT -->
 <head>
     <meta charset="UTF-8">
@@ -14,18 +12,6 @@
     <!-- Favicon -->
 
     <link rel="shortcut icon" type="image/x-icon" href="/assets/imgs/theme/favicon.svg" />
-
-    <!-- <link rel="apple-touch-icon" sizes="180x180" href="/productAssets/assets/images/icons/apple-touch-icon.png">
-    <link rel="icon" type="image/png" sizes="32x32" href="/productAssets/assets/images/icons/favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="/productAssets/assets/images/icons/favicon-16x16.png">
-    <link rel="manifest" href="/productAssets/assets/images/icons/site.html">
-    <link rel="mask-icon" href="/productAssets/assets/images/icons/safari-pinned-tab.svg" color="#666666">
-    <link rel="shortcut icon" href="/productAssets/assets/images/icons/favicon.ico">
-    <meta name="apple-mobile-web-app-title" content="Molla">
-    <meta name="application-name" content="Molla">
-    <meta name="msapplication-TileColor" content="#cc9966">
-    <meta name="msapplication-config" content="/productAssets/assets/images/icons/browserconfig.xml">
-    <meta name="theme-color" content="#ffffff"> -->
     <!-- Plugins CSS File -->
     <link rel="stylesheet" href="/productAssets/assets/css/bootstrap.min.css">
     <link rel="stylesheet" href="/productAssets/assets/css/plugins/owl-carousel/owl.carousel.css">
@@ -77,11 +63,9 @@
                             <li>
                                 <a href="#">Links</a>
                                 <ul>
-                                    <li><a href="">About Us</a></li>
-                                    <li><a href="">Contact Us</a></li>
                                     <% if (userData) { %>
                                         <div class="dropdown">
-                                           <a href="#"  class="icon-user" style="margin-left: 10px;">welcome  <%=userData.name%></a>
+                                           <a href="#"  class="icon-user" style="margin-left:10px; color: green;">welcome <%=userData.name%></a>
                                            <div class="dropdown-content">
                                               <a href="/profile">My profile</a>
                                               <a href="/viewOrders">orders</a>
@@ -110,10 +94,10 @@
                         <nav class="main-nav">
                             <ul class="menu sf-arrows">
                                 <li class="megamenu-container active">
-                                    <a href="/" class="sf-with-ul">Home</a>
+                                    <a href="/">Home</a>
                                 </li>
                                 <li>
-                                    <a href="/shop" class="sf-with-ul">Shop</a>
+                                    <a href="/shop">Shop</a>
                                 </li>
                             </ul><!-- End .menu -->
                         </nav><!-- End .main-nav -->

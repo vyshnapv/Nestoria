@@ -5,23 +5,20 @@ const path = require("path");
 const session = require('express-session');
 const nocache = require('nocache')
 const passport=require("./config/passport");
-
+// const morgan = require('morgan')
 
 const db=require("./config/database")
 db();
 
 const app = express();
 
-
-
 app.use("/", express.static(path.join(__dirname, "public")));
 app.use('/uploads', express.static(path.join(__dirname, "public", 'uploads')));
-
 
 app.use(express.json());
 
 app.use(nocache());
-
+// app.use(morgan('dev'))
 app.use(express.urlencoded({ extended: true }));
 
 app.use(session({
@@ -34,7 +31,6 @@ app.use(session({
         maxAge:72*60*60*1000,
     }
 }));
-
 
 app.use(passport.initialize())
 app.use(passport.session())

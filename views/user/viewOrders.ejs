@@ -166,7 +166,7 @@
                         <input 
                             type="text" 
                             class="search-input" 
-                            placeholder="Search by Order ID or Status"
+                            placeholder="Search by Order ID or payment Status"
                             value="<%= searchQuery || '' %>"
                             id="searchInput"
                         >
@@ -244,12 +244,11 @@
         window.location.href = '/viewOrders';
     }
 }
-    
-    // Add event listener for Enter key
-    document.getElementById('searchInput').addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') {
-            handleSearch();
-        }
-    });
-    </script>
+
+document.getElementById('searchInput').addEventListener('keypress', function(e) {
+  if (e.key === 'Enter') {
+    handleSearch();
+  }
+});
+</script>
 <%- include('../layoutsUser/userfooter') %>
