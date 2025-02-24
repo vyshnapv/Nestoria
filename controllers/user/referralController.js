@@ -11,9 +11,14 @@ const generateReferralCode = () => {
 // Get referral offer page
 const getReferalOffer = async (req, res) => {
     try {
+        const page = parseInt(req.query.page) || 1;
+        const limit = 5;
+        const skip = (page - 1) * limit;
+
         const userData = await User.findById(req.session.user);
         let referral = await Referral.findOne({ referrer: req.session.user })
-            .populate('referees.user', 'name email');
+            .populate('referees.user', 'name email')
+            .lean();
 
         if (!referral) {
             referral = new Referral({
@@ -24,7 +29,21 @@ const getReferalOffer = async (req, res) => {
             await referral.save();
         }
 
-        res.render('referralOffer', { userData, referral });
+        const totalReferees = referral.referees.length;
+        const totalPages = Math.ceil(totalReferees / limit);
+
+        referral.referees = referral.referees.slice(skip, skip + limit);
+
+        res.render('referralOffer', { 
+            userData, 
+            referral,
+            pagination: {
+                page,
+                totalPages,
+                hasNextPage: page < totalPages,
+                hasPrevPage: page > 1
+            }
+        });
     } catch (error) {
         console.error(error);
         res.status(500).send("Internal Server Error");

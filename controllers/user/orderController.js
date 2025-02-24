@@ -159,6 +159,13 @@ const createOrder = async (req, res) => {
 
                 await newOrder.save();
 
+                if (appliedCoupon) {
+                    await Coupon.findOneAndUpdate(
+                        { couponCode: appliedCoupon.code },
+                        { $addToSet: { redeemedUsers: userId } }
+                    );
+                }
+
                 for (const item of orderItems) {
                     await Product.findByIdAndUpdate(
                         item.productId,
@@ -205,6 +212,13 @@ const createOrder = async (req, res) => {
                 });
 
                 await newOrder.save();
+
+                if (appliedCoupon) {
+                    await Coupon.findOneAndUpdate(
+                        { couponCode: appliedCoupon.code },
+                        { $addToSet: { redeemedUsers: userId } }
+                    );
+                }
 
                 for (const item of orderItems) {
                     await Product.findByIdAndUpdate(
@@ -263,10 +277,10 @@ const createOrder = async (req, res) => {
 
                 await newOrder.save();
 
-                for (const item of orderItems) {
-                    await Product.findByIdAndUpdate(
-                        item.productId,
-                        { $inc: { quantity: -item.quantity } }
+                if (appliedCoupon) {
+                    await Coupon.findOneAndUpdate(
+                        { couponCode: appliedCoupon.code },
+                        { $addToSet: { redeemedUsers: userId } }
                     );
                 }
 
@@ -319,7 +333,7 @@ const verifyRazorpayPayment = async (req, res) => {
 
          if (status === 'failed') {
             order.paymentStatus = 'Failed';
-            order.orderStatus = 'pending';
+            order.orderStatus = 'Cancelled';
             await order.save();
             return res.status(200).json({ 
                 success: false, 
@@ -334,9 +348,16 @@ const verifyRazorpayPayment = async (req, res) => {
 
         if (generatedSignature !== razorpay_signature) {
             order.paymentStatus = 'Failed';
-            order.orderStatus = 'pending';
+            order.orderStatus = 'Cancelled';
             await order.save();
             return res.status(400).json({ success: false, message: 'Invalid payment signature' });
+        }
+
+        for (const item of order.items) {
+            await Product.findByIdAndUpdate(
+                item.productId,
+                { $inc: { quantity: -item.quantity } }
+            );
         }
 
         order.paymentStatus = 'Paid';
@@ -357,7 +378,7 @@ const verifyRazorpayPayment = async (req, res) => {
             const order = await Order.findOne({ razorpayOrderId: razorpay_order_id });
             if (order) {
                 order.paymentStatus = 'Failed';
-                order.orderStatus = 'pending';
+                order.orderStatus = 'Cancelled';
                 await order.save();
             }
         } catch (err) {

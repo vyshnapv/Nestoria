@@ -310,12 +310,12 @@ del {
                 <% if (order.items.some(item => item.highestDiscount > 0)) { %>
                     <div class="summary-item">
                         <span>Offer Discount:</span>
-                        <span class="text-success">-₹<%= order.items.reduce((total, item) => {
+                        <span class="text-success">-₹<%=Math.round(order.items.reduce((total, item) => {
                             if (item.itemStatus !== 'Cancelled' && item.highestDiscount > 0) {
                                 return total + ((item.price - item.offerPrice) * item.quantity);
                             }
                             return total;
-                        }, 0).toFixed(2) %></span>
+                        }, 0)).toFixed(2) %></span>
                     </div>
                 <% } %>
                 <div class="summary-item">

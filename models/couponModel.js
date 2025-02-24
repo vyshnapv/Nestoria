@@ -39,10 +39,10 @@ const couponSchema = mongoose.Schema({
         enum: ['Active', 'Inactive'],
         default: 'Active'
     },
-    usedBy: [{
+    redeemedUsers: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User'
-    }]
+    }],
 });
 
 module.exports = mongoose.model("Coupon",couponSchema);

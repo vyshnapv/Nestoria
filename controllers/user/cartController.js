@@ -288,7 +288,7 @@ const loadCheckout = async (req, res) => {
             const coupons = await Coupon.find({ 
                 status: 'Active', 
                 expiryDate: { $gt: currentDate },
-                usedBy: { $ne: req.session.user } 
+                redeemedUsers: { $ne: req.session.user } 
             });
     
             const wallet = await Wallet.findOne({ userId: req.session.user });
@@ -367,21 +367,15 @@ const applyCoupon = async (req, res) => {
         const coupon = await Coupon.findOne({ 
             couponCode, 
             status: 'Active',
-            expiryDate: { $gt: new Date() },
-            usedBy: { $ne: userId } 
+            expiryDate: { $gt: new Date() }
         });
 
         if (!coupon) {
             return res.status(400).json({
                 success: false,
-                message: 'Invalid or expired coupon, or already used coupon'
+                message: 'Invalid or expired coupon'
             });
         }
-
-        await Coupon.findByIdAndUpdate(
-            coupon._id,
-            { $addToSet: { usedBy: userId } }
-        );
         
         const cart = await Cart.findOne({ userId })
             .populate({
