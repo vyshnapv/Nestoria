@@ -7,7 +7,7 @@ require('dotenv').config();
 passport.use(new googleStrategy({
     clientID:process.env.GOOGLE_CLIENT_ID,
     clientSecret:process.env.GOOGLE_CLIENT_SECRET,
-    callbackURL:"http://localhost:3001/auth/google/callback",
+    callbackURL:"https://nestoria.site/auth/google/callback",
 },
 async(accessTocken,refreshToken,profile,done)=>
 {
