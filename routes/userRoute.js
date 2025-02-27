@@ -50,7 +50,7 @@ user_route.get("/shop",userController.shop)
 user_route.get("/product/:id",userAuth,userController.productDetails)
 
 //cart
-user_route.get('/cart',userAuth,cartController.loadCart);
+user_route.get('/cart',cartController.loadCart);
 user_route.post('/addToCart',userAuth1,cartController.addToCart);
 user_route.post('/updateCart',userAuth,cartController.updateCartQuantity);
 user_route.post('/removeFromCart',userAuth, cartController.removeCartItem);
@@ -87,7 +87,7 @@ user_route.post('/orderDetails/:orderId/return-item', userAuth, orderController.
 user_route.get('/order/:orderId/download-pdf', userAuth,orderController.generateOrderSummaryPDF);
 
 //wishlist
-user_route.get("/wishlist",wishlistController.wishlist);
+user_route.get("/wishlist",userAuth,wishlistController.wishlist);
 user_route.post('/addWishlist', wishlistController.addToWishlist);
 user_route.delete('/removeFromWishlist',wishlistController.removeFromWishlist);
 
