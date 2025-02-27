@@ -1,0 +1,448 @@
+//this is dashboard controller 
+const generateSalesReport = async (req, res) => {
+  try {
+      const { startDate, endDate, reportType } = req.query;
+      let dateQuery = {};
+      let previousPeriodQuery = {};
+
+      const statusFilter = {
+        orderStatus: { 
+            $nin: ['Cancelled', 'Returned'] 
+        }
+      };
+      if (reportType === 'daily') {
+        const today = new Date();
+        const yesterday = new Date(today);
+        yesterday.setDate(yesterday.getDate() - 1);
+
+        dateQuery = {
+            createdAt: {
+                $gte: new Date(today.setHours(0, 0, 0, 0)),
+                $lt: new Date(today.setHours(23, 59, 59, 999))
+            },
+            ...statusFilter
+        };
+        previousPeriodQuery = {
+            createdAt: {
+                $gte: new Date(yesterday.setHours(0, 0, 0, 0)),
+                $lt: new Date(yesterday.setHours(23, 59, 59, 999))
+            },
+            ...statusFilter
+        };
+    } else if (reportType === 'weekly') {
+        const today = new Date();
+        const weekStart = new Date(today);
+        weekStart.setDate(today.getDate() - today.getDay());
+        
+        const previousWeekStart = new Date(weekStart);
+        previousWeekStart.setDate(previousWeekStart.getDate() - 7);
+        const previousWeekEnd = new Date(weekStart);
+        previousWeekEnd.setSeconds(previousWeekEnd.getSeconds() - 1);
+
+        dateQuery = {
+            createdAt: {
+                $gte: new Date(weekStart.setHours(0, 0, 0, 0)),
+                $lt: new Date(today.setHours(23, 59, 59, 999))
+            },
+            ...statusFilter
+        };
+        previousPeriodQuery = {
+            createdAt: {
+                $gte: new Date(previousWeekStart.setHours(0, 0, 0, 0)),
+                $lt: new Date(previousWeekEnd)
+            },
+            ...statusFilter
+        };
+    } else if (reportType === 'monthly') {
+        const today = new Date();
+        const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+        
+        const previousMonthStart = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+        const previousMonthEnd = new Date(today.getFullYear(), today.getMonth(), 0);
+
+        dateQuery = {
+            createdAt: {
+                $gte: new Date(monthStart.setHours(0, 0, 0, 0)),
+                $lt: new Date(today.setHours(23, 59, 59, 999))
+            },
+            ...statusFilter
+        };
+        previousPeriodQuery = {
+            createdAt: {
+                $gte: new Date(previousMonthStart.setHours(0, 0, 0, 0)),
+                $lt: new Date(previousMonthEnd.setHours(23, 59, 59, 999))
+            },
+            ...statusFilter
+        };
+    } else if (reportType === 'yearly') {
+        const today = new Date();
+        const yearStart = new Date(today.getFullYear(), 0, 1);
+        
+        const previousYearStart = new Date(today.getFullYear() - 1, 0, 1);
+        const previousYearEnd = new Date(today.getFullYear(), 0, 0);
+
+        dateQuery = {
+            createdAt: {
+                $gte: new Date(yearStart.setHours(0, 0, 0, 0)),
+                $lt: new Date(today.setHours(23, 59, 59, 999))
+            },
+            ...statusFilter
+        };
+        previousPeriodQuery = {
+            createdAt: {
+                $gte: new Date(previousYearStart.setHours(0, 0, 0, 0)),
+                $lt: new Date(previousYearEnd.setHours(23, 59, 59, 999))
+            },
+            ...statusFilter
+        };
+    } else if (reportType === 'custom' && startDate && endDate) {
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+        const daysDiff = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
+        
+        const previousStart = new Date(start);
+        previousStart.setDate(previousStart.getDate() - daysDiff);
+        const previousEnd = new Date(start);
+        previousEnd.setSeconds(previousEnd.getSeconds() - 1);
+
+        dateQuery = {
+            createdAt: {
+                $gte: new Date(start.setHours(0, 0, 0, 0)),
+                $lt: new Date(end.setHours(23, 59, 59, 999))
+            },
+            ...statusFilter
+        };
+        previousPeriodQuery = {
+            createdAt: {
+                $gte: new Date(previousStart.setHours(0, 0, 0, 0)),
+                $lt: new Date(previousEnd)
+            },
+            ...statusFilter
+        };
+    }
+
+      const currentOrders = await Order.find(dateQuery)
+      .populate('userId', 'name')
+      .populate({
+          path: 'items.productId',
+          populate: {
+            path: 'category'
+          }
+      })
+
+      const calculateValidOrderAmount = (order) => {
+        return order.items.reduce((sum, item) => {
+            if (item.itemStatus !== 'Cancelled' && item.itemStatus !== 'Returned') {
+                return sum + item.finalPrice;
+            }
+            return sum;
+        }, 0);
+    };
+
+      const currentCustomers = await User.distinct('_id', { 
+        _id: { $in: currentOrders.map(order => order.userId) } 
+    });
+
+    const previousOrders = await Order.find(previousPeriodQuery);
+    const previousCustomers = await User.distinct('_id', { 
+        _id: { $in: previousOrders.map(order => order.userId) } 
+    });
+
+  
+     const currentRevenue = currentOrders.reduce((sum, order) => 
+            sum + calculateValidOrderAmount(order), 0);
+
+     const previousRevenue = previousOrders.reduce((sum, order) => 
+      sum + calculateValidOrderAmount(order), 0);
+  
+     const currentDiscount = currentOrders.reduce((sum, order) => {
+      let totalDiscount = 0;
+      order.items.forEach(item => {
+        if (item.itemStatus !== 'Cancelled' && item.itemStatus !== 'Returned') {
+            const originalPrice = item.price * item.quantity;
+            const finalPrice = item.finalPrice;
+            const itemDiscount = originalPrice - finalPrice;
+            
+            if (itemDiscount > 0) {
+                totalDiscount += itemDiscount;
+            }
+        }
+    }); 
+    if (order.discount && order.items.some(item => 
+      item.itemStatus !== 'Cancelled' && item.itemStatus !== 'Returned')) {
+         totalDiscount += order.discount;
+       }
+      return sum + totalDiscount;
+    }, 0);
+     
+   const stats = {
+       revenue: {
+          current: currentRevenue,
+          change: previousRevenue ? ((currentRevenue - previousRevenue) / previousRevenue) * 100 : 0
+       },
+       orders: {
+          current: currentOrders.length,
+          change: previousOrders.length ? 
+              ((currentOrders.length - previousOrders.length) / previousOrders.length) * 100 : 0
+       },
+       customers: {
+          current: currentCustomers.length,
+          change: previousCustomers.length ? 
+              ((currentCustomers.length - previousCustomers.length) / previousCustomers.length) * 100 : 0
+       },
+       discounts: {
+          current: currentDiscount
+       }
+    };
+      const orders = await Order.find(dateQuery)
+            .populate('userId', 'name')
+            .populate({
+                path: 'items.productId',
+                populate: {
+                    path: 'category'
+                }
+            })
+            .sort({ createdAt: -1 });
+            const salesData = await generateSalesData(dateQuery);
+
+            const productSales = {};
+            currentOrders.forEach(order => {
+                order.items.forEach(item => {
+                    if (item.itemStatus !== 'Cancelled' && item.itemStatus !== 'Returned') {
+                        if (!productSales[item.productId]) {
+                            productSales[item.productId] = {
+                                name: item.productName,
+                                unitsSold: 0,
+                                revenue: 0
+                            };
+                        }
+                        productSales[item.productId].unitsSold += item.quantity;
+                        productSales[item.productId].revenue += item.finalPrice;
+                    }
+                });
+            });
+    
+            const topProducts = Object.values(productSales)
+                .sort((a, b) => b.unitsSold - a.unitsSold)
+                .slice(0, 10);
+    
+            const categorySales = {};
+            let totalSales = 0;
+    
+            currentOrders.forEach(order => {
+              order.items.forEach(item => {
+                  if (item.itemStatus !== 'Cancelled' && item.itemStatus !== 'Returned' && 
+                      item.productId && item.productId.category) {
+                      const categoryName = item.productId.category.name;
+                      if (!categorySales[categoryName]) {
+                          categorySales[categoryName] = 0;
+                      }
+                      categorySales[categoryName] += item.finalPrice;
+                      totalSales += item.finalPrice;
+                  }
+              });
+          });
+    
+            const topCategories = Object.entries(categorySales)
+                .map(([name, sales]) => ({
+                    name,
+                    sales,
+                    percentage: ((sales / totalSales) * 100).toFixed(1)
+                }))
+                .sort((a, b) => b.sales - a.sales)
+                .slice(0, 9);
+      
+                if (req.query.download === 'excel') {
+                   return await downloadExcel(orders, topProducts, topCategories, res);
+                } else if (req.query.download === 'pdf') {
+                   return await downloadPDF(orders, topProducts, topCategories, res);
+                }
+      
+
+                const report = currentOrders.map(order => {
+                  const validItems = order.items.filter(item => 
+                      item.itemStatus !== 'Cancelled' && item.itemStatus !== 'Returned'
+                  );
+      
+                  const totalBeforeDiscount = validItems.reduce((sum, item) => 
+                      sum + (item.price * item.quantity), 0);
+                  const totalAfterDiscount = validItems.reduce((sum, item) => 
+                      sum + item.finalPrice, 0);
+                  const itemLevelDiscount = totalBeforeDiscount - totalAfterDiscount;
+      
+                  const orderDiscount = validItems.length > 0 ? (order.discount || 0) : 0;
+                  const totalDiscount = orderDiscount + itemLevelDiscount;
+                  const shippingCharge = validItems.length > 0 ? 50 : 0;
+      
+                  return {
+                      orderId: order.orderId,
+                      customerName: order.userId?.name || 'Unknown',
+                      date: order.createdAt.toLocaleDateString(),
+                      total: totalBeforeDiscount,
+                      discount: totalDiscount,
+                      shippingCharge: shippingCharge,
+                      finalAmount: totalAfterDiscount - orderDiscount + shippingCharge
+                  };
+              });
+              const summary = {
+                totalOrders: currentOrders.length,
+                totalAmount: report.reduce((sum, order) => sum + order.total, 0),
+                totalDiscount: report.reduce((sum, order) => sum + order.discount, 0),
+                totalShipping: report.reduce((sum, order) => sum + order.shippingCharge, 0),
+                finalTotal: report.reduce((sum, order) => sum + order.finalAmount, 0)
+            };
+
+            if (req.query.download === 'excel') {
+              return await downloadExcel(currentOrders, topProducts, topCategories, res);
+          } else if (req.query.download === 'pdf') {
+              return await downloadPDF(currentOrders, topProducts, topCategories, res);
+          }
+
+         res.json({
+           success: true,
+           stats,
+           report,
+           topProducts,
+           topCategories,
+           salesData,
+           summary
+         });
+
+  } catch (error) {
+      console.error('Error generating sales report:', error);
+      res.status(500).json({ success: false, message: 'Error generating report' });
+  }
+};
+
+//helper function for generate sales data
+async function generateSalesData(dateQuery) {
+    const orders = await Order.find(dateQuery).sort('createdAt');
+    const salesMap = new Map();
+  
+    orders.forEach(order => {
+      const date = order.createdAt.toISOString().split('T')[0];
+      if (!salesMap.has(date)) {
+          salesMap.set(date, {
+              sales: 0,
+              orders: 0
+          });
+      }
+      const dayData = salesMap.get(date);
+      const validSales = order.items.reduce((sum, item) => {
+        if (item.itemStatus !== 'Cancelled' && item.itemStatus !== 'Returned') {
+            return sum + item.finalPrice;
+        }
+        return sum;
+      }, 0);
+
+      dayData.sales += validSales;
+        if (validSales > 0) {
+          dayData.orders += 1;
+        }
+   });
+
+  return {
+    dates: Array.from(salesMap.keys()),
+    sales: Array.from(salesMap.values()).map(data => data.sales),
+    orders: Array.from(salesMap.values()).map(data => data.orders)
+  };
+}
+
+// functions for downloading reports excel
+async function downloadExcel(orders, topProducts, topCategories, res) {
+  const workbook = new ExcelJS.Workbook();
+  const salesSheet = workbook.addWorksheet('Sales Report');
+
+  salesSheet.columns = [
+    { header: 'Order ID', key: 'orderId' },
+    { header: 'Customer', key: 'customer' },
+    { header: 'Date', key: 'date' },
+    { header: 'Total', key: 'total' },
+    { header: 'Discount', key: 'discount' },
+    { header: 'Shipping Charge', key: 'shipping' }, 
+    { header: 'Final Amount', key: 'final' }
+  ];
+
+  orders.forEach(order => {
+    salesSheet.addRow({
+        orderId: order.orderId,
+        customer: order.userId?.name || 'Unknown',
+        date: order.createdAt.toLocaleDateString(),
+        total: order.items.reduce((sum, item) => sum + item.finalPrice, 0),
+        discount: order.discount || 0,
+        shipping: 50,
+        final: order.items.reduce((sum, item) => sum + item.finalPrice, 0) - (order.discount || 0) + 50
+    });
+  });
+
+
+  const productsSheet = workbook.addWorksheet('Top Products');
+  productsSheet.columns = [
+      { header: 'Product Name', key: 'name' },
+      { header: 'Units Sold', key: 'unitsSold' },
+      { header: 'Revenue', key: 'revenue' }
+  ];
+  topProducts.forEach(product => productsSheet.addRow(product));
+
+  const categoriesSheet = workbook.addWorksheet('Top Categories');
+    categoriesSheet.columns = [
+        { header: 'Category', key: 'name' },
+        { header: 'Sales', key: 'sales' },
+        { header: 'Percentage', key: 'percentage' }
+    ];
+    topCategories.forEach(category => categoriesSheet.addRow(category));
+
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', 'attachment; filename=sales-report.xlsx');
+
+    await workbook.xlsx.write(res);
+}
+
+//function for downloading pdf
+async function downloadPDF(orders, topProducts, topCategories, res) {
+  const doc = new PDFDocument();
+  res.setHeader('Content-Type', 'application/pdf');
+  res.setHeader('Content-Disposition', 'attachment; filename=sales-report.pdf');
+  doc.pipe(res);
+
+  doc.fontSize(16).text('Sales Report', { align: 'center' });
+  doc.moveDown();
+
+  orders.forEach(order => {
+    const total = order.items.reduce((sum, item) => sum + item.finalPrice, 0);
+    const discount = order.discount || 0;
+    const shipping = 50;
+
+    doc.fontSize(12).text(`Order ID: ${order.orderId}`);
+    doc.fontSize(10).text(`Customer: ${order.userId?.name || 'Unknown'}`);
+    doc.text(`Date: ${order.createdAt.toLocaleDateString()}`);
+    doc.text(`Total: Rs${total}`);
+    doc.text(`Discount: Rs${discount}`);
+    doc.text(`Shipping Charge: Rs${shipping}`);
+    doc.text(`Final Amount: Rs${total - discount + shipping}`);
+    doc.moveDown();
+  });
+  doc.addPage();
+      doc.fontSize(16).text('Top Products', { align: 'center' });
+      doc.moveDown();
+      topProducts.forEach(product => {
+        doc.fontSize(12).text(`${product.name}`);
+        doc.fontSize(10).text(`Units Sold: ${product.unitsSold}`);
+        doc.text(`Revenue: Rs${product.revenue.toFixed(2)}`);
+        doc.moveDown();
+      });
+
+      doc.addPage();
+      doc.fontSize(16).text('Top Categories', { align: 'center' });
+      doc.moveDown();
+      topCategories.forEach(category => {
+        doc.fontSize(12).text(`${category.name}`);
+        doc.fontSize(10).text(`Sales: Rs${category.sales.toFixed(2)}`);
+        doc.text(`Percentage: ${category.percentage}%`);
+        doc.moveDown();
+      });
+
+    doc.end();
+  }
+
+  //this is dashboard ejs

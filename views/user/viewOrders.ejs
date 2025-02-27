@@ -32,6 +32,8 @@
         padding: 20px;
         background-color: #f4f4f4;
         margin-top: -30px;
+        padding-left: 73px;
+        padding-right: 72px;
     }
     .order-history .container {
         max-width: 800px;
@@ -92,7 +94,7 @@
         gap: 5px;
         margin-top: 20px;
         font-size: 12px;
-        margin-left: 515px;
+        margin-left: 456px;
     }
 
    .pagination a, .pagination span {
@@ -214,22 +216,32 @@
                   </div>
 
                   <div class="pagination">
-                     <% if (currentPage > 1) { %>
-                        <a href="?page=<%= currentPage - 1 %>">&laquo; Previous</a>
-                     <% } else { %>
-                       <a class="disabled">&laquo; Previous</a>
-                     <% } %>
-                
-                     <% for(let i = 1; i <= totalPages; i++) { %>
-                        <a href="?page=<%= i %>" class="<%= currentPage === i ? 'active' : '' %>"><%= i %></a>
-                     <% } %>
-                
-                     <% if (currentPage < totalPages) { %>
-                        <a href="?page=<%= currentPage + 1 %>">Next &raquo;</a>
-                     <% } else { %>
-                        <a class="disabled">Next &raquo;</a>
-                     <% } %>
-                  </div>
+                    <% if (currentPage > 1) { %>
+                       <a href="?page=<%= currentPage - 1 %><%= searchQuery ? '&search=' + searchQuery : '' %>">&laquo; Previous</a>
+                    <% } else { %>
+                       <span class="disabled">&laquo; Previous</span>
+                    <% } %>
+                 
+                    <% 
+                    // Show only 2 page numbers at a time, centered around current page when possible
+                    let startPage = Math.max(1, currentPage - 1);
+                    let endPage = Math.min(startPage + 1, totalPages);
+                    
+                    // Adjust if we're at the end of the pagination
+                    if (endPage === totalPages && endPage > 1) {
+                      startPage = Math.max(1, endPage - 1);
+                    }
+                    
+                    for(let i = startPage; i <= endPage; i++) { %>
+                       <a href="?page=<%= i %><%= searchQuery ? '&search=' + searchQuery : '' %>" class="<%= currentPage === i ? 'active' : '' %>"><%= i %></a>
+                    <% } %>
+                 
+                    <% if (currentPage < totalPages) { %>
+                       <a href="?page=<%= currentPage + 1 %><%= searchQuery ? '&search=' + searchQuery : '' %>">Next &raquo;</a>
+                    <% } else { %>
+                       <span class="disabled">Next &raquo;</span>
+                    <% } %>
+                 </div>
               </div>
             </div>
         </div>

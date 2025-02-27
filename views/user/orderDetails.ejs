@@ -251,10 +251,8 @@ del {
                     <th>Image</th>
                     <th>Quantity</th>
                     <th>Price</th>
-                    <th>
-                        Final Price <br>
-                        (include coupon)
-                    </th>
+                    <th>coupon discount</th>
+                    <th>Final Price</th>
                     <th>Order Status</th>
                     <th>Action</th>
                 </tr>
@@ -267,6 +265,7 @@ del {
                     <td><img src="/uploads/<%= item.image %>"  alt="<%= item.productName %>" class="order-detail-product-image"></td>
                     <td><%= item.quantity %></td>
                     <td>₹<%= Math.round(item.offerPrice).toFixed(2) %></td>
+                    <td>₹<%= Math.round((item.offerPrice * item.quantity) - item.finalPrice).toFixed(2) %></td>
                     <td>₹<%= Math.round(item.finalPrice).toFixed(2) %></td>
                     <td><%= item.itemStatus %></td>
                     <td>
@@ -319,19 +318,20 @@ del {
                     </div>
                 <% } %>
                 <div class="summary-item">
-                    <span>Subtotal:(include coupon)</span>
-                    <span>₹<%= order.items.reduce((total, item) => total + (item.itemStatus !== 'Cancelled' ? item.finalPrice : 0), 0).toFixed(2) %></span>
+                   <span>Coupon Discount:</span>
+                   <span class="text-success">-₹<%= order.items.reduce((total, item) => {
+                      return total + ((item.itemStatus !== 'Cancelled') ? ((item.offerPrice * item.quantity) - item.finalPrice) : 0);
+                    }, 0).toFixed(2) %></span>
+                  </div>
+                </div>
+                <div class="summary-item">
+                    <span>Subtotal:</span>
+                    <span>₹<%= Math.round(order.items.reduce((total, item) => total + (item.itemStatus !== 'Cancelled' ? item.finalPrice : 0), 0)).toFixed(2) %></span>
                 </div>
                 <div class="summary-item">
                     <span>shipping Charge:</span>
                     <span>₹50</span>
                 </div>
-                <% if (order.appliedCoupon) { %>
-                    <div class="summary-item">
-                        <span>Coupon Discount (<%= order.appliedCoupon.code %>):</span>
-                        <span class="text-success">-₹<%= order.appliedCoupon.discountAmount.toFixed(2) %></span>
-                    </div>
-                <% } %>
                 <div class="summary-item total">
                     <span>Total Amount(include shipping):</span>
                     <span>₹<%= Math.round(order.totalPrice).toFixed(2) %></span>

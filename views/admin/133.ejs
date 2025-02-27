@@ -1,0 +1,761 @@
+//this is a part of my order details page 
+<div class="order-detail-table-responsive">
+    <table class="table order-detail-table order-detail-table-bordered">
+        <thead class="order-detail-table-header">
+            <tr>
+                <th>Product Name</th>
+                <th>Category</th>
+                <th>Image</th>
+                <th>Quantity</th>
+                <th>Price</th>
+                <th>
+                    Final Price <br>
+                    (include coupon)
+                </th>
+                <th>Order Status</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            <% order.items.forEach(item => { %>
+            <tr>
+                <td><%= item.productName %></td>
+                <td><%= item.category.name %></td>
+                <td><img src="/uploads/<%= item.image %>"  alt="<%= item.productName %>" class="order-detail-product-image"></td>
+                <td><%= item.quantity %></td>
+                <td>₹<%= Math.round(item.offerPrice).toFixed(2) %></td>
+                <td>₹<%= Math.round(item.finalPrice).toFixed(2) %></td>
+                <td><%= item.itemStatus %></td>
+                <td>
+                    <% if (item.itemStatus === 'Ordered') { %>
+                        <button class="btn btn-sm order-detail-btn-cancel" 
+                           onclick="cancelOrderItem('<%= order.orderId %>', '<%= item.productName %>')">
+                           ✖ Cancel
+                        </button>
+                    <% } else if (order.orderStatus === 'Delivered' && item.itemStatus !== 'Returned' && item.itemStatus !== 'Cancelled') { %>
+                        <% if (item.itemStatus === 'Delivered') { %>
+                            <button class="btn btn-sm order-detail-btn-return" 
+                               onclick="returnOrderItem('<%= order.orderId %>', '<%= item.productName %>')">
+                               ↩ Return
+                            </button>
+                        <% } else if (item.returnStatus === 'Return Requested') { %>
+                            <span class="text-warning">Return Requested</span>
+                        <% } else if (item.returnStatus === 'Return Accepted') { %>
+                            <span class="text-success">Return Accepted</span>
+                        <% } else if (item.returnStatus === 'Return Rejected') { %>
+                            <span class="text-danger">Return Rejected</span>
+                        <% } %>
+                    <% } else { %>
+                        <%= item.itemStatus %>
+                    <% } %>
+                </td>
+            </tr>
+            <% }); %>
+        </tbody>
+    </table>
+</div>
+
+//this is some parts of my order controller 
+const createOrder = async (req, res) => {
+    try {
+        const userId = req.session.user;
+        const { paymentMethod, addressId } = req.body;
+
+        if (!userId) {
+            return res.status(401).json({ success: false, message: "Please login to place an order." });
+        }
+
+        const cart = await Cart.findOne({ userId }).populate({
+            path: 'items.product',
+            populate: {
+                path: 'category',
+                model: 'Category'
+            }
+        });
+
+        if (!cart || cart.items.length === 0) {
+            return res.status(400).json({ success: false, message: "Your cart is empty." });
+        }
+
+        for (const item of cart.items) {
+            if (!item.product || !item.product._id) {
+                cart.items = cart.items.filter(cartItem => cartItem.product && cartItem.product._id);
+                await cart.save();
+                return res.status(400).json({ 
+                    success: false, 
+                    message: "Some products in your cart are no longer available. Cart has been updated." 
+                });
+            }
+            const product = await Product.findById(item.product._id);
+            if (!product) {
+                cart.items = cart.items.filter(cartItem => cartItem.product._id.toString() !== item.product._id.toString());
+                await cart.save();
+                return res.status(400).json({ 
+                    success: false, 
+                    message: "Some products in your cart are no longer available. Cart has been updated." 
+                });
+            }
+
+            if (product.quantity < item.quantity) {
+                return res.status(400).json({ 
+                    success: false, 
+                    message: `Insufficient stock for ${product.productName}. Only ${product.quantity} available.` 
+                });
+            }
+        }
+
+        const address = await Address.findOne({ userId });
+        if (!address || !address.address[addressId]) {
+            return res.status(404).json({ success: false, message: "Address not found." });
+        }
+
+        const selectedAddress = address.address[addressId];
+
+        const orderItems = [];
+        let subtotal = 0;
+        
+        for (const item of cart.items) {
+            const product = await Product.findById(item.product._id);
+            const originalPrice = product.regularPrice;
+            
+            const currentDate = new Date();
+            const offers = await Offer.find({
+                status: 'Active',
+                expireDate: { $gt: currentDate }
+            });
+            
+            const productOffer = offers.find(offer => 
+                (offer.productIds?.includes(product._id)) ||
+                (offer.categoryIds?.includes(product.category))
+            );
+
+            const priceAfterOffer = productOffer 
+                ? originalPrice * (1 - productOffer.discount / 100)
+                : originalPrice;
+            
+            const itemSubtotal = priceAfterOffer * item.quantity;
+            subtotal += itemSubtotal;
+
+            orderItems.push({
+                productId: product._id,
+                productName: product.productName,
+                quantity: item.quantity,
+                price: originalPrice,
+                finalPrice: itemSubtotal,
+                itemStatus: "Ordered",
+                highestDiscount: productOffer ? productOffer.discount : 0
+            });
+        }
+
+        let finalAmount = subtotal;
+        const appliedCoupon = req.session.appliedCoupon;
+        
+        if (appliedCoupon) {
+            const discountAmount = appliedCoupon.discountAmount;
+            finalAmount = subtotal - discountAmount;
+
+            orderItems.forEach(item => {
+                const proportion = item.finalPrice / subtotal;
+                const itemDiscount = discountAmount * proportion;
+                item.finalPrice -= itemDiscount;
+            });
+        }
+
+        finalAmount+=50;
+        if (paymentMethod === 'COD' && finalAmount > 1000) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Cash on Delivery is not available for orders above ₹1,000' 
+            });
+        }
+
+        switch (paymentMethod) {
+            case 'COD': {
+                const newOrder = new Order({
+                    orderId: `ORD-${Date.now()}`,
+                    userId,
+                    items: orderItems,
+                    totalPrice: finalAmount,
+                    deliveryCharge: 50,
+                    address: {
+                        name: selectedAddress.name,
+                        phone: selectedAddress.phone,
+                        district: selectedAddress.district,
+                        city: selectedAddress.city,
+                        house: selectedAddress.house,
+                        state: selectedAddress.state,
+                        pincode: selectedAddress.pincode,
+                    },
+                    paymentMethod,
+                    paymentStatus: 'Pending',
+                    orderStatus: "Processing"
+                });
+
+                await newOrder.save();
+
+                if (appliedCoupon) {
+                    await Coupon.findOneAndUpdate(
+                        { couponCode: appliedCoupon.code },
+                        { $addToSet: { redeemedUsers: userId } }
+                    );
+                }
+
+                for (const item of orderItems) {
+                    await Product.findByIdAndUpdate(
+                        item.productId,
+                        { $inc: { quantity: -item.quantity } }
+                    );
+                }
+
+                await Cart.deleteOne({ userId });
+                delete req.session.appliedCoupon;
+
+                return res.status(200).json({ 
+                    success: true, 
+                    orderId: newOrder.orderId 
+                });
+            }
+
+            case 'Wallet': {
+                const wallet = await Wallet.findOne({ userId });
+                
+                if (!wallet || wallet.balance < finalAmount) {
+                    return res.status(400).json({ 
+                        success: false, 
+                        message: 'Insufficient wallet balance' 
+                    });
+                }
+
+                const newOrder = new Order({
+                    orderId: `ORD-${Date.now()}`,
+                    userId,
+                    items: orderItems,
+                    totalPrice: finalAmount,
+                    address: {
+                        name: selectedAddress.name,
+                        phone: selectedAddress.phone,
+                        district: selectedAddress.district,
+                        city: selectedAddress.city,
+                        house: selectedAddress.house,
+                        state: selectedAddress.state,
+                        pincode: selectedAddress.pincode,
+                    },
+                    paymentMethod,
+                    paymentStatus: 'Paid',
+                    orderStatus: "Processing"
+                });
+
+                await newOrder.save();
+
+                if (appliedCoupon) {
+                    await Coupon.findOneAndUpdate(
+                        { couponCode: appliedCoupon.code },
+                        { $addToSet: { redeemedUsers: userId } }
+                    );
+                }
+
+                for (const item of orderItems) {
+                    await Product.findByIdAndUpdate(
+                        item.productId,
+                        { $inc: { quantity: -item.quantity } }
+                    );
+                }
+
+                wallet.balance -= finalAmount;
+                wallet.transactions.push({
+                    amount: finalAmount,
+                    type: 'debit',
+                    description: `Payment for order ${newOrder.orderId}`,
+                    balance: wallet.balance
+                });
+                await wallet.save();
+
+                await Cart.deleteOne({ userId });
+                delete req.session.appliedCoupon;
+
+                return res.status(200).json({ 
+                    success: true, 
+                    orderId: newOrder.orderId 
+                });
+            }
+
+            case 'Razorpay': {
+                const razorpayOrderOptions = {
+                    amount: Math.round(finalAmount * 100),
+                    currency: 'INR',
+                    receipt: `ORD-${Date.now()}`,
+                    payment_capture: 1
+                };
+
+                const razorpayOrder = await razorpay.orders.create(razorpayOrderOptions);
+
+                const newOrder = new Order({
+                    orderId: `ORD-${Date.now()}`,
+                    userId,
+                    items: orderItems,
+                    totalPrice: finalAmount,
+                    address: {
+                        name: selectedAddress.name,
+                        phone: selectedAddress.phone,
+                        district: selectedAddress.district,
+                        city: selectedAddress.city,
+                        house: selectedAddress.house,
+                        state: selectedAddress.state,
+                        pincode: selectedAddress.pincode,
+                    },
+                    paymentMethod,
+                    paymentStatus: 'Pending',
+                    orderStatus: "Processing",
+                    razorpayOrderId: razorpayOrder.id
+                });
+
+                await newOrder.save();
+
+                if (appliedCoupon) {
+                    await Coupon.findOneAndUpdate(
+                        { couponCode: appliedCoupon.code },
+                        { $addToSet: { redeemedUsers: userId } }
+                    );
+                }
+
+                await Cart.deleteOne({ userId });
+                delete req.session.appliedCoupon;
+
+                return res.status(200).json({ 
+                    success: true, 
+                    orderId: newOrder.orderId,
+                    razorpayOrder: {
+                        id: razorpayOrder.id,
+                        key: process.env.RAZORPAY_KEY_ID,
+                        amount: razorpayOrder.amount
+                    }
+                });
+            }
+
+            default:
+                return res.status(400).json({ 
+                    success: false, 
+                    message: 'Invalid payment method' 
+                });
+        }
+
+    } catch (error) {
+        console.error("Error placing order:", error);
+        return res.status(500).json({ 
+            success: false, 
+            message: error.message || 'An error occurred while placing the order' 
+        });
+    }
+};
+
+const getOrderDetails = async (req, res) => {
+    try {
+        const userData = await User.findById(req.session.user);
+        const { orderId } = req.params;
+
+        const order = await Order.findOne({ orderId }).populate({
+            path: 'items.productId',
+            model: 'Product',
+            populate: {
+                path: 'category',
+                model: 'Category',
+                select: 'name'
+            }
+        });
+
+        if (!order) {
+            return res.status(404).render('error', {
+                message: 'Order not found',
+                error: { status: 404 }
+            });
+        }
+        const currentDate = new Date();
+        const offers = await Offer.find({
+            status: 'Active',
+            expireDate: { $gt: currentDate }
+        });
+
+        let activeSubtotal = 0;
+        let activeItemsCount = 0;
+
+        const processedItems = order.items.map(item => {
+
+            const productOffer = offers.find(offer => 
+                (offer.productIds?.includes(item.productId._id)) ||
+                (offer.categoryIds?.includes(item.productId.category._id))
+            );
+
+            const highestDiscount = productOffer ? productOffer.discount : 0;
+            const offerPrice = item.offerPrice || (productOffer 
+                ? item.price * (1 - productOffer.discount / 100)
+                : item.price);
+
+            const itemData = {
+                productName: item.productName,
+                productId: item.productId,
+                quantity: item.quantity,
+                price: item.price,
+                highestDiscount: highestDiscount,
+                offerPrice: offerPrice,
+                finalPrice: item.finalPrice,
+                itemStatus: item.itemStatus,
+                returnStatus: item.returnStatus || 'Not Requested',
+                returnReason: item.returnReason || '',
+                category: item.productId.category
+            };
+
+            if (item.itemStatus !== 'Cancelled') {
+                activeSubtotal += item.finalPrice;
+                activeItemsCount++;
+            }
+
+            return itemData;
+        });
+
+        let finalTotal = activeSubtotal;
+        if (order.appliedCoupon && activeItemsCount > 0) {
+            const proportionalDiscount = (activeSubtotal / order.totalPrice) * order.appliedCoupon.discountAmount;
+            finalTotal = activeSubtotal - proportionalDiscount;
+        }
+        finalTotal += 50;
+        const formattedOrder = {
+            orderId: order.orderId,
+            orderDate: new Date(order.createdAt).toLocaleDateString('en-US', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            }),
+            address: order.address,
+            paymentMethod: order.paymentMethod,
+            paymentStatus: order.paymentStatus,
+            orderStatus: order.orderStatus,
+            items: processedItems.map(item => ({
+                productName: item.productName,
+                category: item.category,
+                image: item.productId.productImage[0],
+                quantity: item.quantity,
+                price: item.price,
+                offerPrice: item.offerPrice,
+                highestDiscount: item.highestDiscount,
+                finalPrice: item.finalPrice,
+                itemStatus: item.itemStatus,
+                returnStatus: item.returnStatus
+            })),
+            totalPrice: order.totalPrice,
+            subtotal: activeSubtotal,
+            deliveryCharge: 50,
+            appliedCoupon: order.appliedCoupon ? {
+                code: order.appliedCoupon.code,
+                discountAmount: order.appliedCoupon.discountAmount
+            } : null
+        };
+
+        res.render("orderDetails", {
+            userData,
+            order: formattedOrder
+        });
+
+    } catch (error) {
+        console.error('Error in getOrderDetails:', error);
+        res.status(500).render('error', {
+            message: 'An error occurred while fetching order details',
+            error: process.env.NODE_ENV === 'development' ? error : {}
+        });
+    }
+};
+
+//this is my checkout controller 
+const loadCheckout = async (req, res) => {
+    try {
+        if (!req.session.user) {
+            return res.redirect('/login');
+        }
+
+        const userData = await User.findById(req.session.user);
+        if (!userData) {
+            return res.redirect('/login');
+        }
+
+        const cart = await Cart.findOne({ userId: req.session.user })
+            .populate({
+                path: 'items.product',
+                populate: {
+                    path: 'category',
+                    model: 'Category'
+                }
+            });
+
+            if (!cart || !cart.items || cart.items.length === 0) {
+                delete req.session.appliedCoupon;
+                return res.redirect('/cart');
+            }
+
+        const currentDate = new Date();
+        const offers = await Offer.find({
+            status: 'Active',
+            expireDate: { $gt: currentDate }
+        });
+
+        const processedItems = cart.items
+            .filter(item => item.product && item.product.category) 
+            .map(item => {
+                const productOffer = offers.find(offer => 
+                    (offer.productIds && offer.productIds.includes(item.product._id)) ||
+                    (offer.categoryIds && offer.categoryIds.includes(item.product.category._id))
+                );
+
+                const highestDiscount = productOffer ? productOffer.discount : 0;
+                const regularPrice = item.product.regularPrice || 0;
+                const offerPrice = productOffer 
+                    ? regularPrice * (1 - productOffer.discount / 100)
+                    : regularPrice;
+
+                return {
+                    ...item.toObject(),
+                    product: {
+                        ...item.product.toObject(),
+                        highestDiscount,
+                        offerPrice: roundToTwo(offerPrice)
+                    }
+                };
+            });
+
+            let subtotal = roundToTwo(processedItems.reduce((total, item) => {
+                const price = item.product.offerPrice || item.product.regularPrice || 0;
+                return total + (price * (item.quantity || 1));
+            }, 0));
+
+            const appliedCoupon = req.session.appliedCoupon;
+            let finalAmount = subtotal;
+            let itemsWithDiscount = processedItems;
+    
+            if (appliedCoupon) {
+                const totalDiscount = roundToTwo(appliedCoupon.discountAmount || 0);
+                itemsWithDiscount = processedItems.map(item => {
+                    const itemTotal = roundToTwo((item.product.offerPrice || 0) * (item.quantity || 1));
+                    const itemProportion = subtotal > 0 ? itemTotal / subtotal : 0;
+                    const itemDiscount = roundToTwo(totalDiscount * itemProportion);
+                    const finalItemPrice = roundToTwo(itemTotal - itemDiscount);
+                    
+                    return {
+                        ...item,
+                        couponDiscount: {
+                            amount: itemDiscount,
+                            priceBeforeDiscount: itemTotal,
+                            finalPrice: finalItemPrice,
+                            perUnitDiscount: item.quantity > 0 ? roundToTwo(itemDiscount / item.quantity) : 0
+                        }
+                    };
+                });
+                finalAmount = roundToTwo(subtotal - (appliedCoupon.discountAmount || 0));
+            }
+
+            const addresses = await Address.findOne({ userId: req.session.user }) || { address: [] };
+        
+            const coupons = await Coupon.find({ 
+                status: 'Active', 
+                expiryDate: { $gt: currentDate },
+                redeemedUsers: { $ne: req.session.user } 
+            });
+    
+            const wallet = await Wallet.findOne({ userId: req.session.user });
+            const walletBalance = wallet ? wallet.balance : 0;
+
+            res.render("checkout", {
+                userData,
+                cart: { items: itemsWithDiscount },
+                subtotal,
+                finalAmount,
+                appliedCoupon,
+                addresses,
+                coupons,
+                walletBalance
+            });
+    
+    } catch (error) {
+        console.error("Error loading checkout page:", error);
+        res.status(500).redirect("/cart");
+    }
+};
+
+//this is coupon schema
+const mongoose = require('mongoose');
+
+const couponSchema = mongoose.Schema({
+    title: {
+        type: String,
+        required: true
+    },
+    couponCode: {
+        type: String,
+        required: true,
+        unique: true
+    },
+    description: {
+        type: String
+    },
+    percentage: {
+        type: Number,
+        required: true,
+        min: 1,
+        max: 80
+    },
+    minPrice: {
+        type: Number,
+        default: 0
+    },
+    maxRedeemAmount: {
+        type: Number,
+    },
+    addedDate: {
+        type: Date,
+        default: Date.now
+    },
+    expiryDate: {
+        type: Date,
+        required: true,
+    },
+    status: {
+        type: String,
+        enum: ['Active', 'Inactive'],
+        default: 'Active'
+    },
+    redeemedUsers: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
+    }],
+});
+
+module.exports = mongoose.model("Coupon",couponSchema);
+
+//this is order schema
+const mongoose = require('mongoose');
+const { Schema } = mongoose;
+
+const OrderSchema = new mongoose.Schema({
+    orderId: {
+        type: String,
+        required: true,
+    },
+    userId: {
+        type: Schema.Types.ObjectId,
+        required: true,
+        ref: "User"
+    },
+    totalPrice: {
+        type: Number,
+        required: true,
+    },
+    items: [
+        {
+            productId: {
+                type: Schema.Types.ObjectId,
+                required: true,
+                ref: "Product"
+            },
+            productName: {
+                type: String,
+                required: true
+            },
+            quantity: {
+                type: Number,
+                required: true
+            },
+            itemStatus: {
+                type: String,
+                required: true,
+                default: "Ordered"
+            },
+            price: {
+                type: Number,
+                required: true
+            },
+            highestDiscount: {
+                type: Number,
+                default: 0
+            },
+            couponDiscount: {
+                type: Number,
+                default: 0
+            },
+            couponCode: {
+                type: String,
+                default: null
+            },
+            offerPrice: {
+                type: Number,
+            },
+            finalPrice: {
+                type: Number,
+                required: true
+            },
+            reason: {
+                type: String,
+            },
+            isApproved: {
+                type: Boolean,
+            },
+            returnReason: { type: String },
+            returnStatus: { 
+             type: String, 
+             enum: ['Not Requested', 'Return Requested', 'Return Accepted', 'Return Rejected'],
+             default: 'Not Requested'
+           },
+           returnReason: { type: String },
+           returnRequestDate: { type: Date },
+           isApproved: { type: Boolean }
+        },
+    ],
+    address: {
+        name: {
+            type: String
+        },
+        phone: {
+            type: String
+        },
+        district: {
+            type: String
+        },
+        city: {
+            type: String
+        },
+        house: {
+            type: String
+        },
+        state: {
+            type: String
+        },
+        pincode: {
+            type: String
+        },
+    },
+    paymentMethod: {
+        type: String,
+        enum:['COD','Razorpay','Wallet'],
+        required: true,
+    },
+    paymentStatus: {
+        type: String,
+        enum:['Paid','Pending','Failed'],
+        required: true
+    },
+    orderStatus: {
+        type: String,
+        required: true,
+        enum:['Processing','Shipped','Delivered','Cancelled','Return Request','Returned','pending'],
+        default: "Processing"
+    },
+    razorpayOrderId: {
+        type: String,
+        required: function() {
+            return this.paymentMethod === 'Razorpay';
+        }
+    },
+    deliveryCharge: {
+        type: Number,
+        default: 50
+    }
+},{timestamps:true});
+
+module.exports = mongoose.model("Order", OrderSchema);

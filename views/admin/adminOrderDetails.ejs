@@ -129,6 +129,17 @@
     background-color: #e9ecef;
     cursor: not-allowed;
   }
+  .cancelled-note {
+    color: #dc3545;
+    font-style: italic;
+    font-size: 0.9em;
+    margin-left: 8px;
+  }
+  
+  .order-item-card .order-item-details p strong + span:contains('Cancelled') {
+    text-decoration: line-through;
+    color: #dc3545;
+  }
 </style>
 
 <div class="main-panel">
@@ -137,9 +148,20 @@
       <div class="d-flex justify-content-between align-items-center mb-4">
         <h3 class="section">Order Details</h3>
         <div class="d-flex gap-3">
-          <button class="cancel-all-btn" onclick="cancelAllProducts('<%= order.orderId %>')">
-            Cancel All Products
-          </button>
+          <% 
+          let allDelivered = true;
+          order.items.forEach(item => {
+            if(item.status !== 'Delivered' && item.status !== 'Cancelled') {
+              allDelivered = false;
+            }
+          });
+          
+          if (!allDelivered) { 
+          %>
+            <button class="cancel-all-btn" onclick="cancelAllProducts('<%= order.orderId %>')">
+              Cancel All Products
+            </button>
+          <% } %>
           <button class="btn-back" onclick="location.href='/admin/orderList'">
             Back to Orders
           </button>
@@ -155,19 +177,22 @@
             ₹ <%= Math.round(order.subtotal) %>
           </p>
           <% if (order.appliedCoupon) { %>
-            <p>
-                <strong>Coupon Discount:</strong> 
-                -₹ <%= order.appliedCoupon.appliedDiscount %>
-            </p>
-        <% } %>
-        <p>
+          <p>
+            <strong>Coupon Discount:</strong> 
+            -₹ <%= order.appliedCoupon.appliedDiscount %>
+          </p>
+          <% } %>
+          <p>
             <strong>Shipping Charge:</strong> 
             +₹ 50
-        </p>
-        <p>
-            <strong>Total Amount:</strong> 
-            ₹ <%= Math.round(order.finalTotal) %>
-        </p>
+          </p>
+          <p>
+           <strong>Total Amount:</strong> 
+           ₹ <%= Math.round(order.finalTotal) %>
+           <% if (order.allCancelled) { %> 
+           <span class="cancelled-note">(Order Cancelled)</span>
+           <% } %>
+          </p>
           <p><strong>Payment Method:</strong> <%= order.paymentMethod %></p>
           <p><strong>Payment Status:</strong> <%= order.paymentStatus %></p>
           <p><strong>Customer Name:</strong> <%= order.customer.name %></p>
@@ -178,10 +203,11 @@
               id="order-status" 
               class="status-dropdown"
               onchange="updateAllProductsStatus('<%= order.orderId %>', this.value)"
-            >
-              <option value="Processing">Processing</option>
-              <option value="Shipped">Shipped</option>
-              <option value="Delivered">Delivered</option>
+              <% if (order.allCancelled) { %>disabled<% } %> >
+                 <option value="Processing">Processing</option>
+                 <option value="Shipped">Shipped</option>
+                 <option value="Delivered">Delivered</option>
+              <% if (order.allCancelled) { %><option value="Cancelled" selected>Cancelled</option><% } %>
             </select>
           </div>
         </div>
@@ -210,16 +236,16 @@
               <p><strong>Quantity:</strong> <%= item.quantity %></p>
               <p>
                 <% if (item.highestDiscount > 0) { %>
-                  Original Price: <span style="text-decoration: line-through;">₹<%= item.price %></span><br>
-                  Offer Price: <span style="color: green;">₹<%= item.offerPrice %> (<%= item.highestDiscount %>% off)</span><br>
+                  Price: ₹<%= item.price %> (<%= item.highestDiscount %>% off)<br>
+                  Offer price:<span style="color: green;"> ₹<%= item.offerPrice %></span><br>
                 <% } else { %>
                   Price: ₹<%= item.price %><br>
                 <% } %>
-                Final Price: ₹<%= Math.round(item.finalPrice) %>
+                  Final Price: ₹<%= Math.round(item.finalPrice) %>
               </p>
               <p><strong>Status:</strong> <span id="status-text-<%= item.productId %>"><%= item.status %></span></p>
               
-              <% if (item.status !== 'Cancelled') { %>
+              <% if (item.status !== 'Cancelled' && item.status !== 'Delivered') { %>
                 <button 
                   class="cancel-product-btn"
                   onclick="cancelProduct('<%= order.orderId %>', '<%= item.productId %>')"

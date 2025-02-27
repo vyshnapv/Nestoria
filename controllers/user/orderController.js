@@ -333,7 +333,7 @@ const verifyRazorpayPayment = async (req, res) => {
 
          if (status === 'failed') {
             order.paymentStatus = 'Failed';
-            order.orderStatus = 'Cancelled';
+            order.orderStatus = 'pending';
             await order.save();
             return res.status(200).json({ 
                 success: false, 
@@ -348,7 +348,7 @@ const verifyRazorpayPayment = async (req, res) => {
 
         if (generatedSignature !== razorpay_signature) {
             order.paymentStatus = 'Failed';
-            order.orderStatus = 'Cancelled';
+            order.orderStatus = 'pending';
             await order.save();
             return res.status(400).json({ success: false, message: 'Invalid payment signature' });
         }

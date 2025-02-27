@@ -1,106 +1,318 @@
 <%- include('../layoutsUser/userheader') %>
 <style>
 .small-title {
-font-size: 3rem;
-color: black;
+   font-size: 3rem;
+   color: black;
 }
 .welcome{
    padding-left: 420px;
-   margin-bottom: 40px;
+   padding-bottom: 67px;
+   padding-top: 36px;
+   margin-bottom: -29px;
    font-size: 50px;
+   background-color: grey;
    font-family:'Times New Roman', Times, serif;
 }
+
+.title-lg{
+    font-size: 40px;
+    padding-top: 30px;
+    font-family:'Times New Roman', Times, serif;
+}
+.owl-carousel .product {
+    margin-bottom: -50px !important;
+}
+.product-image{
+    height: 280px;
+}
+
+.hero-section {
+    position: relative;
+    margin-bottom: 4rem;
+    overflow: hidden;
+}
+
+.hero-image {
+    width: 100%;
+    height: 500px;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.hero-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.hero-content {
+    text-align: center;
+    color: #fff;
+    max-width: 800px;
+    padding: 2rem;
+}
+
+.hero-title {
+    font-size: 3rem;
+    font-weight: 700;
+    margin-bottom: 1.5rem;
+    color: white;
+    text-shadow: 2px 2px 4px rgb(44, 33, 33);
+}
+
+.hero-description {
+    font-size: 1.25rem;
+    margin-bottom: 2rem;
+    line-height: 1.6;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.hero-button {
+    display: inline-block;
+    background-color: #fff;
+    color: #000;
+    font-size: 1rem;
+    font-weight: 600;
+    padding: 1rem 2rem;
+    border-radius: 4px;
+    text-transform: uppercase;
+    transition: all 0.3s ease;
+    text-decoration: none;
+}
+
+.hero-button:hover {
+    background-color: transparent;
+    color: #fff;
+    border: 2px solid #fff;
+}
+
+/* Offer Styling */
+.product-price {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.original-price {
+    text-decoration: line-through;
+    color: #999;
+    font-size: 0.9em;
+    margin-bottom: 0.2rem;
+}
+.discount-badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background-color: #e53637;
+    color: white;
+    padding: 0.3rem 0.6rem;
+    border-radius: 3px;
+    font-size: 0.8rem;
+    font-weight: bold;
+    z-index: 1;
+}
+
+.category-mosaic {
+        display: grid;
+        grid-template-columns: repeat(6, 1fr);
+        grid-auto-rows: auto;
+        gap: 0;
+        margin-bottom: 4rem;
+    }
+    
+    .category-item {
+        position: relative;
+        overflow: hidden;
+        aspect-ratio: 1/1;
+    }
+    
+    .category-item-xl {
+        grid-column: span 2;
+        grid-row: span 2;
+    }
+    
+    .category-item-lg {
+        grid-column: span 2;
+        grid-row: span 2;
+    }
+    
+    .category-item-md {
+        grid-column: span 2;
+        grid-row: span 2;
+    }
+    
+    .category-item-sm {
+        grid-column: span 2;
+        grid-row: span 2;
+    }
+    
+    .category-banner {
+        position: relative;
+        height: 100%;
+        width: 100%;
+    }
+    
+    .category-banner img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.3s;
+    }
+    
+    .category-banner:hover img {
+        transform: scale(1.05);
+    }
+    
+    .category-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.3);
+        transition: background 0.3s;
+    }
+    
+    .category-banner:hover .category-overlay {
+        background: rgba(0, 0, 0, 0.5);
+    }
+    
+    .category-content {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        text-align: center;
+        color: #fff;
+        width: 80%;
+        z-index: 1;
+    }
+    
+    .category-title {
+        font-size: 1.25rem;
+        margin-bottom: 1rem;
+        font-weight: 700;
+        color: #fff;
+        text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.8);
+    }
+    
+    .category-banner .btn {
+        border: 2px solid #fff;
+        color: #fff;
+        font-weight: 500;
+        padding: 0.5rem 1rem;
+        text-transform: uppercase;
+        font-size: 0.875rem;
+        transition: all 0.3s;
+    }
+    
+    .category-banner .btn:hover {
+        background-color: #fff;
+        color: #000;
+    }
+    
+    @media (min-width: 1200px) {
+        .category-mosaic {
+            grid-template-columns: repeat(6, 1fr);
+        }
+        
+        .category-item-xl {
+            grid-column: span 3;
+            grid-row: span 3;
+        }
+        
+        .category-item-lg {
+            grid-column: span 3;
+            grid-row: span 3;
+        }
+        
+        .category-item-md {
+            grid-column: span 2;
+            grid-row: span 3;
+        }
+        
+        .category-item-sm {
+            grid-column: span 2;
+            grid-row: span 3;
+        }
+    }
+    
+    @media (min-width: 992px) and (max-width: 1199px) {
+        .category-mosaic {
+            grid-template-columns: repeat(4, 1fr);
+        }
+        
+        .category-item-xl, .category-item-lg {
+            grid-column: span 2;
+            grid-row: span 2;
+        }
+        
+        .category-item-md, .category-item-sm {
+            grid-column: span 2;
+            grid-row: span 2;
+        }
+    }
+    
+    @media (min-width: 768px) and (max-width: 991px) {
+        .category-mosaic {
+            grid-template-columns: repeat(3, 1fr);
+        }
+        
+        .category-item {
+            grid-column: span 1;
+            grid-row: span 1;
+        }
+    }
+    
+    @media (max-width: 767px) {
+        .category-mosaic {
+            grid-template-columns: repeat(2, 1fr);
+        }
+        
+        .category-item {
+            grid-column: span 1;
+            grid-row: span 1;
+        }
+    }
+    .main{
+        background-color: gray;
+    }
+    .product-body{
+        background-color: rgb(186, 183, 183);
+    }
+    .top{
+        color: white;
+    }
 </style>
         <main class="main">
-            <div class="intro-section bg-lighter pt-5 pb-6">
                 <h4 class="welcome">Welcome to Nestoria</h4>
-                <div class="container">
-                    <div class="row">
-                        <div class="col-lg-8">
-                            <div class="intro-slider-container slider-container-ratio slider-container-1 mb-2 mb-lg-0">
-                                <div class="intro-slider intro-slider-1 owl-carousel owl-simple owl-light owl-nav-inside" data-toggle="owl" data-owl-options='{
-                                        "nav": false, 
-                                        "responsive": {
-                                            "768": {
-                                                "nav": true
-                                            }
-                                        }
-                                    }'>
-                                    <% products.slice(0, 3).forEach(product => { %>
-                                    <div class="intro-slide">
-                                        <figure class="slide-image">
-                                            <picture>
-                                                <source media="(max-width: 480px)" srcset="/uploads/<%= product.productImage[0] %>">
-                                                <img src="/uploads/<%= product.productImage[0] %>" alt="<%= product.productName %>">
-                                            </picture>
-                                        </figure>
-
-                                        <div class="intro-content">
-                                            <h3 class="intro-subtitle"><%= product.category ? product.category.name : 'Featured Collection' %></h3>
-                                            <h1 class="intro-title small-title"><%= product.productName %></h1>
-
-                                            <a href="/product/<%= product._id %>" class="btn btn-outline-white" style="color: black;">
-                                               <span>SHOP NOW</span>
-                                               <i class="icon-long-arrow-right"></i>
-                                            </a>
-                                        </div><!-- End .intro-content -->
-                                    </div><!-- End .intro-slide -->
-                                    <% }); %>
-                                </div><!-- End .intro-slider owl-carousel owl-simple --> 
-                                <span class="slider-loader"></span><!-- End .slider-loader -->
-                            </div><!-- End .intro-slider-container -->
-                        </div><!-- End .col-lg-8 -->
-                        <div class="col-lg-4">
-                                <div class="row row-sm">
-                                    <% products.slice(3, 4).forEach(product => { %>
-                                    <div class="col-md-6 col-lg-12">
-                                        <div class="banner banner-display">
-                                            <a href="#">
-                                                <img src="/uploads/<%= product.productImage[0] %>" alt="<%= product.productName %>">
-                                            </a>
-
-                                            <div class="banner-content">
-                                                <h4 class="banner-subtitle text-darkwhite">
-                                                    <a href="/product/<%= product._id %>">
-                                                        <%= product.category ? product.category.name : 'Special Offer' %>
-                                                    </a>
-                                                </h4>
-                                                <h3 class="banner-title text-white">
-                                                    <a href="/product/<%= product._id %>" style="color: black;">
-                                                        <%= product.productName %><br>
-                                                    </a>
-                                                </h3>
-                                                <a href="/product/<%= product._id %>" class="btn btn-outline-white banner-link" style="color: black;">
-                                                    Shop Now<i class="icon-long-arrow-right"></i>
-                                                </a>
-                                            </div><!-- End .banner-content -->
-                                        </div><!-- End .banner -->
-                                    </div><!-- End .col-md-6 col-lg-12 -->
-                                    <% }); %>
-                                </div><!-- End .row row-sm -->
-                        </div><!-- End .col-lg-4 -->
-                    </div><!-- End .row -->
-                </div><!-- End .container -->
-            </div><!-- End .bg-lighter -->
+                <div class="hero-section">
+                    <img src="images/black-sofa_1268-31803.avif" alt="Nestoria Featured Image" class="hero-image">
+                    <div class="hero-overlay">
+                        <div class="hero-content">
+                            <h1 class="hero-title">Discover Elegance at Nestoria</h1>
+                            <p class="hero-description">
+                                Nestoria brings you a curated collection of high-quality products designed to transform your living space. 
+                                From stylish furniture to elegant home decor, we offer everything you need to create the perfect home environment.
+                                Experience exceptional craftsmanship, timeless designs, and unmatched quality.
+                            </p>
+                            <a href="/shop" class="hero-button">Shop Now</a>
+                        </div>
+                    </div>
+                </div>  
             <div class="container">
                 <div class="heading heading-center mb-3">
                     <h2 class="title-lg">Trendy Products</h2>
-                    <ul class="nav nav-pills justify-content-center" role="tablist">
-                        <li class="nav-item">
-                            <a class="nav-link active" id="trendy-all-link" data-toggle="tab" href="#trendy-all-tab" role="tab" aria-controls="trendy-all-tab" aria-selected="true">All</a>
-                        </li>
-                        <% categories.forEach((category, index) => { %>
-                        <li class="nav-item">
-                            <a class="nav-link" id="trendy-<%= category.name.toLowerCase() %>-link" data-toggle="tab" href="#trendy-<%= category.name.toLowerCase() %>-tab" role="tab" aria-controls="trendy-<%= category.name.toLowerCase() %>-tab" aria-selected="false">
-                                <%= category.name %>
-                            </a>
-                        </li>
-                        <% }); %>
-                    </ul>
-                </div><!-- End .heading -->
-
+                    <p class="top">Top selling products </p>
+                </div>
                 <div class="tab-content tab-content-carousel">
-                    <!-- 'All' Products Tab -->
                     <div class="tab-pane p-0 fade show active" id="trendy-all-tab" role="tabpanel" aria-labelledby="trendy-all-link">
                         <div class="owl-carousel owl-simple carousel-equal-height carousel-with-shadow" data-toggle="owl" 
                             data-owl-options='{
@@ -115,161 +327,114 @@ color: black;
                                     "992": { "items":4 },
                                     "1200": { "items":4, "nav": true, "dots": false }
                                 }
-                            }'>
+                            }'> 
+                            <% 
+                            // Get current date for offer validation
+                            const currentDate = new Date();
                             
-                            <% products.forEach(product => { %>
-                            <div class="product product-11 text-center">
-                                <figure class="product-media">
-                                    <a href="/product/<%= product._id %>">
-                                        <img src="/uploads/<%= product.productImage[0] %>" alt="<%= product.productName %>" class="product-image">
-                                        <% if (product.productImage[1]) { %>
-                                            <img src="/uploads/<%= product.productImage[1] %>" alt="<%= product.productName %>" class="product-image-hover">
-                                        <% } %>
-                                    </a>
-                                    <div class="product-action-vertical">
-                                        <a href="#" class="btn-product-icon btn-wishlist"><span>add to wishlist</span></a>
-                                    </div>
-                                </figure>
-                                <div class="product-body">
-                                    <h3 class="product-title"><a href="/product/<%= product._id %>"><%= product.productName %></a></h3>
-                                    <div class="product-price">
-                                        $<%= product.regularPrice %>
-                                    </div>
-                                </div>
-                                <div class="product-action">
-                                    <a href="#" class="btn-product btn-cart"><span>add to cart</span></a>
-                                </div>
-                            </div>
-                            <% }); %>
-                        </div>
-                    </div>
-                
-                  
-                    <% categories.forEach(category => { %>
-                    <div class="tab-pane p-0 fade" id="trendy-<%= category.name.toLowerCase() %>-tab" role="tabpanel" aria-labelledby="trendy-<%= category.name.toLowerCase() %>-link">
-                        <div class="owl-carousel owl-simple carousel-equal-height carousel-with-shadow" data-toggle="owl" 
-                            data-owl-options='{
-                                "nav": false, 
-                                "dots": true,
-                                "margin": 20,
-                                "loop": false,
-                                "responsive": {
-                                    "0": { "items":2 },
-                                    "480": { "items":2 },
-                                    "768": { "items":3 },
-                                    "992": { "items":4 },
-                                    "1200": { "items":4, "nav": true, "dots": false }
+                            // Loop through each product
+                            products.forEach(async product => { 
+                                // Initialize hasOffer and offerPrice variables
+                                let hasOffer = false;
+                                let offerPrice = product.regularPrice;
+                                let discountPercentage = 0;
+                                
+                                // Check for product offers
+                                if (product.offers && product.offers.length > 0) {
+                                    // Find active offer with the highest discount
+                                    const activeOffers = product.offers.filter(offer => 
+                                        offer.status === 'Active' && 
+                                        new Date(offer.expireDate) > currentDate
+                                    );
+                                    
+                                    if (activeOffers.length > 0) {
+                                        // Sort by discount amount (highest first)
+                                        activeOffers.sort((a, b) => b.discount - a.discount);
+                                        const highestOffer = activeOffers[0];
+                                        
+                                        hasOffer = true;
+                                        discountPercentage = highestOffer.discount;
+                                        offerPrice = (product.regularPrice * (1 - discountPercentage / 100)).toFixed(2);
+                                    }
                                 }
-                            }'>
-                            <!-- Filter products by category -->
-                            <% products.filter(product => product.category && product.category.name === category.name).forEach(product => { %>
+                            %>
                             <div class="product product-11 text-center">
                                 <figure class="product-media">
+                                    <% if (hasOffer) { %>
+                                        <div class="discount-badge">-<%= discountPercentage %>%</div>
+                                    <% } %>
                                     <a href="/product/<%= product._id %>">
                                         <img src="/uploads/<%= product.productImage[0] %>" alt="<%= product.productName %>" class="product-image">
                                         <% if (product.productImage[1]) { %>
                                             <img src="/uploads/<%= product.productImage[1] %>" alt="<%= product.productName %>" class="product-image-hover">
                                         <% } %>
                                     </a>
-                                    <div class="product-action-vertical">
-                                        <a href="#" class="btn-product-icon btn-wishlist"><span>add to wishlist</span></a>
-                                    </div>
                                 </figure>
                                 <div class="product-body">
                                     <h3 class="product-title"><a href="/product/<%= product._id %>"><%= product.productName %></a></h3>
                                     <div class="product-price">
-                                        $<%= product.regularPrice %>
+                                        <% if (hasOffer) { %>
+                                            <span class="original-price">₹<%= product.regularPrice %></span>
+                                            <span class="offer-price">₹<%= offerPrice %></span>
+                                        <% } else { %>
+                                            ₹<%= product.regularPrice %>
+                                        <% } %>
                                     </div>
-                                </div>
-                                <div class="product-action">
-                                    <a href="#" class="btn-product btn-cart"><span>add to cart</span></a>
                                 </div>
                             </div>
                             <% }); %>
                         </div>
                     </div>
+                </div>
+            </div><!-- End .container -->
+            <div class="container-fluid">
+                <div class="heading heading-center mb-3">
+                    <h2 class="title-lg">Shop by Categories</h2>
+                    <p class="top">Explore our collection by category</p>
+                </div>
+            
+                <div class="category-mosaic">
+                    <% let categoryCount = 0; %>
+                    <% categories.slice(0, 5).forEach((category, index) => { %>
+                        <% 
+                            // Find products for this category
+                            const categoryProducts = products.filter(product => 
+                                product.category && product.category._id.toString() === category._id.toString()
+                            );
+                            
+                            // Skip if no products
+                            if (categoryProducts.length === 0) return;
+                            
+                            // Get first product image for display
+                            const displayProduct = categoryProducts[0];
+                            if (!displayProduct) return;
+                            
+                            // Determine size class based on index - more subtle differences
+                            let sizeClass = "";
+                            if (index % 5 === 0) sizeClass = "category-item-xl";
+                            else if (index % 5 === 1) sizeClass = "category-item-lg";
+                            else if (index % 5 === 2) sizeClass = "category-item-md";
+                            else sizeClass = "category-item-sm";
+                            
+                            categoryCount++;
+                            if (categoryCount > 5) return;
+                        %>
+                        
+                        <div class="category-item <%= sizeClass %>">
+                            <div class="category-banner">
+                                <a href="/shop?Category=<%= encodeURIComponent(category.name) %>">
+                                    <img src="/uploads/<%= displayProduct.productImage[0] %>" alt="<%= category.name %>" class="img-fluid">
+                                    <div class="category-overlay"></div>
+                                    <div class="category-content">
+                                        <h3 class="category-title"><%= category.name %></h3>
+                                        <a href="/shop?Category=<%= encodeURIComponent(category.name) %>" class="btn btn-outline-white">Shop Now</a>
+                                    </div>
+                                </a>
+                            </div>
+                        </div>
                     <% }); %>
                 </div>
-                <!-- End .tab-content -->
-            </div><!-- End .container -->
-
-    		<div class="container categories pt-6">
-        		<h2 class="title-lg text-center mb-4">Shop by Categories</h2><!-- End .title-lg text-center -->
-
-        		<div class="row">
-        			<div class="col-6 col-lg-4">
-        				<div class="banner banner-display banner-link-anim">
-                			<a href="#">
-                				<img src="/productAssets/assets/images/banners/home/banner-1.jpg" alt="Banner">
-                			</a>
-
-                			<div class="banner-content banner-content-center">
-                				<h3 class="banner-title text-white"><a href="#">Outdoor</a></h3><!-- End .banner-title -->
-                				<a href="#" class="btn btn-outline-white banner-link">Shop Now<i class="icon-long-arrow-right"></i></a>
-                			</div><!-- End .banner-content -->
-            			</div><!-- End .banner -->
-        			</div><!-- End .col-sm-6 col-lg-3 -->
-        			<div class="col-6 col-lg-4 order-lg-last">
-        				<div class="banner banner-display banner-link-anim">
-                			<a href="#">
-                				<img src="/productAssets/assets/images/banners/home/banner-4.jpg" alt="Banner">
-                			</a>
-
-                			<div class="banner-content banner-content-center">
-                				<h3 class="banner-title text-white"><a href="#">Lighting</a></h3><!-- End .banner-title -->
-                				<a href="#" class="btn btn-outline-white banner-link">Shop Now<i class="icon-long-arrow-right"></i></a>
-                			</div><!-- End .banner-content -->
-            			</div><!-- End .banner -->
-        			</div><!-- End .col-sm-6 col-lg-3 -->
-        			<div class="col-sm-12 col-lg-4 banners-sm">
-                        <div class="row">
-            				<div class="banner banner-display banner-link-anim col-lg-12 col-6">
-                    			<a href="#">
-                    				<img src="/productAssets/assets/images/banners/home/banner-2.jpg" alt="Banner">
-                    			</a>
-
-                    			<div class="banner-content banner-content-center">
-                    				<h3 class="banner-title text-white"><a href="#">Furniture and Design</a></h3><!-- End .banner-title -->
-                    				<a href="#" class="btn btn-outline-white banner-link">Shop Now<i class="icon-long-arrow-right"></i></a>
-                    			</div><!-- End .banner-content -->
-                			</div><!-- End .banner -->
-
-                			<div class="banner banner-display banner-link-anim col-lg-12 col-6">
-                    			<a href="#">
-                    				<img src="/productAssets/assets/images/banners/home/banner-3.jpg" alt="Banner">
-                    			</a>
-
-                    			<div class="banner-content banner-content-center">
-                    				<h3 class="banner-title text-white"><a href="#">Kitchen & Utensil</a></h3><!-- End .banner-title -->
-                    				<a href="#" class="btn btn-outline-white banner-link">Shop Now<i class="icon-long-arrow-right"></i></a>
-                    			</div><!-- End .banner-content -->
-                			</div><!-- End .banner -->
-                        </div>
-        			</div><!-- End .col-sm-6 col-lg-3 -->
-        		</div><!-- End .row -->
-    		</div><!-- End .container -->
-
-            <div class="mb-5"></div><!-- End .mb-6 -->
-
-            
-            <div class="cta cta-display bg-image pt-4 pb-4" style="background-image: url(/productAssets/assets/images/backgrounds/cta/bg-6.jpg);">
-                <div class="container">
-                    <div class="row justify-content-center">
-                        <div class="col-md-10 col-lg-9 col-xl-8">
-                            <div class="row no-gutters flex-column flex-sm-row align-items-sm-center">
-                                <div class="col">
-                                    <h3 class="cta-title text-white">Sign Up & Get 10% Off</h3><!-- End .cta-title -->
-                                    <p class="cta-desc text-white">Molla presents the best in interior design</p><!-- End .cta-desc -->
-                                </div><!-- End .col -->
-
-                                <div class="col-auto">
-                                    <a href="login.html" class="btn btn-outline-white"><span>SIGN UP</span><i class="icon-long-arrow-right"></i></a>
-                                </div><!-- End .col-auto -->
-                            </div><!-- End .row no-gutters -->
-                        </div><!-- End .col-md-10 col-lg-9 -->
-                    </div><!-- End .row -->
-                </div><!-- End .container -->
-            </div><!-- End .cta -->
+            </div>
         </main><!-- End .main -->
 
  <%- include('../layoutsUser/userfooter') %>

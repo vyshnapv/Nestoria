@@ -113,7 +113,15 @@
     border-radius: 5px;
     font-size: 1rem;
   }
+  .pagination .dots {
+  padding: 8px 12px;
+  color: #333;
+  border: none;
+}
 
+.page-link {
+  margin: 0 3px;
+}
   .pagination a.active {
     background-color: #4caf50;
     color: white;
@@ -210,7 +218,7 @@
           <td><%= order.orderId %></td>
           <td><%= order.orderDate %></td>
           <td><%= order.customerName %></td>
-          <td>₹<%= order.totalPrice %></td>
+          <td>₹<%= Math.round(order.totalPrice) %></td>
           <td><%= order.paymentMethod %></td>
           <td><%= order.paymentStatus %></td>
           <td><%= order.orderStatus %></td>
@@ -247,28 +255,52 @@
   </div>
 
   <% if (pagination.totalPages > 1) { %>
-  <div class="pagination-container">
-    <% if (pagination.hasPrevPage) { %>
-    <a
-      class="page-link"
-      href="?page=<%= pagination.prevPage %>&search=<%= search %>"
-      >Previous</a
-    >
-    <% } %> <% for (let i = 1; i <= pagination.totalPages; i++) { %>
-    <a
-      class="page-link <%= i === pagination.currentPage ? 'active' : '' %>"
-      href="?page=<%= i %>&search=<%= search %>"
-      ><%= i %></a
-    >
-    <% } %> <% if (pagination.hasNextPage) { %>
-    <a
-      class="page-link"
-      href="?page=<%= pagination.nextPage %>&search=<%= search %>"
-      >Next</a
-    >
+    <div class="pagination-container">
+      <% if (pagination.hasPrevPage) { %>
+      <a
+        class="page-link"
+        href="?page=<%= pagination.prevPage %>&search=<%= search %>"
+        >Previous</a
+      >
+      <% } %>
+      
+      <% 
+      const totalPages = pagination.totalPages;
+      const currentPage = pagination.currentPage;
+      const maxPagesToShow = 2;
+      
+      let startPage = Math.max(1, currentPage - Math.floor(maxPagesToShow / 2));
+      let endPage = Math.min(totalPages, startPage + maxPagesToShow - 1);
+      
+      if (endPage === totalPages) {
+        startPage = Math.max(1, endPage - maxPagesToShow + 1);
+      }
+      
+      if (startPage > 1) { %>
+        <a class="page-link <%= 1 === currentPage ? 'active' : '' %>" href="?page=1&search=<%= search %>">1</a>
+        <% if (startPage > 2) { %>
+          <span class="page-link dots">...</span>
+        <% } %>
+      <% } %>
+      
+      <% 
+      for (let i = startPage; i <= endPage; i++) { %>
+        <a class="page-link <%= i === currentPage ? 'active' : '' %>" href="?page=<%= i %>&search=<%= search %>"><%= i %></a>
+      <% } %>
+      
+      <% // Show last page if not included in the range
+      if (endPage < totalPages) { %>
+        <% if (endPage < totalPages - 1) { %>
+          <span class="page-link dots">...</span>
+        <% } %>
+        <a class="page-link <%= totalPages === currentPage ? 'active' : '' %>" href="?page=<%= totalPages %>&search=<%= search %>"><%= totalPages %></a>
+      <% } %>
+      
+      <% if (pagination.hasNextPage) { %>
+      <a class="page-link" href="?page=<%= pagination.nextPage %>&search=<%= search %>">Next</a>
+      <% } %>
+    </div>
     <% } %>
-  </div>
-  <% } %>
 </div>
 
 <div class="modal fade" id="returnDetailsModal" tabindex="-1" role="dialog">

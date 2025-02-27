@@ -6,6 +6,7 @@ const Category= require('../../models/categoryModel');
 const Coupon= require('../../models/couponModel')
 const Product = require("../../models/productModel");
 const Offer = require("../../models/offerModel")
+const Wallet = require("../../models/walletModel")
 const ExcelJS = require('exceljs');
 const PDFDocument = require('pdfkit');
 
@@ -154,85 +155,93 @@ const loadOrdersList = async (req, res) => {
           orders.map(async (order) => {
               const customerName = await getCustomerName(order.userId);
               let subtotal = 0;
+              let originalSubtotal = 0;
               let activeItemsCount = 0;
 
               const itemsWithPricing = order.items.map(item => {
-                  if (item.itemStatus !== 'Cancelled') {
-                      activeItemsCount++;
-                      
-                      const productOffer = offers.find(offer =>
-                          (offer.productIds?.includes(item.productId)) ||
-                          (offer.categoryIds?.includes(item.category))
-                      );
-
-                      const priceAfterOffer = productOffer
-                          ? item.price * (1 - productOffer.discount / 100)
-                          : item.price;
-
-                      const finalItemPrice = item.finalPrice || priceAfterOffer;
-                      subtotal += finalItemPrice;
-
-                      return {
-                          ...item,
-                          originalPrice: item.price,
-                          finalPrice: finalItemPrice,
-                          offerDiscount: productOffer ? productOffer.discount : 0
-                      };
-                  }
-                  return item;
-              });
-
-              let finalTotal = subtotal;
-              let couponDiscount = 0;
-              const shippingCharge = 50;
-
-              if (order.appliedCoupon && activeItemsCount > 0) {
-                  couponDiscount = (subtotal / order.totalPrice) * order.appliedCoupon.discountAmount;
-                  finalTotal = subtotal - couponDiscount+shippingCharge
-              } else {
-                finalTotal = subtotal + shippingCharge;
-            }
-            
-
-              const highestDiscount = Math.max(
-                  ...itemsWithPricing
-                      .filter(item => item.offerDiscount)
-                      .map(item => item.offerDiscount),
-                  order.appliedCoupon ? (couponDiscount / subtotal * 100) : 0
+                const productOffer = offers.find(offer =>
+                  (offer.productIds?.includes(item.productId)) ||
+                  (offer.categoryIds?.includes(item.category))
               );
+  
+              const priceAfterOffer = productOffer
+                  ? item.price * (1 - productOffer.discount / 100)
+                  : item.price;
+  
+              const finalItemPrice = item.finalPrice || priceAfterOffer;
+              originalSubtotal += finalItemPrice; 
+  
+              if (item.itemStatus !== 'Cancelled') {
+                  activeItemsCount++;
+                  subtotal += finalItemPrice;
+              }
+              
+              return {
+                ...item,
+                originalPrice: item.price,
+                finalPrice: finalItemPrice,
+                offerDiscount: productOffer ? productOffer.discount : 0
+            };
+        });
 
-              const hasReturnRequest = order.items.some(item =>
+        const allCancelled = activeItemsCount === 0;
+
+        let finalTotal;
+        let couponDiscount = 0;
+        const shippingCharge = 50;
+
+        if (allCancelled) {
+          finalTotal = originalSubtotal + shippingCharge;
+        } else {
+          finalTotal = subtotal;
+          
+          if (order.appliedCoupon && activeItemsCount > 0) {
+              couponDiscount = (subtotal / order.totalPrice) * order.appliedCoupon.discountAmount;
+              finalTotal = subtotal - couponDiscount + shippingCharge;
+          } else {
+              finalTotal = subtotal + shippingCharge;
+          }
+         }
+
+          const highestDiscount = Math.max(
+             ...itemsWithPricing
+             .filter(item => item.offerDiscount)
+             .map(item => item.offerDiscount),
+             order.appliedCoupon ? (couponDiscount / subtotal * 100) : 0
+          );
+
+          const hasReturnRequest = order.items.some(item =>
+              item.returnStatus &&
+              ['Return Requested', 'Return Accepted'].includes(item.returnStatus)
+          );
+
+          return {
+              _id: order._id,
+              orderId: order.orderId,
+              orderDate: new Date(order.createdAt).toLocaleDateString('en-GB'),
+              customerName: customerName || "Unknown Customer",
+              subtotal: subtotal.toFixed(2),
+              shippingCharge: shippingCharge.toFixed(2),
+              couponDiscount: couponDiscount.toFixed(2),
+              totalPrice: finalTotal.toFixed(2),
+              originalPrice: order.totalPrice.toFixed(2),
+              highestDiscount: highestDiscount.toFixed(1),
+              appliedCoupon: order.appliedCoupon,
+              paymentMethod: order.paymentMethod,
+              orderStatus: order.orderStatus,
+              paymentStatus: order.paymentStatus,
+              hasReturnRequest: hasReturnRequest,
+              returnItems: order.items.filter(item =>
                   item.returnStatus &&
                   ['Return Requested', 'Return Accepted'].includes(item.returnStatus)
-              );
-
-              return {
-                  _id: order._id,
-                  orderId: order.orderId,
-                  orderDate: new Date(order.createdAt).toLocaleDateString('en-GB'),
-                  customerName: customerName || "Unknown Customer",
-                  subtotal: subtotal.toFixed(2),
-                  shippingCharge: shippingCharge.toFixed(2),
-                  couponDiscount: couponDiscount.toFixed(2),
-                  totalPrice: finalTotal.toFixed(2),
-                  originalPrice: order.totalPrice.toFixed(2),
-                  highestDiscount: highestDiscount.toFixed(1),
-                  appliedCoupon: order.appliedCoupon,
-                  paymentMethod: order.paymentMethod,
-                  orderStatus: order.orderStatus,
-                  paymentStatus: order.paymentStatus,
-                  hasReturnRequest: hasReturnRequest,
-                  returnItems: order.items.filter(item =>
-                      item.returnStatus &&
-                      ['Return Requested', 'Return Accepted'].includes(item.returnStatus)
-                  ).map(item => ({
-                      ...item,
-                      returnDisplayStatus: item.returnStatus === 'Return Accepted' ? 'Accepted' :
-                          item.returnStatus === 'Return Rejected' ? 'Rejected' :
-                              'Requested'
-                  }))
-              };
-          })
+              ).map(item => ({
+                  ...item,
+                  returnDisplayStatus: item.returnStatus === 'Return Accepted' ? 'Accepted' :
+                      item.returnStatus === 'Return Rejected' ? 'Rejected' :
+                          'Requested'
+              }))
+          };
+        })
       );
       const pagination = {
           totalPages: Math.ceil(totalOrders / limit),
@@ -372,6 +381,7 @@ const adminOrderDetails = async (req, res) => {
       const customer = await User.findById(order.userId).select('name email phone');
 
       let activeSubtotal = 0;
+      let originalSubtotal = 0;
       let activeItemsCount = 0;
 
       const processedItems = order.items.map(item => {
@@ -382,12 +392,14 @@ const adminOrderDetails = async (req, res) => {
 
           const highestDiscount = productOffer ? productOffer.discount : 0;
           const offerPrice = productOffer 
-              ? item.price * (1 - productOffer.discount / 100)
+              ? Math.round(item.price * (1 - productOffer.discount / 100))
               : item.price;
           
           const itemFinalPrice = productOffer 
               ? item.quantity * offerPrice 
               : item.finalPrice;
+
+              originalSubtotal += parseFloat(item.finalPrice);
 
           if (item.itemStatus !== 'Cancelled') {
             activeSubtotal += parseFloat(item.finalPrice);
@@ -403,8 +415,8 @@ const adminOrderDetails = async (req, res) => {
                   : '/placeholder-image.jpg',
               quantity: item.quantity,
               price: item.price.toFixed(2),
-              offerPrice: item.offerPrice ? item.offerPrice.toFixed(2) : item.price.toFixed(2),
-              highestDiscount: item.highestDiscount || 0,
+              offerPrice: offerPrice.toFixed(2),
+              highestDiscount: productOffer ? productOffer.discount : 0,
               finalPrice: item.finalPrice.toFixed(2),
               status: item.itemStatus,
               isAvailable: !item.productId?.isBlocked
@@ -412,22 +424,20 @@ const adminOrderDetails = async (req, res) => {
       });
 
 
-      let finalTotal = activeSubtotal;
+      let finalTotal = originalSubtotal;
       const shippingCharge = order.deliveryCharge || 50;
       let appliedCouponInfo = null;
 
-      if (order.appliedCoupon && activeItemsCount > 0) {
-          const proportionalDiscount = (activeSubtotal / order.totalPrice) * order.appliedCoupon.discountAmount;
-          finalTotal = activeSubtotal - proportionalDiscount;
+      if (order.appliedCoupon) {
+        const proportionalDiscount = order.appliedCoupon.discountAmount;
+        finalTotal = originalSubtotal - proportionalDiscount;
 
-          appliedCouponInfo = {
-              code: order.appliedCoupon.code,
-              originalDiscount: order.appliedCoupon.discountAmount,
-              appliedDiscount: proportionalDiscount.toFixed(2)
-          }
-        } else {
-            finalTotal = activeSubtotal;
+        appliedCouponInfo = {
+            code: order.appliedCoupon.code,
+            originalDiscount: order.appliedCoupon.discountAmount,
+            appliedDiscount: proportionalDiscount.toFixed(2)
         }
+    }
 
       const formattedOrder = {
           orderId: order.orderId,
@@ -444,7 +454,8 @@ const adminOrderDetails = async (req, res) => {
           subtotal: activeSubtotal.toFixed(2),
           shippingCharge: shippingCharge.toFixed(2),
           appliedCoupon: appliedCouponInfo,
-          finalTotal: (finalTotal + shippingCharge).toFixed(2)
+          finalTotal: (finalTotal + shippingCharge).toFixed(2),
+          allCancelled: activeItemsCount === 0
       };
 
       res.render('adminOrderDetails', { order: formattedOrder });
@@ -497,17 +508,44 @@ const updateOrderStatus = async (req, res) => {
       const oldStatus = item.itemStatus;
       
       if (status === 'Cancelled' && oldStatus !== 'Cancelled') {
-            product.quantity += item.quantity;
-            await product.save();
+        product.quantity += item.quantity;
+        await product.save();
+        
+        if (order.paymentMethod !== 'COD' && order.paymentStatus === 'Paid') {
+          const refundAmount = parseFloat(item.finalPrice);
+          let wallet = await Wallet.findOne({ userId: order.userId });
+          if (!wallet) {
+            wallet = new Wallet({ 
+              userId: order.userId,
+              balance: 0,
+              transactions: []
+            });
+          }
+
+          wallet.balance += refundAmount;
+          
+          wallet.transactions.push({
+            amount: refundAmount,
+            type: 'credit',
+            description: `Refund for canceled product ${item.productName} in order #${order.orderId}`,
+            orderId: order._id,
+            balance: wallet.balance
+          });
+   
+          await wallet.save();
         }
+      }
 
       order.items[itemIndex].itemStatus = status;
 
-      const allItemStatuses = order.items.map(item => item.itemStatus);
-
-      if (status === 'Cancelled' && 
-          (order.paymentMethod !== 'COD' && order.paymentStatus === 'Paid')) {
-          order.paymentStatus = 'Refund Pending';
+      const allItemsStatus = order.items.map(item => item.itemStatus);
+      const allCancelled = allItemsStatus.every(status => status === 'Cancelled');
+      
+      if (allCancelled) {
+        order.orderStatus = 'Cancelled';
+        if (order.paymentMethod !== 'COD' && order.paymentStatus === 'Paid') {
+          order.paymentStatus = 'Refunded';
+        }
       }
 
       await order.save();
@@ -603,8 +641,31 @@ const cancelAllProducts = async (req, res) => {
     await Promise.all(productUpdates);
     order.orderStatus = 'Cancelled';
 
+    order.originalTotalPrice = order.totalPrice;
+
     if (order.paymentMethod !== 'COD' && order.paymentStatus === 'Paid') {
-      order.paymentStatus = 'Refund Pending';
+      const refundAmount = parseFloat(order.totalPrice);
+
+      let wallet = await Wallet.findOne({ userId: order.userId });
+      if (!wallet) {
+        wallet = new Wallet({ 
+          userId: order.userId,
+          balance: 0,
+          transactions: []
+        });
+      }
+
+      wallet.balance += refundAmount;
+      wallet.transactions.push({
+        amount: refundAmount,
+        type: 'credit',
+        description: `Refund for canceled order #${order.orderId}`,
+        orderId: order._id,
+        balance: wallet.balance
+      });
+      await wallet.save();
+      
+      order.paymentStatus = 'Refunded';
     }
 
     await order.save();
@@ -1030,46 +1091,279 @@ async function downloadPDF(orders, topProducts, topCategories, res) {
   res.setHeader('Content-Disposition', 'attachment; filename=sales-report.pdf');
   doc.pipe(res);
 
-  doc.fontSize(16).text('Sales Report', { align: 'center' });
+  doc.fontSize(18).text('Sales Report', { align: 'center' });
   doc.moveDown();
 
+  doc.fontSize(14).text('Order Details', { align: 'left' });
+  doc.moveDown();
+  
+  const orderTableTop = doc.y;
+  const orderTableLeft = 50;
+  const colWidths = [70, 80, 70, 70, 70, 80, 80]; 
+  const colLabels = ['Order ID', 'Customer', 'Date', 'Total', 'Discount', 'Shipping', 'Final Amount'];
+  const rowHeight = 25;
+  const tableWidth = colWidths.reduce((a, b) => a + b, 0);
+  
+  doc.font('Helvetica-Bold');
+  doc.fontSize(10);
+  
+  doc.rect(orderTableLeft, orderTableTop, tableWidth, rowHeight).stroke();
+  
+  let xPos = orderTableLeft;
+  for (let i = 0; i < colWidths.length - 1; i++) {
+    xPos += colWidths[i];
+    doc.moveTo(xPos, orderTableTop)
+       .lineTo(xPos, orderTableTop + rowHeight)
+       .stroke();
+  }
+  
+  xPos = orderTableLeft;
+  for (let i = 0; i < colLabels.length; i++) {
+    doc.text(colLabels[i], xPos + 5, orderTableTop + 7, { width: colWidths[i] - 10, align: 'center' });
+    xPos += colWidths[i];
+  }
+  
+  doc.font('Helvetica');
+  let yPos = orderTableTop + rowHeight;
+  
+  const checkPage = (height) => {
+    if (yPos + height > doc.page.height - 50) {
+      doc.addPage();
+      yPos = 50;
+      
+      doc.fontSize(14).text('Order Details (continued)', { align: 'left' });
+      doc.moveDown();
+      yPos = doc.y;
+      
+      doc.font('Helvetica-Bold');
+      doc.rect(orderTableLeft, yPos, tableWidth, rowHeight).stroke();
+      
+      let xHeaderPos = orderTableLeft;
+      for (let i = 0; i < colWidths.length - 1; i++) {
+        xHeaderPos += colWidths[i];
+        doc.moveTo(xHeaderPos, yPos)
+           .lineTo(xHeaderPos, yPos + rowHeight)
+           .stroke();
+      }
+      
+      xHeaderPos = orderTableLeft;
+      for (let i = 0; i < colLabels.length; i++) {
+        doc.text(colLabels[i], xHeaderPos + 5, yPos + 7, { width: colWidths[i] - 10, align: 'center' });
+        xHeaderPos += colWidths[i];
+      }
+      
+      doc.font('Helvetica');
+      yPos += rowHeight;
+    }
+  };
+
   orders.forEach(order => {
+    checkPage(rowHeight);
+    
     const total = order.items.reduce((sum, item) => sum + item.finalPrice, 0);
     const discount = order.discount || 0;
     const shipping = 50;
-
-    doc.fontSize(12).text(`Order ID: ${order.orderId}`);
-    doc.fontSize(10).text(`Customer: ${order.userId?.name || 'Unknown'}`);
-    doc.text(`Date: ${order.createdAt.toLocaleDateString()}`);
-    doc.text(`Total: $${total}`);
-    doc.text(`Discount: $${discount}`);
-    doc.text(`Shipping Charge: $${shipping}`);
-    doc.text(`Final Amount: $${total - discount + shipping}`);
-    doc.moveDown();
+    const final = total - discount + shipping;
+    
+    doc.rect(orderTableLeft, yPos, tableWidth, rowHeight).stroke();
+    
+    xPos = orderTableLeft;
+    for (let i = 0; i < colWidths.length - 1; i++) {
+      xPos += colWidths[i];
+      doc.moveTo(xPos, yPos)
+         .lineTo(xPos, yPos + rowHeight)
+         .stroke();
+    }
+    
+    xPos = orderTableLeft;
+    const rowData = [
+      order.orderId, 
+      order.userId?.name || 'Unknown', 
+      order.createdAt.toLocaleDateString(),
+      `Rs${total.toFixed(2)}`,
+      `Rs${discount.toFixed(2)}`,
+      `Rs${shipping.toFixed(2)}`,
+      `Rs${final.toFixed(2)}`
+    ];
+    
+    for (let i = 0; i < rowData.length; i++) {
+      doc.text(rowData[i], xPos + 5, yPos + 7, { width: colWidths[i] - 10, align: 'center' });
+      xPos += colWidths[i];
+    }
+    
+    yPos += rowHeight;
   });
+  
   doc.addPage();
-      doc.fontSize(16).text('Top Products', { align: 'center' });
-      doc.moveDown();
-      topProducts.forEach(product => {
-        doc.fontSize(12).text(`${product.name}`);
-        doc.fontSize(10).text(`Units Sold: ${product.unitsSold}`);
-        doc.text(`Revenue: $${product.revenue.toFixed(2)}`);
-        doc.moveDown();
-      });
-
-      doc.addPage();
-      doc.fontSize(16).text('Top Categories', { align: 'center' });
-      doc.moveDown();
-      topCategories.forEach(category => {
-        doc.fontSize(12).text(`${category.name}`);
-        doc.fontSize(10).text(`Sales: $${category.sales.toFixed(2)}`);
-        doc.text(`Percentage: ${category.percentage}%`);
-        doc.moveDown();
-      });
-
-    doc.end();
+  doc.fontSize(14).text('Top Products', { align: 'center' });
+  doc.moveDown();
+  
+  const productTableTop = doc.y;
+  const productTableLeft = 100;
+  const productColWidths = [200, 100, 100];
+  const productTableWidth = productColWidths.reduce((a, b) => a + b, 0);
+  const productLabels = ['Product Name', 'Units Sold', 'Revenue'];
+  
+  doc.font('Helvetica-Bold');
+  
+  doc.rect(productTableLeft, productTableTop, productTableWidth, rowHeight).stroke();
+  
+  xPos = productTableLeft;
+  for (let i = 0; i < productColWidths.length - 1; i++) {
+    xPos += productColWidths[i];
+    doc.moveTo(xPos, productTableTop)
+       .lineTo(xPos, productTableTop + rowHeight)
+       .stroke();
   }
+  
+  xPos = productTableLeft;
+  for (let i = 0; i < productLabels.length; i++) {
+    doc.text(productLabels[i], xPos + 5, productTableTop + 7, { width: productColWidths[i] - 10, align: 'center' });
+    xPos += productColWidths[i];
+  }
+  
+  doc.font('Helvetica');
+  yPos = productTableTop + rowHeight;
+  
+  topProducts.forEach(product => {
+    if (yPos + rowHeight > doc.page.height - 50) {
+      doc.addPage();
+      doc.fontSize(14).text('Top Products (continued)', { align: 'center' });
+      doc.moveDown();
+      yPos = doc.y;
+      
+      doc.font('Helvetica-Bold');
+      doc.rect(productTableLeft, yPos, productTableWidth, rowHeight).stroke();
+      
+      let xHeaderPos = productTableLeft;
+      for (let i = 0; i < productColWidths.length - 1; i++) {
+        xHeaderPos += productColWidths[i];
+        doc.moveTo(xHeaderPos, yPos)
+           .lineTo(xHeaderPos, yPos + rowHeight)
+           .stroke();
+      }
+      
+      xHeaderPos = productTableLeft;
+      for (let i = 0; i < productLabels.length; i++) {
+        doc.text(productLabels[i], xHeaderPos + 5, yPos + 7, { width: productColWidths[i] - 10, align: 'center' });
+        xHeaderPos += productColWidths[i];
+      }
+      
+      doc.font('Helvetica');
+      yPos += rowHeight;
+    }
+    
+    doc.rect(productTableLeft, yPos, productTableWidth, rowHeight).stroke();
 
+    xPos = productTableLeft;
+    for (let i = 0; i < productColWidths.length - 1; i++) {
+      xPos += productColWidths[i];
+      doc.moveTo(xPos, yPos)
+         .lineTo(xPos, yPos + rowHeight)
+         .stroke();
+    }
+    
+    xPos = productTableLeft;
+    const rowData = [
+      product.name,
+      product.unitsSold.toString(),
+      `Rs${product.revenue.toFixed(2)}`
+    ];
+    
+    for (let i = 0; i < rowData.length; i++) {
+      doc.text(rowData[i], xPos + 5, yPos + 7, { width: productColWidths[i] - 10, align: 'center' });
+      xPos += productColWidths[i];
+    }
+    
+    yPos += rowHeight;
+  });
+  
+  doc.addPage();
+  doc.fontSize(14).text('Top Categories', { align: 'center' });
+  doc.moveDown();
+  
+  const categoryTableTop = doc.y;
+  const categoryTableLeft = 100;
+  const categoryColWidths = [200, 100, 100];
+  const categoryTableWidth = categoryColWidths.reduce((a, b) => a + b, 0);
+  const categoryLabels = ['Category', 'Sales', 'Percentage'];
+  
+  doc.font('Helvetica-Bold');
+  
+  doc.rect(categoryTableLeft, categoryTableTop, categoryTableWidth, rowHeight).stroke();
+  
+  xPos = categoryTableLeft;
+  for (let i = 0; i < categoryColWidths.length - 1; i++) {
+    xPos += categoryColWidths[i];
+    doc.moveTo(xPos, categoryTableTop)
+       .lineTo(xPos, categoryTableTop + rowHeight)
+       .stroke();
+  }
+  
+  xPos = categoryTableLeft;
+  for (let i = 0; i < categoryLabels.length; i++) {
+    doc.text(categoryLabels[i], xPos + 5, categoryTableTop + 7, { width: categoryColWidths[i] - 10, align: 'center' });
+    xPos += categoryColWidths[i];
+  }
+  
+  doc.font('Helvetica');
+  yPos = categoryTableTop + rowHeight;
+  
+  topCategories.forEach(category => {
+    if (yPos + rowHeight > doc.page.height - 50) {
+      doc.addPage();
+      doc.fontSize(14).text('Top Categories (continued)', { align: 'center' });
+      doc.moveDown();
+      yPos = doc.y;
+      
+      doc.font('Helvetica-Bold');
+      doc.rect(categoryTableLeft, yPos, categoryTableWidth, rowHeight).stroke();
+    
+      let xHeaderPos = categoryTableLeft;
+      for (let i = 0; i < categoryColWidths.length - 1; i++) {
+        xHeaderPos += categoryColWidths[i];
+        doc.moveTo(xHeaderPos, yPos)
+           .lineTo(xHeaderPos, yPos + rowHeight)
+           .stroke();
+      }
+      
+      xHeaderPos = categoryTableLeft;
+      for (let i = 0; i < categoryLabels.length; i++) {
+        doc.text(categoryLabels[i], xHeaderPos + 5, yPos + 7, { width: categoryColWidths[i] - 10, align: 'center' });
+        xHeaderPos += categoryColWidths[i];
+      }
+      
+      doc.font('Helvetica');
+      yPos += rowHeight;
+    }
+    
+    doc.rect(categoryTableLeft, yPos, categoryTableWidth, rowHeight).stroke();
+    
+    xPos = categoryTableLeft;
+    for (let i = 0; i < categoryColWidths.length - 1; i++) {
+      xPos += categoryColWidths[i];
+      doc.moveTo(xPos, yPos)
+         .lineTo(xPos, yPos + rowHeight)
+         .stroke();
+    }
+    
+    xPos = categoryTableLeft;
+    const rowData = [
+      category.name,
+      `Rs${category.sales.toFixed(2)}`,
+      `${category.percentage}%`
+    ];
+    
+    for (let i = 0; i < rowData.length; i++) {
+      doc.text(rowData[i], xPos + 5, yPos + 7, { width: categoryColWidths[i] - 10, align: 'center' });
+      xPos += categoryColWidths[i];
+    }
+    
+    yPos += rowHeight;
+  });
+
+  doc.end();
+}
 module.exports={
     loadLogin,
     login,

@@ -62,10 +62,38 @@ async function sendverificationEmail(email, otp) {
 const loadHome = async (req, res) => {
     try {
         const userData =await User.findById(req.session.user);
-        const products=await Product.find({ isBlocked: false })
+        const products=await Product.find({ isBlocked: false }).populate('category');
         const categories=await Category.find({isListed:true});
-        res.render('home', { userData ,products,categories});
 
+        const currentDate = new Date();
+
+        const activeOffers = await Offer.find({
+            status: 'Active',
+            expireDate: { $gt: currentDate },
+            isBlocked: false
+        });
+        
+        const productsWithOffers = products.map(product => {
+            const productObj = product.toObject();
+        
+            const applicableOffers = activeOffers.filter(offer => 
+                (offer.offerType === 'Product' && offer.productIds.some(id => id.toString() === product._id.toString())) ||
+                (offer.offerType === 'Category' && product.category && offer.categoryIds.some(id => id.toString() === product.category._id.toString()))
+            );
+
+            if (applicableOffers.length > 0) {
+                applicableOffers.sort((a, b) => b.discount - a.discount);
+                productObj.offers = applicableOffers;
+            }
+            
+            return productObj;
+        });
+
+       res.render('home', { 
+            userData,
+            products: productsWithOffers,
+            categories
+        });
     } catch (error) {
         console.error("Error loading home page", error);
         res.redirect("/pageNotFound");
