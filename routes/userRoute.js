@@ -17,7 +17,7 @@ const passport = require("passport");
 const { userAuth, userNotAuth, userAuth1 } = require("../middleware/userAuth");
 
 //user management 
-user_route.get('/',userAuth,userController.loadHome)
+user_route.get('/',userController.loadHome)
 user_route.get("/register",userNotAuth, userController.loadRegister)
 user_route.get("/login",userNotAuth,userController.loadLogin)
 user_route.get('/logout',userController.logoutUser); 
@@ -45,7 +45,7 @@ user_route.get("/auth/google/callback",passport.authenticate("google",{failureRe
 })
 
 //product
-user_route.get("/shop",userAuth,userController.shop)
+user_route.get("/shop",userController.shop)
 user_route.get("/product/:id",userAuth,userController.productDetails)
 
 //cart
