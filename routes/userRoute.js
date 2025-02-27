@@ -41,6 +41,7 @@ user_route.post("/resend-otp",userController.resendOtp)
 //googleAuth
 user_route.get("/auth/google",passport.authenticate("google",{scope:["profile","email"]}))
 user_route.get("/auth/google/callback",passport.authenticate("google",{failureRedirect:"/signup"}),(req,res)=>{
+    req.session.user = req.user
     res.redirect("/")
 })
 
