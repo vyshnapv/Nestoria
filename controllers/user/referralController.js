@@ -18,7 +18,7 @@ const getReferalOffer = async (req, res) => {
         const userData = await User.findById(req.session.user);
         let referral = await Referral.findOne({ referrer: req.session.user })
             .populate('referees.user', 'name email')
-            .lean();
+            .lean();//to get the plain js object
 
         if (!referral) {
             referral = new Referral({

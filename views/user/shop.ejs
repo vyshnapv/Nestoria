@@ -162,12 +162,9 @@
                                             </figure><!-- End .product-media -->
                     
                                             <div class="product-body">
-                                                
-                    
                                                 <h3 class="product-title">
                                                     <a href="/product/<%= product._id %>"><%= product.productName %></a>
                                                 </h3><!-- End .product-title -->
-
                                                 <div class="product-price">
                                                     <% if (product.highestDiscount > 0) { %>
                                                         <span class="price-offer">
@@ -195,8 +192,7 @@
                             <% } %>
                         </div><!-- End .row -->
                     </div>
-                    <!-- End .products -->
-
+    
                     <nav aria-label="Page navigation">
                         <ul class="pagination justify-content-center">
                             <% if (currentPage > 1) { %>
@@ -214,8 +210,29 @@
                                     </a>
                                 </li>
                             <% } %>
-                            
-                            <% for (let i = 1; i <= totalPages; i++) { %>
+                            <% if (currentPage > 3) { %>
+                                <li class="page-item">
+                                    <a class="page-link" href="?page=1&price-sort=<%= priceSort || '' %>&name-sort=<%= nameSort || '' %>&Category=<%= selectedCategory || '' %>&q=<%= searchQuery || '' %>">1</a>
+                                </li>
+                                <% if (currentPage > 4) { %>
+                                    <li class="page-item disabled">
+                                        <a class="page-link" href="#" tabindex="-1" aria-disabled="true">...</a>
+                                    </li>
+                                <% } %>
+                            <% } %>
+                            <% 
+                                let startPage = Math.max(1, currentPage - 1);
+                                let endPage = Math.min(totalPages, currentPage + 1);
+                                if (endPage - startPage + 1 < 3) {
+                                    if (startPage === 1) {
+                                        endPage = Math.min(totalPages, startPage + 2);
+                                    } else if (endPage === totalPages) {
+                                        startPage = Math.max(1, endPage - 2);
+                                    }
+                                }
+                                
+                                for (let i = startPage; i <= endPage; i++) { 
+                            %>
                                 <li class="page-item <%= currentPage === i ? 'active' : '' %>">
                                     <a class="page-link"
                                        href="?page=<%= i %>&price-sort=<%= priceSort || '' %>&name-sort=<%= nameSort || '' %>&Category=<%= selectedCategory || '' %>&q=<%= searchQuery || '' %>">
@@ -224,6 +241,17 @@
                                 </li>
                             <% } %>
                             
+                            <% if (currentPage < totalPages - 2) { %>
+                                <% if (currentPage < totalPages - 3) { %>
+                                    <li class="page-item disabled">
+                                        <a class="page-link" href="#" tabindex="-1" aria-disabled="true">...</a>
+                                    </li>
+                                <% } %>
+                                <li class="page-item">
+                                    <a class="page-link" href="?page=<%= totalPages %>&price-sort=<%= priceSort || '' %>&name-sort=<%= nameSort || '' %>&Category=<%= selectedCategory || '' %>&q=<%= searchQuery || '' %>"><%= totalPages %></a>
+                                </li>
+                            <% } %>
+            
                             <% if (currentPage < totalPages) { %>
                                 <li class="page-item">
                                     <a class="page-link page-link-next"
@@ -240,9 +268,8 @@
                                 </li>
                             <% } %>
                         </ul>
-                    </nav>
-                    
-                </div><!-- End .col-lg-9 -->
+                    </nav> 
+                </div>
 
                 <aside class="col-lg-3 order-lg-first">
                     <div class="sidebar sidebar-shop">
@@ -275,10 +302,10 @@
                                         <% } else { %>
                                             <p>No categories available.</p>
                                         <% } %>
-                                    </div><!-- End .filter-items -->
-                                </div><!-- End .widget-body -->
-                            </div><!-- End .collapse -->
-                        </div><!-- End .widget -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                         <div class="sort-container">
                             <h3 class="widget-title">price</h3>
                             <div class="sort-options">
@@ -312,37 +339,19 @@
                                 </div>
                             </div>
                         </div>
-                    </div><!-- End .sidebar sidebar-shop -->
-                </aside><!-- End .col-lg-3 -->
-            </div><!-- End .row -->
-        </div><!-- End .container -->
-    </div><!-- End .page-content -->
-</main><!-- End .main -->
+                    </div>
+                </aside>
+            </div>
+        </div>
+    </div>
+</main>
 
 <script>
-    function sortNames(order) {
-        const nameList = document.getElementById('nameList');
-        let names = Array.from(nameList.querySelectorAll('.name-item'));
-
-        names.sort((a, b) => {
-            let nameA = a.textContent.toLowerCase();
-            let nameB = b.textContent.toLowerCase();
-            if (order === 'asc') {
-                return nameA.localeCompare(nameB);
-            } else {
-                return nameB.localeCompare(nameA);
-            }
-        });
-
-        nameList.innerHTML = '';
-        names.forEach(name => nameList.appendChild(name));
-    }
-
-    document.addEventListener('DOMContentLoaded', () => {
-        function handleAddToCart(button) {
-    const productId = button.getAttribute('data-product-id');
-    const productName = button.closest('.product, .product-details') 
-        ?.querySelector('.product-title a, .product-title')?.textContent;
+document.addEventListener('DOMContentLoaded', () => {
+    function handleAddToCart(button) {
+      const productId = button.getAttribute('data-product-id');
+      const productName = button.closest('.product, .product-details') 
+      ?.querySelector('.product-title a, .product-title')?.textContent;
 
     fetch('/addToCart', {
         method: 'POST',
@@ -430,6 +439,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 });
+
     function handleWishlist(button) {
         const productId = button.getAttribute('data-product-id');
         const productName = button.closest('.product, .product-details')

@@ -329,26 +329,19 @@
                                 }
                             }'> 
                             <% 
-                            // Get current date for offer validation
                             const currentDate = new Date();
-                            
-                            // Loop through each product
                             products.forEach(async product => { 
-                                // Initialize hasOffer and offerPrice variables
                                 let hasOffer = false;
                                 let offerPrice = product.regularPrice;
                                 let discountPercentage = 0;
                                 
-                                // Check for product offers
                                 if (product.offers && product.offers.length > 0) {
-                                    // Find active offer with the highest discount
                                     const activeOffers = product.offers.filter(offer => 
                                         offer.status === 'Active' && 
                                         new Date(offer.expireDate) > currentDate
                                     );
                                     
                                     if (activeOffers.length > 0) {
-                                        // Sort by discount amount (highest first)
                                         activeOffers.sort((a, b) => b.discount - a.discount);
                                         const highestOffer = activeOffers[0];
                                         
@@ -386,7 +379,7 @@
                         </div>
                     </div>
                 </div>
-            </div><!-- End .container -->
+            </div>
             <div class="container-fluid">
                 <div class="heading heading-center mb-3">
                     <h2 class="title-lg">Shop by Categories</h2>
@@ -397,19 +390,15 @@
                     <% let categoryCount = 0; %>
                     <% categories.slice(0, 5).forEach((category, index) => { %>
                         <% 
-                            // Find products for this category
                             const categoryProducts = products.filter(product => 
                                 product.category && product.category._id.toString() === category._id.toString()
                             );
                             
-                            // Skip if no products
                             if (categoryProducts.length === 0) return;
                             
-                            // Get first product image for display
                             const displayProduct = categoryProducts[0];
                             if (!displayProduct) return;
                             
-                            // Determine size class based on index - more subtle differences
                             let sizeClass = "";
                             if (index % 5 === 0) sizeClass = "category-item-xl";
                             else if (index % 5 === 1) sizeClass = "category-item-lg";

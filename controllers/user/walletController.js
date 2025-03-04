@@ -7,7 +7,10 @@ const loadWallet = async (req, res) => {
     try {
         const userId = req.session.user;
         const userData = await User.findOne({ _id: userId });
-        
+
+        const page = parseInt(req.query.page)||1;
+        limit=5;   
+
         const wallet = await Wallet.findOne({ userId })
             .populate({
                 path: 'transactions.orderId',
@@ -22,12 +25,32 @@ const loadWallet = async (req, res) => {
                 transactions: []
             });
             await newWallet.save();
-            return res.render("wallet", { userData, wallet: newWallet });
+            return res.render("wallet", { 
+                userData, 
+                wallet: newWallet,
+                paginatedTransactions: [],
+                currentPage: 1,
+                totalPages: 1
+            });
         }
+
+        const sortedTransactions = wallet.transactions.sort((a, b) => 
+            new Date(b.createdAt) - new Date(a.createdAt)
+        );
+
+        const totalTransactions = sortedTransactions.length;
+        const totalPages = Math.ceil(totalTransactions / limit);
+        const startIndex = (page - 1) * limit;
+        const endIndex = Math.min(startIndex + limit, totalTransactions);
+
+        const paginatedTransactions = sortedTransactions.slice(startIndex, endIndex);
 
         res.render("wallet", { 
             userData,
-            wallet: wallet 
+            wallet: wallet,
+            paginatedTransactions: paginatedTransactions,
+            currentPage: page,
+            totalPages: totalPages
         });
     } catch (error) {
         console.log(error);

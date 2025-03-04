@@ -1,6 +1,6 @@
 const Category = require("../../models/categoryModel");
 
-
+//get the category information
 const categoryInfo=async(req,res)=>{
     try {
         const page=parseInt(req.query.page) || 1;
@@ -94,7 +94,7 @@ const getEditCategory=async(req,res)=>{
     try {
         const id=req.query.id;
         const category=await Category.findOne({_id:id});
-    res.render("editcategory", { category: category });
+        res.render("editcategory", { category: category });
     } catch (error) {
         res.redirect("/pageerror");
     }
@@ -105,7 +105,7 @@ const editCategory=async(req,res)=>{
     try {
          const id=req.params.id;
          const {categoryName,description}=req.body;
-        const normalizedName = categoryName.trim()
+         const normalizedName = categoryName.trim()
 
         const existingCategory = await Category.findOne({
             _id: { $ne: id },

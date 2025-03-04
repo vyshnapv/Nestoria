@@ -202,27 +202,19 @@
             <% if (currentPage > 1) { %>
                 <li class="page-item">
                     <a class="page-link" href="?page=<%= currentPage - 1 %>&search=<%= search %>">
-                        <i class="material-icons md-chevron_left"></i>
+                        Previous
                     </a>
                 </li>
             <% } %>
 
-            <% for (let i = 1; i <= totalPages; i++) { %>
-                <% if (i === currentPage) { %>
-                    <li class="page-item active">
-                        <a class="page-link" href="#"><%= i %></a>
-                    </li>
-                <% } else { %>
-                    <li class="page-item">
-                        <a class="page-link" href="?page=<%= i %>&search=<%= search %>"><%= i %></a>
-                    </li>
-                <% } %>
-            <% } %>
+            <li class="page-item active">
+                <a class="page-link" href="#"><%= currentPage %> of <%= totalPages %></a>
+            </li>
 
             <% if (currentPage < totalPages) { %>
                 <li class="page-item">
                     <a class="page-link" href="?page=<%= currentPage + 1 %>&search=<%= search %>">
-                        <i class="material-icons md-chevron_right"></i>
+                        Next
                     </a>
                 </li>
             <% } %>
@@ -293,7 +285,6 @@ function handleBlockProduct(productId, action) {
 <script src="/assets/js/vendors/perfect-scrollbar.js"></script>
 <script src="/assets/js/vendors/jquery.fullscreen.min.js"></script>
 <script src="/assets/js/vendors/chart.js"></script>
-<!-- Main Script -->
 <script src="/assets/js/main.js?v=1.1" type="text/javascript"></script>
 <script src="/assets/js/custom-chart.js" type="text/javascript"></script>
 

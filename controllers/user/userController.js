@@ -663,10 +663,6 @@ const productDetails=async(req,res)=>{
             };
         }
 
-        if (!product || !product.category || !product.category.isListed) {
-            return res.redirect("/shop");
-        }
-
         const isWishlisted = userData 
             ? await Wishlist.exists({ 
                 userId: userData._id, 

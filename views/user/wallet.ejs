@@ -1,4 +1,3 @@
-<!-- wallet.ejs -->
 <%- include('../layoutsUser/userheader') %>
 <style>
     .wallet-box {
@@ -83,6 +82,41 @@
         padding: 40px 20px;
         color: #6c757d;
     }
+    .pagination-container {
+        display: flex;
+        justify-content: center;
+        margin-top: 20px;
+    }
+    .pagination {
+        display: flex;
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+    .page-item {
+        margin: 0 5px;
+    }
+    .page-link {
+        display: block;
+        padding: 8px 12px;
+        border-radius: 4px;
+        background: #f8f9fa;
+        color: #495057;
+        text-decoration: none;
+        transition: all 0.2s;
+    }
+    .page-link:hover {
+        background: #e9ecef;
+    }
+    .page-item.active .page-link {
+        background: #007bff;
+        color: white;
+    }
+    .page-item.disabled .page-link {
+        color: #adb5bd;
+        pointer-events: none;
+        background: #f8f9fa;
+    }
 </style>
 
 <main class="main">
@@ -151,7 +185,7 @@
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            <% wallet.transactions.reverse().forEach(transaction => { %>
+                                            <% paginatedTransactions.forEach(transaction => { %>
                                                 <tr>
                                                     <td><%= new Date(transaction.createdAt).toLocaleDateString('en-US', { 
                                                         year: 'numeric', 
@@ -173,6 +207,23 @@
                                         </tbody>
                                     </table>
                                 </div>
+                                
+                                <% if (totalPages > 1) { %>
+                                <div class="pagination-container">
+                                    <ul class="pagination">
+                                        <li class="page-item <%= currentPage === 1 ? 'disabled' : '' %>">
+                                            <a class="page-link" href="/wallet?page=<%= currentPage - 1 %>">Previous</a>
+                                        </li>
+                                        <li class="page-item active">
+                                            <a class="page-link" href="/wallet?page=<%= currentPage %>"><%= currentPage %></a>
+                                        </li>
+                                        <li class="page-item <%= currentPage === totalPages ? 'disabled' : '' %>">
+                                            <a class="page-link" href="/wallet?page=<%= currentPage + 1 %>">Next</a>
+                                        </li>
+                                    </ul>
+                                </div>
+                                <% } %>
+
                             <% } else { %>
                                 <div class="empty-state">
                                     <p>No transactions found in your wallet.</p>

@@ -97,7 +97,7 @@ async function submitForm(event) {
                 showSuccess("Category updated successfully!");
                 setTimeout(() => {
                     window.location.href = '/admin/category';
-                }, 1500);
+                }, 1000);
             } else {
                 throw new Error(result.error || "Failed to update category");
             }

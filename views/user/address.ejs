@@ -358,7 +358,7 @@
 <script>
     function openModal() {
         document.getElementById("addressModal").style.display = "block";
-        document.body.style.overflow = "hidden"; // Prevent background scrolling
+        document.body.style.overflow = "hidden"; 
     }
 
     function closeModal() {
@@ -374,7 +374,7 @@
             if (result.isConfirmed) {
                 document.getElementById("addressModal").style.display = "none";
                 document.getElementById("actualAddAddressForm").reset();
-                document.body.style.overflow = "auto"; // Restore background scrolling
+                document.body.style.overflow = "auto"; 
                 clearErrors();
                 Swal.fire(
                     'Cancelled!',

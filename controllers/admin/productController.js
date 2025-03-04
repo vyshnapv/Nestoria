@@ -18,6 +18,48 @@ const getProductAddPage=async(req,res)=>{
     }
 }
 
+//product list page
+const getAllProducts=async(req,res)=>{
+    try {
+        const search=req.query.search || "";
+        const page=parseInt(req.query.page) || 1;
+        const limit=4;
+        const skip=(page-1)*limit
+
+        const productData=await Product.find({
+            $or:[
+                {productName:{$regex:new RegExp(".*"+search+".*","i")}},
+            ],
+        }).skip(skip).limit(limit).populate("category").exec()
+
+
+        const count=await Product.find({
+            $or:[
+                {productName:{$regex:new RegExp(".*"+search+".*","i")}},
+            ],
+        }).countDocuments();
+
+        const category=await Category.find({isListed:true});
+
+        if(category)
+        {
+            res.render("products",{
+                data:productData,
+                currentPage:page,
+                totalPages:Math.ceil(count/limit),
+                cat:category,
+                search: search,
+            })
+        }
+        else{
+            res.render("page-404");
+        }
+    } catch (error) {
+        console.error(error);
+        res.redirect("/pageerror")
+    }
+}
+
 const addProducts = async (req, res) => {
     try {
         const products = req.body;
@@ -71,49 +113,6 @@ const addProducts = async (req, res) => {
         });
     }
 };
-
-//product list page
-const getAllProducts=async(req,res)=>{
-    try {
-        const search=req.query.search || "";
-        const page=parseInt(req.query.page) || 1;
-        const limit=4;
-        const skip=(page-1)*limit
-
-        const productData=await Product.find({
-            
-            $or:[
-                {productName:{$regex:new RegExp(".*"+search+".*","i")}},
-            ],
-        }).skip(skip).limit(limit).populate("category").exec()
-
-
-        const count=await Product.find({
-            $or:[
-                {productName:{$regex:new RegExp(".*"+search+".*","i")}},
-            ],
-        }).countDocuments();
-
-        const category=await Category.find({isListed:true});
-
-        if(category)
-        {
-            res.render("products",{
-                data:productData,
-                currentPage:page,
-                totalPages:Math.ceil(count/limit),
-                cat:category,
-                search: search,
-            })
-        }
-        else{
-            res.render("page-404");
-        }
-    } catch (error) {
-        console.error(error);
-        res.redirect("/pageerror")
-    }
-}
 
 //block properties
 const blockProduct=async(req,res)=>{
@@ -188,7 +187,6 @@ const editProduct = async (req, res) => {
         if (existingProduct) {
             return res.status(400).json({ error: "Product name already exists" });
         }
-
         let updatedImages = [...product.productImage]; 
 
         if (deletedImages) {
@@ -199,8 +197,6 @@ const editProduct = async (req, res) => {
                 if (fs.existsSync(imagePath)) {
                     fs.unlinkSync(imagePath); 
                 }
-
-
                 updatedImages = updatedImages.filter(img => img !== image);
             });
         }
@@ -242,8 +238,8 @@ const editProduct = async (req, res) => {
 
 module.exports={
     getProductAddPage,
-    addProducts,
     getAllProducts,
+    addProducts,
     blockProduct,
     unblockProduct,
     getEditProduct,
